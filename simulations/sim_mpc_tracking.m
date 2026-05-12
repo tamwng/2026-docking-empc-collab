@@ -40,7 +40,7 @@ Bc = [zeros(3,3); eye(3)];
 
 %%  COST MATRICES (as before for comparison)
 Q = diag([1e-2, 1e-2, 1e-2, 1e0, 1e0, 1e0]);
-R = diag([1e8,  1e8,  1e8]);
+R = diag([1e4,  1e4,  1e4]);
 
 [~, P] = lqr_controller(Ad, Bd, Q, R);
 

@@ -119,9 +119,24 @@ end
 u_end          = -K * [X_hist(:,end); Xi_hist(:,end)];
 U_hist(:, end) = u_end;
 
-%% Plots
+%%  POST-PROCESSING
 
-t_min = t / 60;   % convert to minutes
+t_min = t / 60;
+
+% Relative distance at each timestep
+rel_dist = vecnorm(X_hist(1:3,:), 2, 1);   % [1 x n_steps]
+
+
+% Convergence criterion
+tol      = 0.01;                            % [m] convergence threshold
+conv_idx = find(rel_dist < tol, 1, 'first');
+if ~isempty(conv_idx)
+    fprintf('Converged at t = %.1f min (step %d)\n', t_min(conv_idx), conv_idx);
+else
+    fprintf('Did not converge within simulation time — increase t_final or tune Q/R\n');
+end
+
+%% Plots
 
 c_x   = [0.00 0.60 0.90];   % blue   — x / ux
 c_y   = [0.90 0.40 0.00];   % orange — y / uy
