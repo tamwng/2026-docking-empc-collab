@@ -45,9 +45,9 @@ disp(abs(eig(Ad - Bd*K)));
 
 %% Initial Conditions
 
-x0     =  500e3;  
-y0     = 1000e3;   
-z0     =  200e3;   
+x0     =  500;  
+y0     = 5000;   
+z0     =  200;   
 x_dot0 =    0;   
 y_dot0 =    0;   
 z_dot0 =    0;  
