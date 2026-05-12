@@ -119,24 +119,9 @@ end
 u_end          = -K * [X_hist(:,end); Xi_hist(:,end)];
 U_hist(:, end) = u_end;
 
-%%  POST-PROCESSING
-
-t_min = t / 60;
-
-% Relative distance at each timestep
-rel_dist = vecnorm(X_hist(1:3,:), 2, 1);   % [1 x n_steps]
-
-
-% Convergence criterion
-tol      = 0.01;                            % [m] convergence threshold
-conv_idx = find(rel_dist < tol, 1, 'first');
-if ~isempty(conv_idx)
-    fprintf('Converged at t = %.1f min (step %d)\n', t_min(conv_idx), conv_idx);
-else
-    fprintf('Did not converge within simulation time — increase t_final or tune Q/R\n');
-end
-
 %% Plots
+
+t_min = t / 60;   % convert to minutes
 
 c_x   = [0.00 0.60 0.90];   % blue   — x / ux
 c_y   = [0.90 0.40 0.00];   % orange — y / uy
@@ -229,6 +214,56 @@ end
 disp('Tikz files exported.');
 
 
+%% Performance metrics
+
+% Peak thrust (2-norm across all steps)
+thrust_norms          = vecnorm(U_hist, 2, 1);
+peak_thrust           = max(thrust_norms);
+peak_thrust_step      = find(thrust_norms == peak_thrust, 1);
+
+% Per-axis delta-v
+dv_per_axis           = sum(abs(U_hist), 2) * dt;   % [dvx; dvy; dvz]
+
+% Closed-loop eigenvalue (augmented system)
+eig_max               = max(abs(eig(A_aug - B_aug * K)));
+
+% Convergence (position norm < threshold)
+conv_threshold        = 1.0;                         % [m]
+rel_dist_full         = vecnorm(X_hist(1:3,:), 2, 1);
+conv_idx              = find(rel_dist_full < conv_threshold, 1, 'first');
+if ~isempty(conv_idx)
+    conv_step         = conv_idx;
+    conv_time_s       = t(conv_idx);
+    final_pos_error   = X_hist(1:3, conv_idx);
+    fprintf('Converged (< %.1fm) at t = %.1f min (step %d)\n', ...
+            conv_threshold, conv_time_s/60, conv_step);
+else
+    conv_step         = NaN;
+    conv_time_s       = NaN;
+    final_pos_error   = X_hist(1:3, end);
+    fprintf('Did not converge within simulation time.\n');
+end
+
+% Integrator activation step (first time chaser within 1km)
+act_idx               = find(rel_dist_full < integration_threshold, 1, 'first');
+if ~isempty(act_idx)
+    act_step          = act_idx;
+    act_time_s        = t(act_idx);
+    fprintf('Integrator activated at t = %.1f min (step %d)\n', ...
+            act_time_s/60, act_step);
+else
+    act_step          = NaN;
+    act_time_s        = NaN;
+end
+
+fprintf('Peak thrust:    %.6f m/s^2 (step %d, t=%.1f min)\n', ...
+        peak_thrust, peak_thrust_step, t(peak_thrust_step)/60);
+fprintf('u_max (MPC):    1e-2 m/s^2  →  LQI exceeds by factor %.1f\n', ...
+        peak_thrust / 1e-2);
+fprintf('Max CL eigenvalue (augmented): %.6f\n', eig_max);
+fprintf('Delta-v per axis: dvx=%.2f, dvy=%.2f, dvz=%.2f m/s\n', ...
+        dv_per_axis(1), dv_per_axis(2), dv_per_axis(3));
+
 %% JSON export
 
 metadata = struct(...
@@ -242,11 +277,29 @@ metadata = struct(...
     'controller',     'LQI', ...
     'dynamics_model', 'CWH');
 
+performance = struct(...
+    'delta_v_total_m_s',       dv(end), ...
+    'delta_v_per_axis_m_s',    dv_per_axis', ...
+    'convergence_step',        conv_step, ...
+    'convergence_time_s',      conv_time_s, ...
+    'convergence_threshold_m', conv_threshold, ...
+    'final_position_error_m',  final_pos_error', ...
+    'peak_thrust_m_s2',        peak_thrust, ...
+    'peak_thrust_step',        peak_thrust_step, ...
+    'max_eigenvalue_magnitude', eig_max);
+
+integrator = struct(...
+    'activation_range_m',  integration_threshold, ...
+    'activation_step',     act_step, ...
+    'activation_time_s',   act_time_s);
+
 data = struct(...
-    'metadata', metadata, ...
-    't',        t, ...
-    'X_t',      X_t', ...
-    'Rho',      X_hist');
+    'metadata',    metadata, ...
+    'performance', performance, ...
+    'integrator',  integrator, ...
+    't',           t, ...
+    'X_t',         X_t', ...
+    'Rho',         X_hist');
 
 json_str = jsonencode(data, 'PrettyPrint', true);
 fid = fopen('exports/scenarios/sim_lqi.json', 'w');

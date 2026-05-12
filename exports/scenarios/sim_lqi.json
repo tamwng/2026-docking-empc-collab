@@ -10,6 +10,30 @@
     "controller": "LQI",
     "dynamics_model": "CWH"
   },
+  "performance": {
+    "delta_v_total_m_s": 11003.070620014672,
+    "delta_v_per_axis_m_s": [
+      4908.026310684666,
+      9261.3449899098778,
+      1900.0380963994221
+    ],
+    "convergence_step": 311,
+    "convergence_time_s": 3100,
+    "convergence_threshold_m": 1,
+    "final_position_error_m": [
+      -0.35905458219461522,
+      -0.92047290210200006,
+      0.12859489306373745
+    ],
+    "peak_thrust_m_s2": 103.3800542919746,
+    "peak_thrust_step": 1,
+    "max_eigenvalue_magnitude": 0.96411614955882541
+  },
+  "integrator": {
+    "activation_range_m": 1000,
+    "activation_step": 108,
+    "activation_time_s": 1070
+  },
   "t": [
     0,
     10,

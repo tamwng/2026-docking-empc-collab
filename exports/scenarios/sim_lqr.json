@@ -10,6 +10,25 @@
     "controller": "LQR",
     "dynamics_model": "CWH"
   },
+  "performance": {
+    "delta_v_total_m_s": 33681.596929856045,
+    "delta_v_per_axis_m_s": [
+      15535.999208537914,
+      29139.905970053485,
+      5891.8076576512567
+    ],
+    "convergence_step": 55,
+    "convergence_time_s": 540,
+    "convergence_threshold_m": 1,
+    "final_position_error_m": [
+      0.0064132932964359735,
+      -0.3413013843059135,
+      -0.014042403073962456
+    ],
+    "peak_thrust_m_s2": 904.43114681371014,
+    "peak_thrust_step": 1,
+    "max_eigenvalue_magnitude": 0.79597479360515377
+  },
   "t": [
     0,
     10,
