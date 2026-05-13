@@ -19,8 +19,11 @@ t_min   = t / 60;
 
 
 %%  MPC PARAMETERS
-N     = 20;       % [-]      prediction horizon
-u_max = 1e-2;     % [m/s^2]  
+N     = 20;       % [-]  prediction horizon
+
+%%  CONSTRAINTS
+con.u_max        = 1e-2;   % [m/s^2]  symmetric thrust bound
+con.y_min_active = true;   % enforce y >= 0: approach only from behind
 
 
 %%  CWH STATE SPACE
@@ -104,18 +107,21 @@ fprintf('Running Tracking MPC (%d steps, N=%d)...\n', n_steps, N);
 
 for k = 1:n_steps-1
 
-    % current reference
-    r_k = R_ref(:, k);
+    % N-step reference preview: columns k+1 ... k+N, padded with hold point
+    k_end      = min(k + N, n_steps);
+    R_preview  = [R_ref(:, k+1:k_end), ...
+                  repmat(R_ref(:, end), 1, k + N - k_end)];
 
     % solve tracking MPC
-    [u_opt, ~, ~] = mpc_tracking(X_hist(:,k), r_k, Ad, Bd, Q, R, P, N, u_max);
+    [u_opt, ~, ~] = mpc_tracking(X_hist(:,k), R_preview, Ad, Bd, Q, R, P, N, con);
 
     % apply control and propagate
     U_hist(:, k)   = u_opt;
     X_hist(:, k+1) = Ad * X_hist(:,k) + Bd * u_opt;
     E_hist(:, k+1) = X_hist(:, k+1) - R_ref(:, k+1);
 end
-U_hist(:,end) = mpc_tracking(X_hist(:,end), R_ref(:,end), Ad, Bd, Q, R, P, N, u_max);
+R_preview_end = repmat(R_ref(:, end), 1, N);
+U_hist(:,end) = mpc_tracking(X_hist(:,end), R_preview_end, Ad, Bd, Q, R, P, N, con);
 
 fprintf('Simulation complete.\n');
 
@@ -202,8 +208,8 @@ hold(ax3, 'on'); grid(ax3, 'on');
 plot(ax3, t_min, U_hist(1,:)*1000, 'Color', c_x, 'LineWidth', 1.2, 'DisplayName', '$u_x$');
 plot(ax3, t_min, U_hist(2,:)*1000, 'Color', c_y, 'LineWidth', 1.2, 'DisplayName', '$u_y$');
 plot(ax3, t_min, U_hist(3,:)*1000, 'Color', c_z, 'LineWidth', 1.2, 'DisplayName', '$u_z$');
-yline(ax3,  u_max*1000, '--k', 'LineWidth', 0.8, 'DisplayName', '$u_{max}$');
-yline(ax3, -u_max*1000, '--k', 'LineWidth', 0.8);
+yline(ax3,  con.u_max*1000, '--k', 'LineWidth', 0.8, 'DisplayName', '$u_{max}$');
+yline(ax3, -con.u_max*1000, '--k', 'LineWidth', 0.8);
 if ~isempty(phase_switch_idx)
     xline(ax3, t_min(phase_switch_idx), ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.0);
 end
@@ -305,7 +311,7 @@ metadata = struct(...
     'dynamics_model',  'CWH', ...
     'trajectory_mode', traj_mode, ...
     'horizon_N',       N, ...
-    'u_max',           u_max, ...
+    'u_max',           con.u_max, ...
     'x_hold',          x_hold, ...
     'y_hold',          y_hold, ...
     'z_hold',          z_hold);
