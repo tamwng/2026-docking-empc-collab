@@ -47,7 +47,7 @@ R = diag([1e4,  1e4,  1e4]);
 
 
 %%  INITIAL CONDITIONS
-X0 = [500; 6000; 200; 0; 0; 0];
+X0 = [500; 10000; 200; 0; 0; 0];
 
 
 %%  INTEGRATE TARGET ORBIT (as before)
