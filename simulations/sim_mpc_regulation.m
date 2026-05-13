@@ -9,7 +9,7 @@ clear; clc;
 constants;
 
 %%  SIMULATION PARAMETERS (as before)
-dt      = 10;
+dt      = 60;
 t_final = 2 * T;
 n_steps = round(t_final / dt);
 t       = (0:n_steps-1) * dt;
@@ -47,7 +47,7 @@ R = diag([1e4,  1e4,  1e4]);
 
 
 %%  INITIAL CONDITIONS
-X0 = [500; 5000; 200; 0; 0; 0];
+X0 = [500; 6000; 200; 0; 0; 0];
 
 
 %%  INTEGRATE TARGET ORBIT (as before)
@@ -63,9 +63,6 @@ X_hist(:, 1) = X0;
 
 fprintf('Running Regulation MPC (%d steps, N=%d)...\n', n_steps, N);
 for k = 1:n_steps-1
-    if mod(k, 100) == 0
-        fprintf('  Step %d / %d\n', k, n_steps);
-    end
     [u_opt, ~, ~]  = mpc_regulation(X_hist(:,k), Ad, Bd, Q, R, P, N, u_max);
     U_hist(:, k)   = u_opt;
     X_hist(:, k+1) = Ad * X_hist(:,k) + Bd * u_opt;

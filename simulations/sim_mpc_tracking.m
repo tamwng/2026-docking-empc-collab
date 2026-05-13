@@ -12,7 +12,7 @@ constants;
 
 %%  SIMULATION PARAMETERS
 dt      = 10;
-t_final = 3 * T;            
+t_final = 2 * T;            
 n_steps = round(t_final / dt);
 t       = (0:n_steps-1) * dt;
 t_min   = t / 60;
@@ -103,9 +103,6 @@ E_hist(:, 1) = X0 - R_ref(:, 1);
 fprintf('Running Tracking MPC (%d steps, N=%d)...\n', n_steps, N);
 
 for k = 1:n_steps-1
-    if mod(k, 100) == 0
-        fprintf('  Step %d / %d\n', k, n_steps);
-    end
 
     % current reference
     r_k = R_ref(:, k);

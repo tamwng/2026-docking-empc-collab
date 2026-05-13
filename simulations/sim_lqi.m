@@ -42,7 +42,7 @@ sys_d = ss(Ad, Bd, C_int, zeros(3,3), dt);
 Q = blkdiag(...
     diag([1e-2, 1e-2, 1e-2, ...        % position weights
           1e0,  1e0,  1e0  ]), ...      % velocity weights
-    diag([1e-5, 1e-5, 1e-5]));         % integrator weights 
+    diag([1e-2, 1e-2, 1e-2]));         % integrator weights 
 
 R = diag([1e8, 1e8, 1e8]);             % control weights
 [K, ~, ~] = lqi(sys_d, Q, R);
@@ -68,9 +68,9 @@ end
 
 %% Initial Conditions
 
-x0     =  500e3;  
-y0     = 1000e3;   
-z0     =  200e3;   
+x0     =  500;  
+y0     = 5000;   
+z0     =  200;   
 x_dot0 =    0;   
 y_dot0 =    0;   
 z_dot0 =    0;  
