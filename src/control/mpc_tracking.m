@@ -53,10 +53,15 @@ Rbar = kron(eye(N), R);
 
 %% Steady-state feedforward based on terminal reference
 % u_ss satisfies r_terminal = Ad*r_terminal + Bd*u_ss in discrete time.
-% Using the terminal reference ensures the controller anticipates the
-% thrust needed to hold where the trajectory is heading.
-r_terminal = R_preview(:, end);
-u_ss = pinv(Bd) * (eye(n_x) - Ad) * r_terminal;
+% Valid for fixed equilibrium setpoints (hold points).
+% For zero-input references (e.g. NMC orbit), pass con.u_ss = zeros(n_u,1)
+% to bypass this computation and avoid a spurious feedforward bias.
+if isfield(con, 'u_ss')
+    u_ss = con.u_ss;
+else
+    r_terminal = R_preview(:, end);
+    u_ss = pinv(Bd) * (eye(n_x) - Ad) * r_terminal;
+end
 U_ss = repmat(u_ss, N, 1);
 
 %% QP matrices
