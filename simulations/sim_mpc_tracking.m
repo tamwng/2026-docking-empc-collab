@@ -51,16 +51,24 @@ R = diag([1e4,  1e4,  1e4]);
 %%  INITIAL CONDITIONS
 
 x0_ic = 500;    % [m] radial offset
-y0_ic = 1000;   % [m] along-track offset
+y0_ic = 10000;   % [m] along-track offset
 z0_ic = 0;      % [m] cross-track offset
 
 X0 = [x0_ic; y0_ic; z0_ic; 0; 0; 0];
 
 
-%%  HOLD POINT 
+%%  HOLD POINT
 x_hold = 0;     % [m] radial   — on V-bar axis
 y_hold = 100;   % [m] along-track — 100m behind target
 z_hold = 0;     % [m] cross-track
+
+% LoS cone approach corridor — apex at hold point, docking axis along +y.
+% Set active = true to enforce.  Hard constraint: infeasible if initial
+% state violates the cone.  Check: sqrt(x0^2+z0^2) <= (y0-y_hold)*tan(half_angle).
+con.los_cone.active     = false;
+con.los_cone.half_angle = deg2rad(20);                % [rad]  20° sensor FOV
+con.los_cone.n_faces    = 10;                         % [-]    inner polygon faces
+con.los_cone.apex       = [x_hold; y_hold; z_hold];  % [m]    docking port position
 
 
 %%  REFERENCE TRAJECTORY

@@ -24,6 +24,13 @@ N     = 20;       % [-]  prediction horizon
 con.u_max        = 1e-2;   % [m/s^2]  symmetric thrust bound
 con.y_min_active = true;   % enforce y >= 0: no overshoot past target
 
+% NOTE: hard cone will be infeasible whenever x0 lies outside the cone.
+%       Ensure the initial condition satisfies sqrt(x0^2+z0^2) <= y0*tan(half_angle),
+
+con.los_cone.active     = false;         % LoS cone approach corridor 
+con.los_cone.half_angle = deg2rad(20);   % [rad]  20° — typical sensor FOV
+con.los_cone.n_faces    = 10;            % [-]    faces in inner polygon (Weiss 2015)
+
 %%  CWH SS
 
 Ac = [0      0     0    1     0    0  ;
