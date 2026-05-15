@@ -1,4 +1,4 @@
-function [u_opt, U_opt, X_pred] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, u_max)
+function [u_opt, U_opt, X_pred] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, con)
 % mpc_regulation.m
 % Solves the finite-horizon constrained tracking MPC (regulation to origin
 %  x = 0) problem at each timestep.
@@ -17,7 +17,9 @@ function [u_opt, U_opt, X_pred] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, u_max)
 %   R     - control cost matrix [3x3]
 %   P     - terminal cost matrix [6x6]
 %   N     - prediction horizon
-%   u_max - symmetric thrust acceleration limit [m/s^2]
+%   con   - constraint config struct with fields:
+%             .u_max          [required] symmetric thrust bound [m/s^2]
+%             .y_min_active   [optional] enforce y >= 0 over horizon (bool)
 %
 % Output:
 %   u_opt  - optimal first control input [3x1]
@@ -51,13 +53,12 @@ H = 2 * (Su' * Qbar * Su + Rbar);
 f = 2 * Su' * Qbar * Sx * x0;
 H = (H + H') / 2;   % symmetrize for numerical stability
 
-%% Input constraints
-lb = -u_max * ones(n_u * N, 1);
-ub =  u_max * ones(n_u * N, 1);
+%% Constraints (input bounds + optional state constraints)
+[A_ineq, b_ineq, lb, ub] = constraints(x0, Sx, Su, N, n_u, con);
 
-%% Solve QP 
+%% Solve QP
 opts = optimoptions('quadprog', 'Display', 'off');
-[U_opt, ~, exitflag] = quadprog(H, f, [], [], [], [], lb, ub, [], opts);
+[U_opt, ~, exitflag] = quadprog(H, f, A_ineq, b_ineq, [], [], lb, ub, [], opts);
 
 if exitflag ~= 1
     warning('MPC QP did not solve to optimality. exitflag = %d', exitflag);

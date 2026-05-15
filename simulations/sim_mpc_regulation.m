@@ -13,13 +13,16 @@ dt      = 60;
 t_final = 2 * T;
 n_steps = round(t_final / dt);
 t       = (0:n_steps-1) * dt;
+t_min = t / 60;
 
 
 %%  MPC PARAMETERS
 
-N     = 20;       % [-]      prediction horizon (initial guess)
-u_max = 1e-2;     % [m/s^2]  thrust limit 
+N     = 20;       % [-]  prediction horizon
 
+%%  CONSTRAINTS
+con.u_max        = 1e-2;   % [m/s^2]  symmetric thrust bound
+con.y_min_active = true;   % enforce y >= 0: no overshoot past target
 
 %%  CWH SS
 
@@ -63,18 +66,16 @@ X_hist(:, 1) = X0;
 
 fprintf('Running Regulation MPC (%d steps, N=%d)...\n', n_steps, N);
 for k = 1:n_steps-1
-    [u_opt, ~, ~]  = mpc_regulation(X_hist(:,k), Ad, Bd, Q, R, P, N, u_max);
+    [u_opt, ~, ~]  = mpc_regulation(X_hist(:,k), Ad, Bd, Q, R, P, N, con);
     U_hist(:, k)   = u_opt;
     X_hist(:, k+1) = Ad * X_hist(:,k) + Bd * u_opt;
 end
-U_hist(:,end) = mpc_regulation(X_hist(:,end), Ad, Bd, Q, R, P, N, u_max);
+U_hist(:,end) = mpc_regulation(X_hist(:,end), Ad, Bd, Q, R, P, N, con);
 
 fprintf('Simulation complete.\n');
 
 
 %%  POST-PROCESSING
-
-t_min = t / 60;
 
 % Relative distance at each timestep
 rel_dist = vecnorm(X_hist(1:3,:), 2, 1);   % [1 x n_steps]
@@ -135,8 +136,8 @@ xlabel(ax4, 'Time [min]');
 ylabel(ax4, 'Acceleration [mm/s$^2$]', 'Interpreter', 'latex');
 title(ax4, 'Control Inputs');
 legend(ax4, 'Location', 'northeast', 'Interpreter', 'latex');
-yline(ax4,  u_max*1000, '--k', 'LineWidth', 0.8, 'DisplayName', 'u\_max');
-yline(ax4, -u_max*1000, '--k', 'LineWidth', 0.8);
+yline(ax4,  con.u_max*1000, '--k', 'LineWidth', 0.8, 'DisplayName', 'u\_max');
+yline(ax4, -con.u_max*1000, '--k', 'LineWidth', 0.8);
 
 ax5 = subplot(2, 3, 5);
 hold(ax5, 'on'); grid(ax5, 'on'); axis(ax5, 'equal');
@@ -172,7 +173,8 @@ metadata = struct(...
     'controller',     'MPC_regulation', ...
     'dynamics_model', 'CWH', ...
     'horizon_N',      N, ...
-    'u_max',          u_max);
+    'u_max',          con.u_max, ...
+    'y_min_active',   con.y_min_active);
 
 data = struct(...
     'metadata', metadata, ...

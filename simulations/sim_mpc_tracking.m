@@ -11,7 +11,7 @@ constants;
 
 
 %%  SIMULATION PARAMETERS
-dt      = 10;
+dt      = 60;
 t_final = 2 * T;            
 n_steps = round(t_final / dt);
 t       = (0:n_steps-1) * dt;
