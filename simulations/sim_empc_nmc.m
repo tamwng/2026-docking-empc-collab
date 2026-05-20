@@ -1,17 +1,15 @@
 % sim_empc_nmc.m
 % Economic MPC — NMC orbit acquisition and maintenance.
 %
-% SCENARIO
-% ────────
+% SCENARIO:
 % The chaser sits at the V-bar hold point (0, 100, 0) m with zero velocity
 % after the tracking MPC phase.  The NMC orbit (rho=50m, 2:1 ellipse) passes
 % exactly through (0, 100, 0) at phase phi_0 = -pi/2 — so the chaser is at
 % the right position but with zero velocity. The EMPC finds the minimum-fuel injection
 % impulse and then maintains the orbit with near-zero thrust (free drift).
 %
-% ECONOMIC COST
-% ─────────────
-% Stage cost: ℓ(u) = u'R_eco u  (fuel per step, Q_stage = 0)
+% ECONOMIC COST:
+% Stage cost: ℓ(u) = u'R_eco u 
 % Terminal cost: e_N'P e_N  where e_N = x(N) - r_nmc(k+N)
 %
 

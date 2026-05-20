@@ -22,7 +22,7 @@ constants;
 
 %% Simulation parameters
 
-dt      = 60;           % [s]   sample time
+dt      = 30;           % [s]   sample time
 t_final = 2 * T;        % [s]  
 n_steps = round(t_final / dt);
 t       = (0:n_steps-1) * dt;
