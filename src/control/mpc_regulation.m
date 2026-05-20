@@ -43,9 +43,23 @@ for i = 1:N
     end
 end
 
-%% Cost matrices 
-% Q, P at last stage, terminal constraint included in Qbar
-Qbar = blkdiag(kron(eye(N-1), Q), P);
+%% Terminal equality constraint: x(N) = 0
+% When active, P is irrelevant — replace it with zeros and add Aeq/beq.
+% Aeq = Su_N (last n_x rows of Su), beq = -Sx_N * x0.
+use_terminal_eq = isfield(con, 'terminal_eq') && con.terminal_eq;
+if use_terminal_eq
+    P_cost = zeros(n_x);
+    Aeq = Su(end-n_x+1:end, :);
+    beq = -Sx(end-n_x+1:end, :) * x0;
+else
+    P_cost = P;
+    Aeq = [];
+    beq = [];
+end
+
+%% Cost matrices
+% Q at intermediate stages, P_cost at terminal stage
+Qbar = blkdiag(kron(eye(N-1), Q), P_cost);
 Rbar = kron(eye(N), R);
 
 %% Form QP matrices
@@ -58,7 +72,7 @@ H = (H + H') / 2;   % symmetrize for numerical stability
 
 %% Solve QP
 opts = optimoptions('quadprog', 'Display', 'off');
-[U_opt, ~, exitflag] = quadprog(H, f, A_ineq, b_ineq, [], [], lb, ub, [], opts);
+[U_opt, ~, exitflag] = quadprog(H, f, A_ineq, b_ineq, Aeq, beq, lb, ub, [], opts);
 
 if exitflag ~= 1
     warning('MPC QP did not solve to optimality. exitflag = %d', exitflag);

@@ -50,7 +50,7 @@ Bc = [zeros(3,3); eye(3)];
 [Ad, Bd] = discretize(Ac, Bc, dt);
 
 %%  INITIAL CONDITIONS
-X0 = [500; 10000; 200; 0; 0; 0];
+X0 = [50; 100; 20; 0; 0; 0];
 
 
 %%  TERMINAL COST 
@@ -79,7 +79,7 @@ end
 U_std(:,end) = mpc_regulation(X_std(:,end), Ad, Bd, Q_dare, R_dare, P, N, con);
 
 
-%%  ECONOMIC MPC 
+%%  ECONOMIC MPC
 %   Stage cost: ℓ(x,u) = u'R_eco u  (fuel only — Q_stage = 0)
 %   Terminal cost: x'P x  (same P as above — valid CLF, see header)
 
@@ -103,19 +103,53 @@ U_eco(:,end) = mpc_regulation(X_eco(:,end), Ad, Bd, Q_stage, R_eco, P, N, con);
 fprintf('Simulation complete.\n');
 
 
+%%  ECONOMIC MPC — TERMINAL EQUALITY CONSTRAINT  x(N_eq) = 0
+%
+%  No terminal cost (P = 0), no state penalty (Q_stage = 0).
+%  Feasibility is guaranteed ONLY if the horizon N_eq is long enough to
+%  drive x0 to the origin within the input bounds.
+
+N_eq = 20;
+
+con_eq              = con;
+con_eq.terminal_eq  = true;   % activates Aeq/beq in mpc_regulation
+
+P_eq    = zeros(6);           % irrelevant — terminal equality replaces it
+Q_eq    = zeros(6);           % fuel-only stage cost (same as EMPC above)
+R_eq    = eye(3);
+
+fprintf('Running Economic MPC with terminal equality (N=%d)...\n', N_eq);
+
+X_teq = zeros(6, n_steps);   U_teq = zeros(3, n_steps);
+X_teq(:,1) = X0;
+
+for k = 1:n_steps-1
+    [u_opt, ~, ~]   = mpc_regulation(X_teq(:,k), Ad, Bd, Q_eq, R_eq, P_eq, N_eq, con_eq);
+    U_teq(:,k)      = u_opt;
+    X_teq(:,k+1)    = Ad * X_teq(:,k) + Bd * u_opt;
+end
+U_teq(:,end) = mpc_regulation(X_teq(:,end), Ad, Bd, Q_eq, R_eq, P_eq, N_eq, con_eq);
+
+fprintf('Simulation complete.\n');
+
+
 %%  POST-PROCESSING
 
 rel_std  = vecnorm(X_std(1:3,:), 2, 1);
 rel_eco  = vecnorm(X_eco(1:3,:), 2, 1);
-dv_std   = cumsum(vecnorm(U_std, 2, 1) * dt);
-dv_eco   = cumsum(vecnorm(U_eco, 2, 1) * dt);
+rel_teq  = vecnorm(X_teq(1:3,:), 2, 1);
+dv_std   = cumsum(vecnorm(U_std,  2, 1) * dt);
+dv_eco   = cumsum(vecnorm(U_eco,  2, 1) * dt);
+dv_teq   = cumsum(vecnorm(U_teq, 2, 1) * dt);
 
 V_std = arrayfun(@(k) X_std(:,k)'*P*X_std(:,k), 1:n_steps);
 V_eco = arrayfun(@(k) X_eco(:,k)'*P*X_eco(:,k), 1:n_steps);
+V_teq = arrayfun(@(k) X_teq(:,k)'*P*X_teq(:,k), 1:n_steps);
 
 tol = 0.01;
 conv_std = find(rel_std < tol, 1, 'first');
 conv_eco = find(rel_eco < tol, 1, 'first');
+conv_teq = find(rel_teq < tol, 1, 'first');
 
 fprintf('\n--- Standard MPC ---\n');
 fprintf('  Total delta-v: %.4f m/s\n', dv_std(end));
@@ -133,13 +167,23 @@ else
     fprintf('  Did not converge within simulation time.\n');
 end
 
-fprintf('\nDelta-v saving: %.2f%%\n', 100*(dv_std(end)-dv_eco(end))/dv_std(end));
+fprintf('\n--- Economic MPC + terminal equality (N=%d) ---\n', N_eq);
+fprintf('  Total delta-v: %.4f m/s\n', dv_teq(end));
+if ~isempty(conv_teq)
+    fprintf('  Converged at:  %.1f min\n', t_min(conv_teq));
+else
+    fprintf('  Did not converge within simulation time.\n');
+end
+
+fprintf('\nDelta-v saving (EMPC vs Std):      %.2f%%\n', 100*(dv_std(end)-dv_eco(end))/dv_std(end));
+fprintf('Delta-v saving (EMPC+eq vs Std):   %.2f%%\n', 100*(dv_std(end)-dv_teq(end))/dv_std(end));
 
 
 %%  PLOTS
 
-c_std = [0.00 0.45 0.70];   % blue  — standard MPC
+c_std = [0.00 0.45 0.70];   % blue   — standard MPC
 c_eco = [0.85 0.33 0.10];   % orange — economic MPC
+c_teq = [0.47 0.18 0.56];   % purple — EMPC + terminal equality
 c_x   = [0.00 0.60 0.90];
 c_y   = [0.90 0.40 0.00];
 c_z   = [0.20 0.80 0.20];
@@ -151,11 +195,15 @@ ax1 = subplot(2,3,1);
 hold(ax1,'on'); grid(ax1,'on');
 plot(ax1, t_min, rel_std, 'Color', c_std, 'LineWidth', 1.4, 'DisplayName', 'Std MPC');
 plot(ax1, t_min, rel_eco, 'Color', c_eco, 'LineWidth', 1.4, 'DisplayName', 'EMPC');
+plot(ax1, t_min, rel_teq, 'Color', c_teq, 'LineWidth', 1.4, 'DisplayName', 'EMPC+eq');
 if ~isempty(conv_std)
     xline(ax1, t_min(conv_std), '--', 'Color', c_std, 'LineWidth', 0.8);
 end
 if ~isempty(conv_eco)
     xline(ax1, t_min(conv_eco), '--', 'Color', c_eco, 'LineWidth', 0.8);
+end
+if ~isempty(conv_teq)
+    xline(ax1, t_min(conv_teq), '--', 'Color', c_teq, 'LineWidth', 0.8);
 end
 xlabel(ax1,'Time [min]'); ylabel(ax1,'Distance [m]');
 title(ax1,'Relative Distance to Origin');
@@ -166,6 +214,7 @@ ax2 = subplot(2,3,2);
 hold(ax2,'on'); grid(ax2,'on');
 plot(ax2, t_min, dv_std, 'Color', c_std, 'LineWidth', 1.4, 'DisplayName', 'Std MPC');
 plot(ax2, t_min, dv_eco, 'Color', c_eco, 'LineWidth', 1.4, 'DisplayName', 'EMPC');
+plot(ax2, t_min, dv_teq, 'Color', c_teq, 'LineWidth', 1.4, 'DisplayName', 'EMPC+eq');
 xlabel(ax2,'Time [min]');
 ylabel(ax2,'$\Delta v$ [m/s]','Interpreter','latex');
 title(ax2,'Cumulative $\Delta v$','Interpreter','latex');
@@ -176,6 +225,7 @@ ax3 = subplot(2,3,3);
 hold(ax3,'on'); grid(ax3,'on');
 semilogy(ax3, t_min, V_std, 'Color', c_std, 'LineWidth', 1.4, 'DisplayName', 'Std MPC');
 semilogy(ax3, t_min, V_eco, 'Color', c_eco, 'LineWidth', 1.4, 'DisplayName', 'EMPC');
+semilogy(ax3, t_min, V_teq, 'Color', c_teq, 'LineWidth', 1.4, 'DisplayName', 'EMPC+eq');
 xlabel(ax3,'Time [min]');
 ylabel(ax3,'$V = x^\top P x$','Interpreter','latex');
 title(ax3,'Lyapunov Function (log scale)');
@@ -186,6 +236,7 @@ ax4 = subplot(2,3,4);
 hold(ax4,'on'); grid(ax4,'on'); axis(ax4,'equal');
 plot(ax4, X_std(2,:), X_std(1,:), 'Color', c_std, 'LineWidth', 1.4, 'DisplayName', 'Std MPC');
 plot(ax4, X_eco(2,:), X_eco(1,:), 'Color', c_eco, 'LineWidth', 1.4, 'DisplayName', 'EMPC');
+plot(ax4, X_teq(2,:), X_teq(1,:), 'Color', c_teq, 'LineWidth', 1.4, 'DisplayName', 'EMPC+eq');
 plot(ax4, X0(2), X0(1), 'o', 'Color', [0.5 0.5 0.5], ...
      'MarkerFaceColor', [0.5 0.5 0.5], 'MarkerSize', 6, 'HandleVisibility','off');
 plot(ax4, 0, 0, '+k', 'MarkerSize', 8, 'LineWidth', 1.5, 'HandleVisibility','off');
@@ -234,19 +285,23 @@ metadata = struct(...
     'controller',     'EMPC_regulation', ...
     'dynamics_model', 'CWH', ...
     'horizon_N',      N, ...
+    'horizon_N_eq',   N_eq, ...
     'u_max',          con.u_max, ...
     'Q_stage',        'zeros', ...
     'R_eco',          'eye3', ...
     'dv_std_ms',      dv_std(end), ...
-    'dv_eco_ms',      dv_eco(end));
+    'dv_eco_ms',      dv_eco(end), ...
+    'dv_teq_ms',      dv_teq(end));
 
 data = struct(...
     'metadata', metadata, ...
     't',        t, ...
     'X_std',    X_std', ...
     'X_eco',    X_eco', ...
+    'X_teq',    X_teq', ...
     'U_std',    U_std', ...
-    'U_eco',    U_eco');
+    'U_eco',    U_eco', ...
+    'U_teq',    U_teq');
 
 json_str = jsonencode(data, 'PrettyPrint', true);
 fid = fopen('exports/scenarios/sim_empc_regulation.json', 'w');
