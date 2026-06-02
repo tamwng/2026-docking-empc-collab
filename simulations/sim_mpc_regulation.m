@@ -27,7 +27,7 @@ con.y_min_active = true;   % enforce y >= 0: no overshoot past target
 % NOTE: hard cone will be infeasible whenever x0 lies outside the cone.
 %       Ensure the initial condition satisfies sqrt(x0^2+z0^2) <= y0*tan(half_angle),
 
-con.los_cone.active     = false;         % LoS cone approach corridor 
+con.los_cone.active     = true;         % LoS cone approach corridor 
 con.los_cone.half_angle = deg2rad(20);   % [rad]  20° — typical sensor FOV
 con.los_cone.n_faces    = 10;            % [-]    faces in inner polygon (Weiss 2015)
 
@@ -94,7 +94,7 @@ for k = 1:n_steps
 end
 
 % Convergence criterion
-tol      = 0.01;                            % [m] convergence threshold
+tol      = 1.0;                             % [m] convergence threshold
 conv_idx = find(rel_dist < tol, 1, 'first');
 if ~isempty(conv_idx)
     fprintf('Converged at t = %.1f min (step %d)\n', t_min(conv_idx), conv_idx);

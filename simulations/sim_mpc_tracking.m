@@ -146,7 +146,7 @@ for k = 1:n_steps
 end
 
 % Convergence to hold point
-tol      = 0.01;
+tol      = 1.0;   % [m]
 hold_dist = vecnorm(X_hist(1:3,:) - [x_hold; y_hold; z_hold], 2, 1);
 conv_idx  = find(hold_dist < tol, 1, 'first');
 if ~isempty(conv_idx)

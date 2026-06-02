@@ -22,8 +22,8 @@ constants;
 
 %% Simulation parameters
 
-dt      = 30;           % [s]   sample time
-t_final = 2 * T;        % [s]  
+dt      = 60;           % [s]   sample time
+t_final = 1 * T;        % [s]  
 n_steps = round(t_final / dt);
 t       = (0:n_steps-1) * dt;
 t_min   = t / 60;
@@ -50,7 +50,7 @@ Bc = [zeros(3,3); eye(3)];
 [Ad, Bd] = discretize(Ac, Bc, dt);
 
 %%  INITIAL CONDITIONS
-X0 = [50; 100; 20; 0; 0; 0];
+X0 = [500; 10000; 200; 0; 0; 0];
 
 
 %%  TERMINAL COST 
@@ -146,7 +146,7 @@ V_std = arrayfun(@(k) X_std(:,k)'*P*X_std(:,k), 1:n_steps);
 V_eco = arrayfun(@(k) X_eco(:,k)'*P*X_eco(:,k), 1:n_steps);
 V_teq = arrayfun(@(k) X_teq(:,k)'*P*X_teq(:,k), 1:n_steps);
 
-tol = 0.01;
+tol = 1.0;   % [m] — realistic RPO threshold (GPS nav accuracy ~1–5 m)
 conv_std = find(rel_std < tol, 1, 'first');
 conv_eco = find(rel_eco < tol, 1, 'first');
 conv_teq = find(rel_teq < tol, 1, 'first');
