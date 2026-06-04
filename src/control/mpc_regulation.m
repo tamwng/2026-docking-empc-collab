@@ -1,4 +1,4 @@
-function [u_opt, U_opt, X_pred] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, con)
+function [u_opt, U_opt, X_pred, exitflag] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, con)
 % mpc_regulation.m
 % Solves the finite-horizon constrained tracking MPC (regulation to origin
 %  x = 0) problem at each timestep.

@@ -1,0 +1,124 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.00000,0.45000,0.70000}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+\definecolor{mycolor3}{rgb}{0.85000,0.33000,0.10000}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=7.677in,
+height=2.036in,
+at={(1.288in,3.485in)},
+scale only axis,
+xmin=-0.0253968253968254,
+xmax=0.692063492063492,
+xlabel style={font=\color{mycolor2}},
+xlabel={Time [h]},
+ymin=-0.1,
+ymax=1.5,
+ytick={0,1},
+yticklabels={{Unsafe},{Safe}},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor2}},
+title={Passive Safety — Std MPC},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids
+]
+\addplot[ycomb, color=mycolor1, line width=0.8pt, forget plot] table[row sep=crcr] {%
+0	1\\
+0.0333333333333333	1\\
+0.0666666666666667	1\\
+0.1	1\\
+0.133333333333333	1\\
+0.166666666666667	1\\
+0.2	1\\
+0.233333333333333	1\\
+0.266666666666667	1\\
+0.3	1\\
+0.333333333333333	1\\
+0.366666666666667	1\\
+0.4	1\\
+0.433333333333333	1\\
+0.466666666666667	1\\
+0.5	1\\
+0.533333333333333	1\\
+0.566666666666667	1\\
+0.6	1\\
+0.633333333333333	1\\
+0.666666666666667	1\\
+};
+\addplot[forget plot, color=mycolor2, line width=0.8pt] table[row sep=crcr] {%
+-0.0253968253968254	0\\
+0.692063492063492	0\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=7.677in,
+height=2.036in,
+at={(1.288in,0.657in)},
+scale only axis,
+xmin=-0.0259459459459459,
+xmax=1.22594594594595,
+xlabel style={font=\color{mycolor2}},
+xlabel={Time [h]},
+ymin=-0.1,
+ymax=1.5,
+ytick={0,1},
+yticklabels={{Unsafe},{Safe}},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor2}},
+title={Passive Safety — EMPC},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids
+]
+\addplot[ycomb, color=mycolor3, line width=0.8pt, forget plot] table[row sep=crcr] {%
+0	1\\
+0.0333333333333333	1\\
+0.0666666666666667	1\\
+0.1	1\\
+0.133333333333333	1\\
+0.166666666666667	1\\
+0.2	1\\
+0.233333333333333	1\\
+0.266666666666667	1\\
+0.3	1\\
+0.333333333333333	1\\
+0.366666666666667	1\\
+0.4	1\\
+0.433333333333333	1\\
+0.466666666666667	1\\
+0.5	1\\
+0.533333333333333	1\\
+0.566666666666667	1\\
+0.6	1\\
+0.633333333333333	1\\
+0.666666666666667	1\\
+0.7	1\\
+0.733333333333333	1\\
+0.766666666666667	1\\
+0.8	1\\
+0.833333333333333	1\\
+0.866666666666667	1\\
+0.9	1\\
+0.933333333333333	1\\
+0.966666666666667	1\\
+1	1\\
+1.03333333333333	1\\
+1.06666666666667	1\\
+1.1	1\\
+1.13333333333333	1\\
+1.16666666666667	1\\
+1.2	1\\
+};
+\addplot[forget plot, color=mycolor2, line width=0.8pt] table[row sep=crcr] {%
+-0.0259459459459459	0\\
+1.22594594594595	0\\
+};
+\end{axis}
+\end{tikzpicture}%
