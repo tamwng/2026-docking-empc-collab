@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "scenario": "S2_flyaround",
+    "run": 1,
+    "description": "One-step EMPC, fuel-only stage cost, no terminal cost, outer+inner band constraints (linearised per stage). EMPC discovers NMT orbit without being told which orbit to track.",
+    "dt_s": 60.270164086747734,
+    "P_orbit_steps": 92,
+    "T_orbit_s": 5544.8550959807917,
+    "N_horizon": 92,
+    "n_sim_steps": 552,
+    "u_max_mps2": 0.01,
+    "rho_min_m": 50,
+    "rho_max_m": 200,
+    "x0_m": [
+      150,
+      0,
+      0,
+      0,
+      -0.33994677219251274,
+      0
+    ],
+    "Q_stage": "zeros(6)",
+    "R_cost": "eye(3)",
+    "terminal_cost": "none"
+  },
+  "results": {
+    "nmt_closure_residual": 3.7919584214404038E-12,
+    "delta_v_total_m_s": 0.40397677358380218,
+    "delta_v_injection_m_s": 0.11885074609608955,
+    "delta_v_injection_steps": 12,
+    "delta_v_steady_state_m_s": 0.28512602748771265,
+    "discovered_nmt_semiaxis_m": 114.94188346913299,
+    "range_ratio_2to1": 1.1351488092268778,
+    "max_range_steady_m": 130.47614215028085,
+    "min_range_steady_m": 114.94188346913299,
+    "band_violations": 0,
+    "infeasible_qp_steps": 175,
+    "u_mean_last_orbit_mps2": 7.9835861648686826E-6,
+    "u_max_last_orbit_mps2": 7.4172187504769E-5,
+    "control_converged": true
+  }
+}
