@@ -23,81 +23,21 @@
     ],
     "r_KOS": 50,
     "N_safe": 554,
+    "use_avg_power": true,
     "P_avail": 1E-5,
-    "V_f_zero": true,
-    "r_switch": 200,
-    "safety_margin": 100
+    "use_terminal_ball": true,
+    "r_switch_ball": 200,
+    "use_passive_safety": false,
+    "ps_margin": 50,
+    "V_f_zero": true
   },
-  "empc_baseline": {
+  "results": {
     "total_dv_ms": 3.2877690990072792,
     "n_steps_to_convergence": 61,
     "passive_safe_fraction": 0.88524590163934425,
-    "avg_power_active": false,
     "terminal_distance_m": 43.35811360360686,
-    "Q_stage": "zeros(6)",
-    "R_empc": "eye(3)",
-    "P_terminal": "zeros(6)"
-  },
-  "empc_passive_safety": {
-    "total_dv_ms": 3.6637889678130193,
-    "n_steps_to_convergence": 62,
-    "passive_safe_fraction": 0.95161290322580649,
-    "terminal_distance_m": 46.7297860566436,
-    "n_ps_rows_avg": 5.0655737704918034,
-    "n_ps_rows_max": 20,
-    "ps_active_steps": [
-      3,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      16,
-      18,
-      20,
-      22,
-      23,
-      24,
-      25,
-      26,
-      27,
-      28,
-      29,
-      30,
-      31,
-      32,
-      33,
-      34,
-      36,
-      37,
-      38,
-      39,
-      40,
-      41,
-      42,
-      43,
-      44,
-      45,
-      46,
-      47,
-      48,
-      49,
-      50,
-      51,
-      52,
-      53,
-      54,
-      55,
-      56,
-      57,
-      58,
-      59,
-      60,
-      61
-    ],
-    "bad_steps": []
+    "n_ps_rows_avg": 0,
+    "n_ps_rows_max": 0
   },
   "turnpike": {
     "u_thresh": 1.0000000000000002E-6,
@@ -208,7 +148,7 @@
       2.8850472984758974E-5
     ]
   },
-  "t_eco": [
+  "t": [
     0,
     120,
     240,
@@ -271,7 +211,7 @@
     7080,
     7200
   ],
-  "X_eco": [
+  "X": [
     [
       0,
       10000,
@@ -761,7 +701,7 @@
       -4.9995024104190651E-10
     ]
   ],
-  "U_eco": [
+  "U": [
     [
       0.00406102701909968,
       0.0022371932003058641,
@@ -1068,7 +1008,7 @@
       0
     ]
   ],
-  "ef_eco": [
+  "ef": [
     9700,
     9713.408782828903,
     9736.9323981912967,
@@ -1131,7 +1071,7 @@
     50.119632162808571,
     43.35811360360686
   ],
-  "avg_power_used": [
+  "avg_power": [
     5.509985697068856E-6,
     3.3413277699391358E-6,
     1.9562024716447862E-6,
@@ -1194,7 +1134,7 @@
     4.8554819082431531E-10,
     0
   ],
-  "is_safe_eco": [
+  "is_safe": [
     true,
     true,
     true,

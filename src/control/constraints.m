@@ -1,4 +1,4 @@
-function [A_ineq, b_ineq, lb, ub] = constraints(x0, Sx, Su, N, n_u, con)
+function [A_ineq, b_ineq, lb, ub, n_ps_added] = constraints(x0, Sx, Su, N, n_u, con)
 % constraints.m
 % Builds QP constraint matrices for MPC from a constraint config struct.
 %
@@ -25,6 +25,9 @@ function [A_ineq, b_ineq, lb, ub] = constraints(x0, Sx, Su, N, n_u, con)
 %   lb     - input lower bound [n_u*N x 1]
 %   ub     - input upper bound [n_u*N x 1]
 
+n_x        = size(Sx, 2);    % state dimension
+n_ps_added = 0;              % passive safety rows added this call
+
 %% Input box constraints
 lb = -con.u_max * ones(n_u * N, 1);
 ub =  con.u_max * ones(n_u * N, 1);
@@ -33,7 +36,7 @@ ub =  con.u_max * ones(n_u * N, 1);
 A_list = {};
 b_list = {};
 
-% Half-space: y >= 0 (chaser stays behind target on V-bar)
+%% Half-space: y >= 0 (chaser stays behind target on V-bar)
 % Selects along-track position (state index 2) from each horizon step.
 % C_y*(Sx*x0 + Su*U) >= 0  =>  -C_y*Su*U <= C_y*Sx*x0
 if isfield(con, 'y_min_active') && con.y_min_active
@@ -42,7 +45,7 @@ if isfield(con, 'y_min_active') && con.y_min_active
     b_list{end+1} =  C_y * Sx * x0;
 end
 
-% LoS cone: inner polyhedral approximation of the V-bar approach corridor.
+%% LoS cone: inner polyhedral approximation of the V-bar approach corridor.
 %
 % Physical setup: docking port at origin, docking axis along +y (chaser
 % approaches from positive y). The cone is:
@@ -61,7 +64,6 @@ end
 if isfield(con, 'los_cone') && con.los_cone.active
     alpha  = con.los_cone.half_angle;
     M      = con.los_cone.n_faces;
-    n_x    = size(Sx, 2);
 
     % Cone apex = docking port position [x_a; y_a; z_a]; defaults to origin.
     if isfield(con.los_cone, 'apex')
@@ -85,6 +87,82 @@ if isfield(con, 'los_cone') && con.los_cone.active
 
     A_list{end+1} = Acone * Su;
     b_list{end+1} = bcone - Acone * Sx * x0;
+end
+
+%% Terminal ball: L-inf box ||e(N)||_inf <= r_switch 
+% e(N) = Sx_N*x0 + Su_N*U  (x0 here is the error state passed to mpc_regulation)
+% L-inf box approximation of L2 terminal ball — conservative inner approx;
+% exact L2 ball would require SOCP.
+if isfield(con, 'terminal_ball') && con.terminal_ball.active
+    r_sw  = con.terminal_ball.r_switch;
+    n_x_l = size(Sx, 2);                       % = n_x = 6
+    Sx_N  = Sx(end-n_x_l+1:end, :);           % 6 × n_x
+    Su_N  = Su(end-n_x_l+1:end, :);           % 6 × n_u*N
+    free_N = Sx_N * x0;
+    A_list{end+1} = [ Su_N; -Su_N];
+    b_list{end+1} = [ r_sw*ones(n_x_l,1) - free_N;
+                      r_sw*ones(n_x_l,1) + free_N];
+end
+
+%% Passive safety: SCA-linearised KOS half-space per prediction step ─────────
+%
+% For each prediction step k, free-drift the reference predicted actual state
+% forward over N_safe steps and find the worst-case approach to the KOS.
+% A single linearised half-space n'*C*Phi*x_k >= r_KOS is added only when the
+% reference comes within (r_KOS + safety_margin) of the KOS boundary.
+%
+% con.passive_safety fields:
+%   .active         — bool
+%   .Phi_array      — [6×6×N_safe] precomputed CW STMs
+%   .C_pos          — [3×6] position extractor [eye(3), zeros(3,3)]
+%   .r_KOS          — keep-out sphere radius [m]
+%   .safety_margin  — activation margin beyond r_KOS [m]
+%   .x_switch       — [6×1] switch point (actual state offset for error coords)
+%   .U_warm         — [3N×1] SCA warm-start input sequence
+if isfield(con, 'passive_safety') && con.passive_safety.active
+    ps     = con.passive_safety;
+    C_p    = ps.C_pos;
+    r_k    = ps.r_KOS;
+    s_mg   = ps.safety_margin;
+    Ph_arr = ps.Phi_array;
+    N_s    = size(Ph_arr, 3);
+    U_w    = ps.U_warm;
+    x_sw   = ps.x_switch;
+
+    % Reference predicted states in error coords, then shift to actual coords
+    x_pred_ref_e = reshape(Sx * x0 + Su * U_w, n_x, N);   % n_x × N (error)
+
+    for k = 1:N
+        x_k_ref = x_pred_ref_e(:, k) + x_sw;   % actual coordinates
+
+        % Find worst-case free-drift time (subsample every 5th step)
+        min_d  = inf;
+        best_i = 1;
+        for i = 1:5:N_s
+            p_i = C_p * Ph_arr(:,:,i) * x_k_ref;
+            d_i = norm(p_i);
+            if d_i < min_d
+                min_d  = d_i;
+                best_i = i;
+            end
+        end
+
+        if min_d < r_k + s_mg
+            Phi_star = Ph_arr(:,:,best_i);
+            p_ref    = C_p * Phi_star * x_k_ref;
+            if norm(p_ref) < 1e-10; continue; end   % degenerate — skip
+            n_vec = p_ref / norm(p_ref);
+
+            Su_k  = Su((k-1)*n_x+1 : k*n_x, :);
+            Sx_k  = Sx((k-1)*n_x+1 : k*n_x, :);
+            % n_vec' * C_p * Phi_star * (Sx_k*x0 + Su_k*U + x_sw) >= r_k
+            A_row = -(n_vec' * C_p * Phi_star * Su_k);
+            b_row = -(r_k - n_vec' * C_p * Phi_star * (Sx_k * x0 + x_sw));
+            A_list{end+1} = A_row;  %#ok<AGROW>
+            b_list{end+1} = b_row;  %#ok<AGROW>
+            n_ps_added = n_ps_added + 1;
+        end
+    end
 end
 
 %% Assemble

@@ -1,4 +1,4 @@
-function [u_opt, U_opt, X_pred, exitflag] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, con)
+function [u_opt, U_opt, X_pred, exitflag, n_ps_added] = mpc_regulation(x0, Ad, Bd, Q, R, P, N, con)
 % mpc_regulation.m
 % Solves the finite-horizon constrained tracking MPC (regulation to origin
 %  x = 0) problem at each timestep.
@@ -43,14 +43,25 @@ for i = 1:N
     end
 end
 
-%% Terminal equality constraint: x(N) = 0
-% When active, P is irrelevant — replace it with zeros and add Aeq/beq.
-% Aeq = Su_N (last n_x rows of Su), beq = -Sx_N * x0.
+%% Terminal constraint selection
+% terminal_eq: x(N) = 0     (regulation to origin)
+% periodic:    x(N) = x(0)  (orbit closes on itself)
+% default:     terminal cost P*x(N)'*x(N)
 use_terminal_eq = isfield(con, 'terminal_eq') && con.terminal_eq;
+use_periodic    = isfield(con, 'periodic')    && con.periodic;
+
 if use_terminal_eq
     P_cost = zeros(n_x);
     Aeq = Su(end-n_x+1:end, :);
-    beq = -Sx(end-n_x+1:end, :) * x0;
+    if isfield(con, 'x_target')
+        beq = con.x_target - Sx(end-n_x+1:end, :) * x0;
+    else
+        beq = -Sx(end-n_x+1:end, :) * x0;
+    end
+elseif use_periodic
+    P_cost = zeros(n_x);
+    Aeq = Su(end-n_x+1:end, :);
+    beq = (eye(n_x) - Sx(end-n_x+1:end, :)) * x0;
 else
     P_cost = P;
     Aeq = [];
@@ -68,7 +79,7 @@ f = 2 * Su' * Qbar * Sx * x0;
 H = (H + H') / 2;   % symmetrize for numerical stability
 
 %% Constraints (input bounds + optional state constraints)
-[A_ineq, b_ineq, lb, ub] = constraints(x0, Sx, Su, N, n_u, con);
+[A_ineq, b_ineq, lb, ub, n_ps_added] = constraints(x0, Sx, Su, N, n_u, con);
 
 %% Solve QP
 opts = optimoptions('quadprog', 'Display', 'off');
