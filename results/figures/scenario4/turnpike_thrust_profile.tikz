@@ -1,0 +1,113 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.85000,0.33000,0.10000}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=7.677in,
+height=4.865in,
+at={(1.288in,0.657in)},
+scale only axis,
+xmin=-0.18,
+xmax=61.18,
+xlabel style={font=\color{mycolor2}},
+xlabel={Step $k$},
+ymode=log,
+ymin=1e-05,
+ymax=0.01,
+yminorticks=true,
+ylabel style={font=\color{mycolor2}},
+ylabel={$\|u_k\|$ [m/s$^2$]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor2}},
+title={$V_f=0$ EMPC, $N=20$, $P_{\rm avail}$ non-binding},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids,
+yminorgrids,
+legend style={legend cell align=left, align=left}
+]
+
+\addplot[area legend, draw=none, fill=white!80!black, fill opacity=0.35, forget plot]
+table[row sep=crcr] {%
+x	y\\
+7.5	1e-05\\
+48.5	1e-05\\
+48.5	0.01\\
+7.5	0.01\\
+}--cycle;
+\addplot[ycomb, color=mycolor1, line width=0.8pt, mark size=1.5pt, mark=o, mark options={solid, mycolor1}] table[row sep=crcr] {%
+1	0.00463648291977361\\
+2	0.00339439496804951\\
+3	0.00240086541937867\\
+4	0.0016276640525515\\
+5	0.00104867360894699\\
+6	0.000754108418793458\\
+7	0.000497684892665576\\
+8	0.000379026407966604\\
+9	0.000347596912661056\\
+10	0.000342363387619655\\
+11	0.000328925987884779\\
+12	0.000305108214560493\\
+13	0.000274434175461084\\
+14	0.000250412312767556\\
+15	0.000240229430963067\\
+16	0.000246768663349257\\
+17	0.000265735361212249\\
+18	0.000288854777825912\\
+19	0.00031035884517951\\
+20	0.000326639171305994\\
+21	0.000335745341383778\\
+22	0.000336080734188872\\
+23	0.000330868995036992\\
+24	0.000320784537387377\\
+25	0.000308062253231604\\
+26	0.000293569750312036\\
+27	0.000283275839243076\\
+28	0.000277413574949224\\
+29	0.000277087759811082\\
+30	0.000282197053694441\\
+31	0.00029158019712459\\
+32	0.000303479169750128\\
+33	0.000316032870519433\\
+34	0.000327603421603553\\
+35	0.000336916133498648\\
+36	0.000343079563160218\\
+37	0.000345649046497693\\
+38	0.000344216063982064\\
+39	0.000338814902598493\\
+40	0.000329619194719311\\
+41	0.000316949371034667\\
+42	0.000301363419556076\\
+43	0.000283152897057446\\
+44	0.000262893670967976\\
+45	0.000241151494336858\\
+46	0.000218480105870374\\
+47	0.000195414649462114\\
+48	0.000172456103630774\\
+49	0.00015006272036516\\
+50	0.000128645810812382\\
+51	0.000108569911995832\\
+52	9.01588742458875e-05\\
+53	7.37073681073242e-05\\
+54	5.94929772758574e-05\\
+55	4.78013104598874e-05\\
+56	3.89112471136071e-05\\
+57	3.29875957235913e-05\\
+58	2.98414667287462e-05\\
+59	2.87800257221993e-05\\
+60	2.8850472984759e-05\\
+};
+\addlegendentry{$\|u_k\|$}
+
+\node[centered, align=center, inner sep=0, font=\color{white!20!black}]
+at (axis cs:4,0) {Entry};
+\node[centered, align=center, inner sep=0, font=\color{white!20!black}]
+at (axis cs:28,0) {Turnpike (steady cruise)};
+\node[centered, align=center, inner sep=0, font=\color{white!20!black}]
+at (axis cs:54.5,0) {Exit};
+\end{axis}
+\end{tikzpicture}%
