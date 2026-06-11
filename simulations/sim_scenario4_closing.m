@@ -504,6 +504,64 @@ else
 end
 
 
+%% ── Controller comparison ────────────────────────────────────────────────────
+p = struct('x0', x0, 'x_switch', x_switch, 'dt', dt, ...
+           'N', N, 'u_max', u_max, 't_final', t_final);
+
+fprintf('\nRunning MPC comparison...\n');
+[X_mpc, U_mpc, t_mpc, dv_mpc] = sim_mpc_regulation(p);
+
+c_mpc = [0.12 0.47 0.71];   % blue
+
+% Figure A — Hill-frame trajectory comparison
+figA = figure('Name', 'S4 — Trajectory Comparison: EMPC vs MPC');
+axA = axes(figA);
+hold(axA,'on'); grid(axA,'on'); axis(axA,'equal');
+plot(axA, X(2,:),     X(1,:),     'Color', c,     'LineWidth', 1.4, 'DisplayName', 'EMPC');
+plot(axA, X_mpc(2,:), X_mpc(1,:), 'Color', c_mpc, 'LineWidth', 1.4, 'DisplayName', 'MPC');
+plot(axA, x0(2),       x0(1),       'o', 'Color', [0.4 0.4 0.4], ...
+    'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 6, 'HandleVisibility', 'off');
+plot(axA, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
+    'MarkerFaceColor', [0.2 0.6 0.2], 'MarkerSize', 7, 'DisplayName', 'Switch point');
+xlabel(axA, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+ylabel(axA, 'Radial $x$ [m]',      'Interpreter', 'latex');
+title(axA, 'Hill-Frame Trajectory — EMPC vs MPC', 'Interpreter', 'latex');
+legend(axA, 'Location', 'northeast');
+
+if exist('matlab2tikz', 'file')
+    matlab2tikz('results/figures/scenario4/comparison_trajectory.tikz', ...
+        'figurehandle', figA, 'showInfo', false);
+end
+
+% Figure B — Cumulative delta-v comparison
+figB = figure('Name', 'S4 — \Delta v Comparison: EMPC vs MPC');
+axB = axes(figB);
+hold(axB,'on'); grid(axB,'on');
+plot(axB, t_h(1:end-1), ...
+    cumsum(vecnorm(U(:,1:end-1),     2, 1)) * dt, 'Color', c,     'LineWidth', 1.4, 'DisplayName', 'EMPC');
+plot(axB, t_mpc(1:end-1)/3600, ...
+    cumsum(vecnorm(U_mpc(:,1:end-1), 2, 1)) * dt, 'Color', c_mpc, 'LineWidth', 1.4, 'DisplayName', 'MPC');
+xlabel(axB, 'Time [h]');
+ylabel(axB, 'Cumulative $\Delta v$ [m/s]', 'Interpreter', 'latex');
+title(axB, 'Cumulative $\Delta v$ — EMPC vs MPC', 'Interpreter', 'latex');
+legend(axB, 'Location', 'northwest');
+
+if exist('matlab2tikz', 'file')
+    matlab2tikz('results/figures/scenario4/comparison_deltav.tikz', ...
+        'figurehandle', figB, 'showInfo', false);
+end
+
+% Terminal summary
+t_empc_h = t_vec(end) / 3600;
+t_mpc_h  = t_mpc(end) / 3600;
+fprintf('\n── Comparison Summary ───────────────────────────────────────────\n');
+fprintf('  %-10s  %8s  %12s\n', 'Controller', 'Time [h]', 'Delta-v [m/s]');
+fprintf('  %-10s  %8.2f  %12.4f\n', 'EMPC', t_empc_h, dv);
+fprintf('  %-10s  %8.2f  %12.4f\n', 'MPC',  t_mpc_h,  dv_mpc);
+fprintf('  Δv savings:  %.4f m/s  (%.1f%%)\n', dv_mpc - dv, 100*(dv_mpc - dv)/dv_mpc);
+fprintf('─────────────────────────────────────────────────────────────────\n');
+
+
 %% ── Local functions ──────────────────────────────────────────────────────────
 
 function is_safe = check_passive_safety(X_log, n_logged, Ad_pow_safe, r_KOS, N_safe)

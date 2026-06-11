@@ -2,7 +2,7 @@
 % Simulates LQR-controlled rendezvous in the Hill frame based on CW
 % equations
 
-clear; clc; 
+clear; clc;
 
 %% constants
 constants;
@@ -35,7 +35,7 @@ Bc = [zeros(3,3); eye(3)];
 Q = diag([1e-2, 1e-2, 1e-2, ...        % position weights
           1e0, 1e0, 1e0]);          % velocity weights
 
-R = diag([1e4, 1e4, 1e4]);        % control weights  
+R = diag([1e4, 1e4, 1e4]);        % control weights
 
 [K, P] = lqr_controller(Ad, Bd, Q, R);
 
@@ -45,12 +45,12 @@ disp(abs(eig(Ad - Bd*K)));
 
 %% Initial Conditions
 
-x0     =  500;  
-y0     = 5000;   
-z0     =  200;   
-x_dot0 =    0;   
-y_dot0 =    0;   
-z_dot0 =    0;  
+x0     =  500;
+y0     = 5000;
+z0     =  200;
+x_dot0 =    0;
+y_dot0 =    0;
+z_dot0 =    0;
 
 X0 = [x0; y0; z0; x_dot0; y_dot0; z_dot0];
 
@@ -70,8 +70,8 @@ X_hist(:, 1) = X0;
 
 for k = 1:n_steps-1
     u = -K * X_hist(:, k);                          % LQR control law
-    X_hist(:, k+1) = Ad * X_hist(:, k) + Bd * u;   
-    U_hist(:, k)   = u;                             
+    X_hist(:, k+1) = Ad * X_hist(:, k) + Bd * u;
+    U_hist(:, k)   = u;
 end
 U_hist(:, end) = -K * X_hist(:, end);               % last control input
 

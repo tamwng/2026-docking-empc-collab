@@ -1,7 +1,8 @@
 % This file was created by matlab2tikz.
 %
 \definecolor{mycolor1}{rgb}{0.85000,0.33000,0.10000}%
-\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+\definecolor{mycolor2}{rgb}{0.12000,0.47000,0.71000}%
+\definecolor{mycolor3}{rgb}{0.12941,0.12941,0.12941}%
 %
 \begin{tikzpicture}
 
@@ -12,15 +13,15 @@ at={(1.288in,0.657in)},
 scale only axis,
 xmin=0,
 xmax=2,
-xlabel style={font=\color{mycolor2}},
+xlabel style={font=\color{mycolor3}},
 xlabel={Time [h]},
-ymin=0.5,
-ymax=3.5,
-ylabel style={font=\color{mycolor2}},
+ymin=0,
+ymax=35,
+ylabel style={font=\color{mycolor3}},
 ylabel={Cumulative $\Delta v$ [m/s]},
 axis background/.style={fill=white},
-title style={font=\bfseries\color{mycolor2}},
-title={Cumulative $\Delta v$},
+title style={font=\bfseries\color{mycolor3}},
+title={Cumulative $\Delta v$ — EMPC vs MPC},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
@@ -91,6 +92,31 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 1.96666666666667	3.28875091926519\\
 };
 \addlegendentry{EMPC}
+
+\addplot [color=mycolor2, line width=1.4pt]
+  table[row sep=crcr]{%
+0	1.69705627484186\\
+0.0333333333333333	3.39411254968956\\
+0.0666666666666667	5.09116882453725\\
+0.1	6.78822509938468\\
+0.133333333333333	8.48528137423237\\
+0.166666666666667	10.18233764908\\
+0.2	11.8793939239276\\
+0.233333333333333	13.3693420865645\\
+0.266666666666667	15.0663983613973\\
+0.3	16.763454636245\\
+0.333333333333333	18.4605109110926\\
+0.366666666666667	20.1575671859403\\
+0.4	21.8546234607848\\
+0.433333333333333	23.1034480849062\\
+0.466666666666667	24.8005043597457\\
+0.5	26.3255659087562\\
+0.533333333333333	28.0226221835562\\
+0.566666666666667	29.4233158835223\\
+0.6	30.3813893942929\\
+0.633333333333333	31.7411961086909\\
+};
+\addlegendentry{MPC}
 
 \end{axis}
 \end{tikzpicture}%
