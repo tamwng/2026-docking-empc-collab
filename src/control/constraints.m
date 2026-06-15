@@ -89,19 +89,24 @@ if isfield(con, 'los_cone') && con.los_cone.active
     b_list{end+1} = bcone - Acone * Sx * x0;
 end
 
-%% Terminal ball: L-inf box ||e(N)||_inf <= r_switch 
-% e(N) = Sx_N*x0 + Su_N*U  (x0 here is the error state passed to mpc_regulation)
-% L-inf box approximation of L2 terminal ball — conservative inner approx;
-% exact L2 ball would require SOCP.
+%% Terminal ball: position-only L-inf box  -r <= e_pos(N) <= r
+% e_pos(N) = C_pos3*(Sx_N*x0 + Su_N*U)  [3×1, position part of terminal error]
+% Velocity rows removed: with V_f=0 (no terminal cost) there is no stabilising
+% mechanism for terminal velocity, so boxing all 6 states over-constrains the QP
+% without providing any additional passive-safety guarantee beyond position
+% containment.  Exact L2 terminal ball would require SOCP; this L-inf box is
+% a conservative inner approximation on position only.
 if isfield(con, 'terminal_ball') && con.terminal_ball.active
-    r_sw  = con.terminal_ball.r_switch;
-    n_x_l = size(Sx, 2);                       % = n_x = 6
-    Sx_N  = Sx(end-n_x_l+1:end, :);           % 6 × n_x
-    Su_N  = Su(end-n_x_l+1:end, :);           % 6 × n_u*N
-    free_N = Sx_N * x0;
-    A_list{end+1} = [ Su_N; -Su_N];
-    b_list{end+1} = [ r_sw*ones(n_x_l,1) - free_N;
-                      r_sw*ones(n_x_l,1) + free_N];
+    r_sw    = con.terminal_ball.r_switch;
+    n_x_l   = size(Sx, 2);                     % = n_x = 6
+    C_pos3  = [eye(3), zeros(3,3)];            % 3×6 position selector
+    Su_N    = Su(end-n_x_l+1:end, :);          % 6 × n_u*N  (full terminal block)
+    Sx_N    = Sx(end-n_x_l+1:end, :);          % 6 × n_x
+    Su_Np   = C_pos3 * Su_N;                   % 3 × n_u*N
+    free_Np = C_pos3 * Sx_N * x0;             % 3 × 1
+    A_list{end+1} = [ Su_Np; -Su_Np];
+    b_list{end+1} = [ r_sw*ones(3,1) - free_Np;
+                      r_sw*ones(3,1) + free_Np];
 end
 
 %% Passive safety: SCA-linearised KOS half-space per prediction step ─────────
@@ -135,10 +140,10 @@ if isfield(con, 'passive_safety') && con.passive_safety.active
     for k = 1:N
         x_k_ref = x_pred_ref_e(:, k) + x_sw;   % actual coordinates
 
-        % Find worst-case free-drift time (subsample every 5th step)
+        % Find worst-case free-drift time (exhaustive search over all steps)
         min_d  = inf;
         best_i = 1;
-        for i = 1:5:N_s
+        for i = 1:N_s
             p_i = C_p * Ph_arr(:,:,i) * x_k_ref;
             d_i = norm(p_i);
             if d_i < min_d
