@@ -1,0 +1,60 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.85000,0.33000,0.10000}%
+\definecolor{mycolor2}{rgb}{0.12000,0.47000,0.71000}%
+\definecolor{mycolor3}{rgb}{0.86600,0.32900,0.00000}%
+\definecolor{mycolor4}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=7.677in,
+height=4.865in,
+at={(1.288in,0.657in)},
+scale only axis,
+xmin=80,
+xmax=270,
+xlabel style={font=\color{mycolor4}},
+xlabel={$r_{\rm ball}$ [m]},
+ymin=81.8852459016393,
+ymax=105,
+ylabel style={font=\color{mycolor4}},
+ylabel={Passive-safe fraction [\\%]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor4}},
+title={Passive-Safety Fraction vs Terminal Ball Radius},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids,
+legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.4pt, mark size=3.5pt, mark=*, mark options={solid, fill=mycolor1, mycolor1}]
+  table[row sep=crcr]{%
+250	88.5245901639344\\
+200	88.5245901639344\\
+104	86.8852459016393\\
+100	86.8852459016393\\
+};
+\addlegendentry{ps\_frac (no SCA)}
+
+\addplot [color=black, dashed, line width=1.0pt]
+  table[row sep=crcr]{%
+104	81.8852459016393\\
+104	105\\
+};
+\addlegendentry{Bound $r_{\rm ball} \leq 104$ m}
+
+\addplot [color=black, dotted, line width=0.8pt, forget plot]
+  table[row sep=crcr]{%
+80	100\\
+270	100\\
+};
+\addplot[only marks, mark=star*, mark options={}, mark size=1.9365pt, color=mycolor2, fill=mycolor2] table[row sep=crcr]{%
+x	y\\
+200	100\\
+};
+\addlegendentry{A1-ps (SCA ON, r=200 m)}
+
+\end{axis}
+\end{tikzpicture}%

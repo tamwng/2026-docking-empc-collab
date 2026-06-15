@@ -1,0 +1,137 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.85000,0.33000,0.10000}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+\definecolor{mycolor3}{rgb}{0.20000,0.63000,0.17000}%
+\definecolor{mycolor4}{rgb}{0.12000,0.47000,0.71000}%
+\definecolor{mycolor5}{rgb}{0.60000,0.10000,0.10000}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=3.137in,
+height=3.226in,
+at={(1.219in,0.435in)},
+scale only axis,
+bar shift auto,
+xmin=0.511111111111111,
+xmax=3.48888888888889,
+xtick={1,2,3},
+xticklabels={{N=10},{N=20},{N=40}},
+xlabel style={font=\color{mycolor2}},
+xlabel={Prediction horizon $N$},
+ymin=0,
+ymax=73,
+ylabel style={font=\color{mycolor2}},
+ylabel={Steps to convergence  (budget: 60)},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor2}},
+title={Convergence steps},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids,
+legend style={legend cell align=left, align=left}
+]
+\addplot[ybar, bar width=0.178, fill=mycolor1, draw=mycolor2, area legend] table[row sep=crcr] {%
+1	65\\
+2	29\\
+3	30\\
+};
+\addplot[forget plot, color=mycolor2] table[row sep=crcr] {%
+0.511111111111111	0\\
+3.48888888888889	0\\
+};
+\addlegendentry{$\rho_c = 1e-12$}
+
+\addplot[ybar, bar width=0.178, fill=mycolor3, draw=mycolor2, area legend] table[row sep=crcr] {%
+1	44\\
+2	36\\
+3	35\\
+};
+\addplot[forget plot, color=mycolor2] table[row sep=crcr] {%
+0.511111111111111	0\\
+3.48888888888889	0\\
+};
+\addlegendentry{$\rho_c = 1e-11$}
+
+\addplot[ybar, bar width=0.178, fill=mycolor4, draw=mycolor2, area legend] table[row sep=crcr] {%
+1	25\\
+2	25\\
+3	25\\
+};
+\addplot[forget plot, color=mycolor2] table[row sep=crcr] {%
+0.511111111111111	0\\
+3.48888888888889	0\\
+};
+\addlegendentry{$\rho_c = 1e-10$}
+
+\node[above, align=center, inner sep=0, font=\color{mycolor5}]
+at (axis cs:0.733,66.5) {DNF};
+\addplot [color=black, dashed, line width=0.8pt, forget plot]
+  table[row sep=crcr]{%
+0.511111111111111	60\\
+3.48888888888889	60\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=3.137in,
+height=3.226in,
+at={(5.347in,0.435in)},
+scale only axis,
+bar shift auto,
+xmin=0.5,
+xmax=3.5,
+xtick={1,2,3},
+xticklabels={{N=10},{N=20},{N=40}},
+xlabel style={font=\color{mycolor2}},
+xlabel={Prediction horizon $N$},
+ymin=0,
+ymax=60,
+ylabel style={font=\color{mycolor2}},
+ylabel={Total $\Delta v$ [m/s]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor2}},
+title={Total $\Delta v$},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids
+]
+\addplot[ybar, bar width=0.178, fill=mycolor1, draw=mycolor2, area legend] table[row sep=crcr] {%
+1	48.7119366084908\\
+2	7.00898056185127\\
+3	6.59459853328488\\
+};
+\addplot[forget plot, color=mycolor2] table[row sep=crcr] {%
+0.5	0\\
+3.5	0\\
+};
+\addplot[ybar, bar width=0.178, fill=mycolor3, draw=mycolor2, area legend] table[row sep=crcr] {%
+1	24.4141692275461\\
+2	18.3320896492641\\
+3	18.3586659738257\\
+};
+\addplot[forget plot, color=mycolor2] table[row sep=crcr] {%
+0.5	0\\
+3.5	0\\
+};
+\addplot[ybar, bar width=0.178, fill=mycolor4, draw=mycolor2, area legend] table[row sep=crcr] {%
+1	26.400085729767\\
+2	25.3769259911075\\
+3	25.3680022180566\\
+};
+\addplot[forget plot, color=mycolor2] table[row sep=crcr] {%
+0.5	0\\
+3.5	0\\
+};
+\node[above, align=center, inner sep=0, font=\color{mycolor5}]
+at (axis cs:0.733,49.212) {(DNF)};
+\addplot [color=black, dashed, line width=0.8pt, forget plot]
+  table[row sep=crcr]{%
+0.511111111111111	60\\
+3.48888888888889	60\\
+};
+\end{axis}
+\end{tikzpicture}%

@@ -1,0 +1,71 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.20000,0.63000,0.17000}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=7.677in,
+height=4.865in,
+at={(1.288in,0.657in)},
+scale only axis,
+xmin=0.24,
+xmax=20.76,
+xlabel style={font=\color{mycolor2}},
+xlabel={Step $k$},
+ymode=log,
+ymin=0.00798389333989897,
+ymax=0.0141421356237316,
+yminorticks=true,
+ylabel style={font=\color{mycolor2}},
+ylabel={$\|u_k\|$ [m/s$^2$]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor2}},
+title={B-noball — strict dissip., $\rho_c$=1e-06, $N$=20, ball OFF},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids,
+yminorgrids,
+legend style={legend cell align=left, align=left}
+]
+
+\addplot[area legend, draw=none, fill=white!80!black, fill opacity=0.35, forget plot]
+table[row sep=crcr] {%
+x	y\\
+0.5	0.00798389333989897\\
+12.5	0.00798389333989897\\
+12.5	0.0141421356237316\\
+0.5	0.0141421356237316\\
+}--cycle;
+\addplot[ycomb, color=mycolor1, line width=0.8pt, mark size=1.5pt, mark=o, mark options={solid, mycolor1}] table[row sep=crcr] {%
+1	0.0141421356237316\\
+2	0.0141421356237307\\
+3	0.014142135623731\\
+4	0.014142135623731\\
+5	0.0141421356237309\\
+6	0.0141421356237235\\
+7	0.0141421356237298\\
+8	0.0124162270232374\\
+9	0.0141421356236075\\
+10	0.0141421356237308\\
+11	0.0141421356237303\\
+12	0.0141421356237308\\
+13	0.0141421356237039\\
+14	0.0104068932540455\\
+15	0.0141421356236619\\
+16	0.0127089317305465\\
+17	0.0141421356233333\\
+18	0.0116724881585197\\
+19	0.00798389333989897\\
+20	0.0113317610541247\\
+};
+\addlegendentry{$\|u_k\|$}
+
+\node[centered, align=center, inner sep=0, font=\color{white!20!black}]
+at (axis cs:6.5,0.011) {Turnpike toward switch point};
+\node[centered, align=center, inner sep=0, font=\color{white!20!black}]
+at (axis cs:16.5,0.011) {Exit};
+\end{axis}
+\end{tikzpicture}%
