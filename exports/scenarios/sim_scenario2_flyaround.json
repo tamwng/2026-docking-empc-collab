@@ -1,7 +1,7 @@
 {
   "metadata": {
     "scenario": "S2_flyaround",
-    "date": "2026-06-12 13:04:49",
+    "date": "2026-06-17 14:06:40",
     "dt_s": 60.270164086747734,
     "P_orbit_steps": 92,
     "T_orbit_s": 5544.8550959807917,
@@ -9,8 +9,8 @@
     "n_sim": 552,
     "u_max_mps2": 0.01,
     "x0": [
-      0,
-      300,
+      25,
+      335,
       0,
       0,
       0,
@@ -32,15 +32,15 @@
   "run2": {
     "terminal": "periodic Pi* (6-row Su_term equality)",
     "n_sim_steps": 552,
-    "delta_v_total_m_s": 0.070778373003558576,
-    "delta_v_injection_m_s": 0.0013207015446567603,
+    "delta_v_total_m_s": 0.11167744648155709,
+    "delta_v_injection_m_s": 0.0029225447239428315,
     "inject_end_step": 1,
-    "b_est_m": 74.925651892186508,
-    "range_ratio_2to1": 2.0020915492511282,
+    "b_est_m": 74.856418888166075,
+    "range_ratio_2to1": 2.0037160662087108,
     "infeasible_qp_steps": 0,
-    "u_mean_last_orbit_mps2": 3.1500683641155811E-9,
-    "phase_err_max_last_m": 0.062666070251706535,
-    "phase_err_mean_last_m": 0.022087015627600244,
+    "u_mean_last_orbit_mps2": 3.6151950310446754E-9,
+    "phase_err_max_last_m": 0.05983549870070709,
+    "phase_err_mean_last_m": 0.023758381352939336,
     "control_converged": true
   }
 }

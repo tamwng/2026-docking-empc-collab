@@ -258,22 +258,3 @@ res.n_ctrl            = n_ctrl;
 res.n_ps_h            = n_ps_h;
 
 end
-
-
-%% ── Local functions ──────────────────────────────────────────────────────────
-
-function is_safe = check_passive_safety(X_log, n_logged, Ad_pow_safe, r_KOS, N_safe)
-    is_safe = false(1, n_logged);
-    for k = 1:n_logged
-        xk   = X_log(:, k);
-        safe = true;
-        for j = 1:N_safe
-            x_free = Ad_pow_safe(:,:,j) * xk;
-            if norm(x_free(1:3)) < r_KOS
-                safe = false;
-                break;
-            end
-        end
-        is_safe(k) = safe;
-    end
-end

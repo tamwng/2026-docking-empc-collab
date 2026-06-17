@@ -56,6 +56,8 @@ closure_res_star = norm(A_d * x_star(:, end) - x_star(:, 1));
 fprintf('Pi* closure residual:  %.2e  (must be < 1e-8)\n', closure_res_star);
 assert(closure_res_star < 1e-6, 'Pi* does not close under A_d');
 
+
+
 %% ── QP dimensions and parameters ────────────────────────────────────────────
 u_max = 1e-2;    % [m/s²]  symmetric per-axis thrust bound
 N     = P;       % horizon = one full orbital period
@@ -102,7 +104,7 @@ matrices.f_vec      = f_vec;
 matrices.A_u        = A_u;
 matrices.b_u        = b_u;
 
-x0 = [0; 300; 0; 0; 0; 0];   % V-bar hold — CWH equilibrium (shared IC)
+x0 = [25; 335; 0; 0; 0; 0];   % V-bar hold — CWH equilibrium (shared IC)
 
 params_base.rho_min = 50;     % unused (use_band=false) — kept for struct completeness
 params_base.rho_max = 200;
@@ -182,16 +184,59 @@ plot(ax1, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.
     'DisplayName', sprintf('\\Pi^* (b = %d m)', b_nmc));
 plot(ax1, r2.x_log(1,:), r2.x_log(2,:), 'Color', c_r2, 'LineWidth', 1.0, ...
     'DisplayName', 'Run 2: trajectory');
-plot(ax1, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 12, ...
-    'MarkerFaceColor', c_r1, 'LineWidth', 1.5, ...
-    'DisplayName', 'Run 1: stuck (no terminal cstr.)');
+plot(ax1, r1.x_log(1,:), r1.x_log(2,:), 'Color', c_r1, 'LineWidth', 1.0, ...
+    'DisplayName', 'Run 1: free drift (no terminal cstr.)');
+plot(ax1, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 10, ...
+    'MarkerFaceColor', c_r1, 'LineWidth', 1.5, 'HandleVisibility', 'off');
 plot(ax1, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
 xlabel(ax1, 'r_x (radial) [m]');
 ylabel(ax1, 'r_y (along-track) [m]');
-title(ax1, 'S2 — Run 1: stuck vs Run 2: stabilises \Pi^*');
+title(ax1, 'S2 — Run 1: free drift vs Run 2: stabilises \Pi^*');
 legend(ax1, 'Location', 'northeast');
 exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.pdf'), 'ContentType', 'vector');
 exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.png'), 'Resolution', 300);
+
+%% Fig 5 — Non-equilibrium IC drift (Run 1 detail)
+time_s_r1 = (0 : n_sim_r1) * dt;
+
+fig5 = figure('Name', 'S2 — Non-equilibrium drift (Run 1)');
+tl5  = tiledlayout(fig5, 2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+% Top: Hill-frame trajectory
+ax5a = nexttile(tl5);
+hold(ax5a, 'on'); grid(ax5a, 'on'); axis(ax5a, 'equal');
+plot(ax5a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
+    'DisplayName', sprintf('\\Pi^* (b = %d m)', b_nmc));
+plot(ax5a, r1.x_log(1,:), r1.x_log(2,:), 'Color', c_r1, 'LineWidth', 1.2, ...
+    'DisplayName', 'Run 1: free drift');
+plot(ax5a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 10, ...
+    'MarkerFaceColor', c_r1, 'DisplayName', 'IC');
+plot(ax5a, r1.x_log(1,end), r1.x_log(2,end), '^', 'Color', [0.4 0.4 0.4], ...
+    'MarkerSize', 8, 'MarkerFaceColor', [0.4 0.4 0.4], 'DisplayName', 'Final (2T)');
+plot(ax5a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax5a, 'r_x (radial) [m]');
+ylabel(ax5a, 'r_y (along-track) [m]');
+title(ax5a, 'Hill-frame — drifting ellipse (U^* = 0, no terminal cstr.)');
+legend(ax5a, 'Location', 'northeast');
+
+% Bottom: along-track time series showing secular drift vs analytical trend
+ax5b = nexttile(tl5);
+hold(ax5b, 'on'); grid(ax5b, 'on');
+t_vec     = linspace(0, n_sim_r1 * dt, 500);
+y_secular = -6 * x0(1) * n * t_vec + x0(2);
+plot(ax5b, time_s_r1, r1.x_log(2,:), 'Color', c_r1, 'LineWidth', 1.2, ...
+    'DisplayName', 'r_y (simulated)');
+plot(ax5b, t_vec, y_secular, 'k--', 'LineWidth', 1.0, ...
+    'DisplayName', 'Secular trend: -6 x_0 n t + y_0');
+xline(ax5b, T, ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.9, ...
+    'Label', '1 orbit', 'HandleVisibility', 'off');
+xlabel(ax5b, 'Time [s]');
+ylabel(ax5b, 'r_y (along-track) [m]');
+title(ax5b, sprintf('Along-track secular drift  (avg. rate \\approx %.3f m/s)', 6 * x0(1) * n));
+legend(ax5b, 'Location', 'northeast');
+
+exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.pdf'), 'ContentType', 'vector');
+exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.png'), 'Resolution', 300);
 
 %% Fig 2 — Phase error (Zanon–Grüne–Diehl convergence)
 fig2 = figure('Name', 'S2 — Phase error');

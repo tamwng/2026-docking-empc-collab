@@ -1,5 +1,5 @@
 % sim_scenario4_closing.m
-% Scenario 4 — terminal-ball study (Run A) and strict-dissipativity study (Run B).
+% Scenario 4 — terminal-ball (A), strict-dissipativity (B), CLF terminal cost (C).
 %
 % Run A — pure energy cost ℓ=‖u‖², Q=0, P=0.
 %   No dissipativity certificate: marginally stable CWH zero-fuel modes tie at
@@ -14,6 +14,13 @@
 %   x_switch autonomously.  Terminal ball becomes slack.
 %   B-noball: converges without ball — Grüne (2013) Thm 5.6/4.2, Remark 7.7.
 %   B-ball:   ball ON but inactive (active-frac ≈ 0) — confirms slackness.
+%
+% Run C — pure energy ℓ=‖u‖², CLF terminal cost Vf=e'P_clf e, no ball.
+%   P_clf from DARE with stabilising weights (Amrit, Rawlings & Angeli 2011).
+%   Vf is a valid local CLF inside Ω={e:e'P_clf e≤α}; optimiser balances
+%   fuel expenditure against terminal proximity, providing asymptotic stability
+%   without strict dissipativity or a terminal ball constraint.
+%   Ref: Amrit, Rawlings & Angeli (2011) Thm 1; Chen & Allgöwer (1998).
 
 clear; clc;
 
@@ -32,13 +39,43 @@ x_switch  = [0;   300; 0; 0; 0; 0];  % [m] handover point (V-bar, 300 m)
 u_max     = 1e-2;                     % [m/s²] thrust bound
 r_KOS     = 50;                       % [m] keep-out sphere radius
 P_avail   = 1e-5;                     % [m²/s⁴] avg-power budget (non-binding)
-rho_c     = 1e-6;                     % state regularisation weight (Run B)
+rho_c     = 1e-11;                     % state regularisation weight (Run B)
 ps_margin = 150;                       % [m] passive-safety activation margin
 t_final   = 5 * T;                    % [s] ~7.7 h (5 orbital periods)
 
 %% Cost structs
 cost_A = struct('Q', zeros(6),    'R', eye(3), 'P', zeros(6));
 cost_B = struct('Q', rho_c*eye(6),'R', eye(3), 'P', zeros(6));
+
+%% Precompute CLF terminal cost (Run C)
+Ac_cwh = [0      0     0    1     0    0  ;
+          0      0     0    0     1    0  ;
+          0      0     0    0     0    1  ;
+          3*n^2  0     0    0     2*n  0  ;
+          0      0     0   -2*n   0    0  ;
+          0      0    -n^2  0     0    0 ];
+Bc_cwh = [zeros(3,3); eye(3)];
+[Ad_clf, Bd_clf] = discretize(Ac_cwh, Bc_cwh, dt);
+
+Q_dare = diag([1e-2, 1e-2, 1e-2, 1e0, 1e0, 1e0]);
+R_dare = diag([1e4,  1e4,  1e4]);
+[K_clf, P_clf] = lqr_controller(Ad_clf, Bd_clf, Q_dare, R_dare);
+R_eco_clf      = eye(3);
+
+% Verify Amrit et al. (2011) Assumption 6 at dt=120s.
+% M1 = P - Acl'*P*Acl - K'*R_eco*K = Q_dare + K'*(R_dare - R_eco)*K >= 0.
+Acl_clf = Ad_clf - Bd_clf * K_clf;
+M1      = Q_dare + K_clf' * (R_dare - R_eco_clf) * K_clf;
+M1      = (M1 + M1') / 2;
+lam_M1  = min(eig(M1));
+rho_Acl = max(abs(eig(Acl_clf)));
+if lam_M1 > 1e-10 && rho_Acl < 1
+    fprintf('  => P_clf satisfies Assumption 6. Terminal cost is a valid CLF.  ✓\n\n');
+else
+    warning('CLF condition not satisfied — check DARE weights.');
+end
+
+cost_C = struct('Q', zeros(6), 'R', eye(3), 'P', P_clf);
 
 %% Shared params base
 params_base.x0       = x0;
@@ -149,6 +186,32 @@ fprintf(' Expect: converges; ball inactive (active-frac ≈ 0%%)\n');
 fprintf('══════════════════════════════════════════════\n');
 resB_ball = run_closing(cost_B, con_B_ball, params_B_ball);
 
+%% ── Run C: pure energy + CLF terminal cost, no ball ──────────────────────────
+% Terminal cost Vf = e'P_clf e (P_clf from DARE) is a valid local CLF for
+% the error dynamics. No dissipativity assumption or
+% terminal ball required — stability follows from the CLF contraction property.
+% Ref: Amrit, Rawlings & Angeli (2011) Thm 1; Chen & Allgöwer (1998).
+
+con_C.u_max              = u_max;
+con_C.y_min_active       = false;
+con_C.los_cone.active    = false;
+con_C.use_avg_power      = true;
+con_C.avg_power.P_avail  = P_avail;
+con_C.use_terminal_ball  = false;
+con_C.use_passive_safety = false;
+
+params_C = params_base;
+
+fprintf('\n══════════════════════════════════════════════\n');
+fprintf(' Run C — energy ℓ=‖u‖², CLF terminal cost V_f=e''P_clf e\n');
+fprintf(' Expect: converges (CLF terminal region, no ball)\n');
+fprintf('══════════════════════════════════════════════\n');
+resC = run_closing(cost_C, con_C, params_C);
+
+
+
+
+
 %% ── Ball-role evidence (trajectory comparison) ────────────────────────────────
 % Ball is load-bearing in A1 iff removing it stalls the chaser.
 %   Proof: Run A2 (same cost, no ball) → U*≡0, Δv≈0.
@@ -168,13 +231,16 @@ p_mpc = struct('x0', x0, 'x_switch', x_switch, 'dt', dt, ...
 [X_mpc, U_mpc, t_mpc, dv_mpc] = sim_mpc_regulation(p_mpc);
 
 fprintf('\n── Δv summary ───────────────────────────────────────────────\n');
-fprintf('  %-28s  %10s\n', 'Run', 'Δv [m/s]');
-fprintf('  %-28s  %10.4f\n', 'A1 — energy, ball ON',            resA1.dv);
-fprintf('  %-28s  %10.4f\n', sprintf('B-noball (N=%d)',N_B_noball), resB_noball.dv);
-fprintf('  %-28s  %10.4f\n', 'B-ball  — strict dissip.',         resB_ball.dv);
-fprintf('  %-28s  %10.4f\n', 'MPC — standard regulation',        dv_mpc);
+fprintf('  %-32s  %10s\n', 'Run', 'Δv [m/s]');
+fprintf('  %-32s  %10.4f\n', 'A1 — energy, ball ON',               resA1.dv);
+fprintf('  %-32s  %10.4f\n', sprintf('B-noball (N=%d)',N_B_noball),    resB_noball.dv);
+fprintf('  %-32s  %10.4f\n', 'B-ball  — strict dissip.',              resB_ball.dv);
+fprintf('  %-32s  %10.4f\n', 'C  — energy + CLF terminal cost',       resC.dv);
+fprintf('  %-32s  %10.4f\n', 'MPC — standard regulation',             dv_mpc);
 fprintf('  A1 vs MPC savings: %.4f m/s  (%.1f%%)\n', ...
     dv_mpc - resA1.dv, 100*(dv_mpc - resA1.dv)/dv_mpc);
+fprintf('  C  vs MPC savings: %.4f m/s  (%.1f%%)\n', ...
+    dv_mpc - resC.dv,  100*(dv_mpc - resC.dv) /dv_mpc);
 fprintf('─────────────────────────────────────────────────────────────\n\n');
 
 %% ── Run A1-ps: energy + ball ON + passive safety SCA ────────────────────────
@@ -246,19 +312,91 @@ for ii = 1:n_sw
 end
 fprintf('──────────────────────────────────────────────────────────────────────────\n\n');
 
+%% ── Precompute free-drift STMs for passive-safety sweeps ────────────────────
+% Same CWH system at dt=120s, shared across all sweep sections below.
+N_safe_sw  = 554;
+Ad_pow_sw  = zeros(6, 6, N_safe_sw);
+Atmp_sw    = Ad_clf;
+for jj_sw  = 1:N_safe_sw
+    Ad_pow_sw(:,:,jj_sw) = Atmp_sw;
+    Atmp_sw = Atmp_sw * Ad_clf;
+end
+
+%% ── Sweep: passive safety vs r_KOS (existing trajectories) ─────────────────
+% For A1, C, and B-noball (all at N=20), re-apply the post-hoc passive safety
+% check at a range of r_KOS values.  No re-runs needed — uses logged X arrays.
+% Reveals which control law leaves the most safety margin above the KOS.
+
+r_KOS_vec  = [10, 25, 50, 75, 100, 150, 200, 300];
+ps_runs    = {resA1, resC, resB_noball};
+ps_labels  = {'A1', 'C', 'B-noball'};
+n_ps_runs  = numel(ps_runs);
+ps_vs_rkos = zeros(n_ps_runs, numel(r_KOS_vec));
+
+for ri = 1:n_ps_runs
+    X_ri = ps_runs{ri}.X;
+    n_ri = size(X_ri, 2);
+    for ki = 1:numel(r_KOS_vec)
+        is_s = check_passive_safety(X_ri, n_ri, Ad_pow_sw, r_KOS_vec(ki), N_safe_sw);
+        ps_vs_rkos(ri, ki) = mean(is_s);
+    end
+end
+
+%% ── Sweep: passive safety vs N for Run C (re-runs at r_KOS=50m) ─────────────
+% Show how prediction horizon affects the trajectory's inherent passive safety.
+N_ps_vec = [5, 10, 15, 20, 30, 40];
+ps_vs_N  = zeros(1, numel(N_ps_vec));
+fprintf('\nPassive safety vs N sweep (Run C config, r_KOS=%d m)...\n', r_KOS);
+for ni = 1:numel(N_ps_vec)
+    params_psN         = params_base;
+    params_psN.N       = N_ps_vec(ni);
+    params_psN.verbose = false;
+    r_psN              = run_closing(cost_C, con_C, params_psN);
+    ps_vs_N(ni)        = r_psN.ps_frac;
+    fprintf('  N=%2d: ps_frac=%.1f%%  (converged=%s)\n', ...
+        N_ps_vec(ni), 100*r_psN.ps_frac, mat2str(~isnan(r_psN.conv_step)));
+end
+
+%% ── Sweep: shrinking terminal ball → turnpike behavior ──────────────────────
+% Run A1 config (pure energy, Q=P=0) at fixed N=20 while tightening the ball.
+% As r_ball shrinks, the ball activates later in the horizon — the "cruise"
+% plateau widens, turnpike fraction grows, and the terminal descent sharpens.
+
+r_ball_vec = [500, 300, 200, 150, 100, 50];
+n_ball     = numel(r_ball_vec);
+ball_res   = cell(1, n_ball);
+
+fprintf('\nShrinking ball sweep (A1 config, N=20)...\n');
+for bi = 1:n_ball
+    con_bi                            = con_A1;
+    con_bi.terminal_ball.r_switch     = r_ball_vec(bi);
+    params_bi                         = params_base;
+    params_bi.verbose                 = false;
+    fprintf('  r_ball=%3d m  ...  ', r_ball_vec(bi));
+    r_bi = run_closing(cost_A, con_bi, params_bi);
+    ball_res{bi} = r_bi;
+    conv_str = 'DNF';
+    if ~isnan(r_bi.conv_step), conv_str = sprintf('step %d', r_bi.conv_step); end
+    fprintf('dv=%.3f m/s  conv=%s  tp_frac=%.2f\n', ...
+        r_bi.dv, conv_str, r_bi.turnpike_fraction);
+end
+
 %% ── Figures ───────────────────────────────────────────────────────────────────
 c_A1   = [0.85 0.33 0.10];   % burnt orange  — A1
 c_A2   = [0.55 0.55 0.55];   % grey          — A2 (stuck)
 c_Bnb  = [0.20 0.63 0.17];   % green         — B-noball
 c_Bbal = [0.58 0.40 0.74];   % purple        — B-ball
+c_C    = [0.00 0.68 0.68];   % teal          — C (CLF terminal cost)
 c_mpc  = [0.12 0.47 0.71];   % blue          — MPC comparison
 
-t_A1_h     = resA1.t_vec      / 3600;
-t_Bnb_h    = resB_noball.t_vec / 3600;
-t_Bbal_h   = resB_ball.t_vec   / 3600;
-n_ctrl_A1  = resA1.n_ctrl;
-n_ctrl_Bnb = resB_noball.n_ctrl;
+t_A1_h      = resA1.t_vec       / 3600;
+t_Bnb_h     = resB_noball.t_vec / 3600;
+t_Bbal_h    = resB_ball.t_vec   / 3600;
+t_C_h       = resC.t_vec        / 3600;
+n_ctrl_A1   = resA1.n_ctrl;
+n_ctrl_Bnb  = resB_noball.n_ctrl;
 n_ctrl_Bbal = resB_ball.n_ctrl;
+n_ctrl_C    = resC.n_ctrl;
 
 %% Figure 1 — Hill-frame: A1 vs A2
 fig1 = figure('Name', 'S4 — Hill Frame: A1 (ball ON) vs A2 (ball OFF)');
@@ -283,20 +421,23 @@ if exist('matlab2tikz', 'file')
         'figurehandle', fig1, 'showInfo', false);
 end
 
-%% Figure 2 — Cumulative Δv: A1 vs MPC
-fig2 = figure('Name', 'S4 — Cumulative \Deltav: A1 vs MPC');
+%% Figure 2 — Cumulative Δv: A1 vs C vs MPC
+fig2 = figure('Name', 'S4 — Cumulative \Deltav: A1 vs C vs MPC');
 ax2  = axes(fig2);
 hold(ax2,'on'); grid(ax2,'on');
 plot(ax2, t_A1_h(1:n_ctrl_A1), ...
     cumsum(vecnorm(resA1.U(:,1:n_ctrl_A1), 2, 1))*dt, ...
     'Color', c_A1,  'LineWidth', 1.4, 'DisplayName', 'A1 — EMPC, ball ON');
+plot(ax2, t_C_h(1:n_ctrl_C), ...
+    cumsum(vecnorm(resC.U(:,1:n_ctrl_C), 2, 1))*dt, ...
+    'Color', c_C,   'LineWidth', 1.4, 'DisplayName', 'C — EMPC, CLF $V_f$');
 plot(ax2, t_mpc(1:end-1)/3600, ...
     cumsum(vecnorm(U_mpc(:,1:end-1), 2, 1))*dt, ...
     'Color', c_mpc, 'LineWidth', 1.4, 'DisplayName', 'MPC — standard regulation');
 xlabel(ax2, 'Time [h]');
 ylabel(ax2, 'Cumulative $\Delta v$ [m/s]', 'Interpreter', 'latex');
-title(ax2, 'Cumulative $\Delta v$ — A1 vs Standard MPC', 'Interpreter', 'latex');
-legend(ax2, 'Location', 'northwest');
+title(ax2, 'Cumulative $\Delta v$ — A1 vs C vs Standard MPC', 'Interpreter', 'latex');
+legend(ax2, 'Location', 'northwest', 'Interpreter', 'latex');
 if exist('matlab2tikz', 'file')
     matlab2tikz('results/figures/scenario4/AB_cumulative_dv.tikz', ...
         'figurehandle', fig2, 'showInfo', false);
@@ -345,8 +486,8 @@ if exist('matlab2tikz', 'file')
         'figurehandle', fig3, 'showInfo', false);
 end
 
-%% Figure 4 — Hill-frame: A1 + B-noball + B-ball
-fig4 = figure('Name', 'S4 — Hill Frame: A1, B-noball, B-ball');
+%% Figure 4 — Hill-frame: A1 + B-noball + B-ball + C
+fig4 = figure('Name', 'S4 — Hill Frame: A1, B-noball, B-ball, C');
 ax4  = axes(fig4);
 hold(ax4,'on'); grid(ax4,'on'); axis(ax4,'equal');
 plot(ax4, resA1.X(2,:),       resA1.X(1,:),       '-',  'Color', c_A1,  'LineWidth', 1.2, ...
@@ -355,6 +496,8 @@ plot(ax4, resB_noball.X(2,:), resB_noball.X(1,:),  '-',  'Color', c_Bnb,  'LineW
     'DisplayName', sprintf('B-noball (\\rho_c=%.0e, N=%d)', rho_c, N_B_noball));
 plot(ax4, resB_ball.X(2,:),   resB_ball.X(1,:),    '--', 'Color', c_Bbal, 'LineWidth', 1.2, ...
     'DisplayName', sprintf('B-ball (\\rho_c=%.0e, ball slack)', rho_c));
+plot(ax4, resC.X(2,:),        resC.X(1,:),         '-',  'Color', c_C,    'LineWidth', 1.2, ...
+    'DisplayName', 'C — energy + CLF $V_f$');
 plot(ax4, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
     'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 6, 'HandleVisibility', 'off');
 plot(ax4, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
@@ -362,8 +505,8 @@ plot(ax4, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
 plot(ax4, 0, 0, '+k', 'MarkerSize', 9, 'LineWidth', 1.5, 'DisplayName', 'Target');
 xlabel(ax4, 'Along-track $y$ [m]', 'Interpreter', 'latex');
 ylabel(ax4, 'Radial $x$ [m]',      'Interpreter', 'latex');
-title(ax4, 'Hill-Frame Trajectory — A1, B-noball, B-ball', 'Interpreter', 'latex');
-legend(ax4, 'Location', 'northeast');
+title(ax4, 'Hill-Frame Trajectory — A1, B-noball, B-ball, C', 'Interpreter', 'latex');
+legend(ax4, 'Location', 'northeast', 'Interpreter', 'latex');
 if exist('matlab2tikz', 'file')
     matlab2tikz('results/figures/scenario4/B_hill_frame.tikz', ...
         'figurehandle', fig4, 'showInfo', false);
@@ -515,6 +658,144 @@ if exist('matlab2tikz', 'file')
         'figurehandle', fig6, 'showInfo', false);
 end
 
+%% Figure 8 — Passive safety sensitivity (2 panels)
+% Panel A: ps_frac vs r_KOS for A1/C/B-noball at N=20.
+% Panel B: ps_frac vs N for Run C at r_KOS=50m.
+
+c_ps = {c_A1, c_C, c_Bnb};   % colours match run colours
+
+fig8 = figure('Name', 'S4 — Passive Safety Sensitivity');
+fig8.Position(3:4) = [900, 380];
+
+ax8a = subplot(1, 2, 1);
+hold(ax8a, 'on'); grid(ax8a, 'on');
+for ri = 1:n_ps_runs
+    plot(ax8a, r_KOS_vec, 100*ps_vs_rkos(ri,:), '-o', ...
+        'Color', c_ps{ri}, 'LineWidth', 1.4, 'MarkerSize', 5, ...
+        'DisplayName', ps_labels{ri});
+end
+xline(ax8a, r_KOS, '--k', 'LineWidth', 0.8, 'HandleVisibility', 'off');
+xlabel(ax8a, 'KOS radius $r_\mathrm{KOS}$ [m]', 'Interpreter', 'latex');
+ylabel(ax8a, 'Passive-safe fraction [\%]');
+title(ax8a, 'ps\_frac vs $r_\mathrm{KOS}$  ($N=20$)', 'Interpreter', 'latex');
+legend(ax8a, 'Location', 'southwest');
+ylim(ax8a, [-5, 105]);
+
+ax8b = subplot(1, 2, 2);
+hold(ax8b, 'on'); grid(ax8b, 'on');
+plot(ax8b, N_ps_vec, 100*ps_vs_N, '-s', 'Color', c_C, 'LineWidth', 1.4, 'MarkerSize', 6);
+xline(ax8b, N, '--k', 'LineWidth', 0.8);
+xlabel(ax8b, 'Prediction horizon $N$', 'Interpreter', 'latex');
+ylabel(ax8b, 'Passive-safe fraction [\%]');
+title(ax8b, 'Run C: ps\_frac vs $N$  ($r_\mathrm{KOS}=50$ m)', 'Interpreter', 'latex');
+ylim(ax8b, [-5, 105]);
+
+sgtitle(fig8, 'Passive safety sensitivity — $r_\mathrm{KOS}$ and horizon $N$', ...
+    'Interpreter', 'latex');
+if exist('matlab2tikz', 'file')
+    matlab2tikz('results/figures/scenario4/ps_sensitivity.tikz', ...
+        'figurehandle', fig8, 'showInfo', false);
+end
+
+%% Figure 9 — Shrinking ball: thrust profiles + summary metrics (2 panels)
+% Panel A: overlaid thrust profiles (log scale), one trace per ball radius.
+%   Shaded band marks the detected turnpike plateau for the current A1 run.
+% Panel B: dv and conv_step vs ball radius — shows cost and speed of convergence.
+
+% Colour ramp from orange (large ball) to dark red (small ball)
+n_b    = n_ball;
+c_ball = zeros(n_b, 3);
+for bi = 1:n_b
+    t_bi       = (bi - 1) / max(n_b - 1, 1);  % 0 → 1 (large → small)
+    c_ball(bi,:) = (1 - t_bi)*[0.95 0.60 0.20] + t_bi*[0.55 0.05 0.05];
+end
+
+fig9 = figure('Name', 'S4 — Shrinking Ball: Thrust & Metrics');
+fig9.Position(3:4) = [900, 400];
+
+ax9a = subplot(1, 2, 1);
+hold(ax9a, 'on'); grid(ax9a, 'on');
+set(ax9a, 'YScale', 'log');
+for bi = 1:n_b
+    r_bi   = ball_res{bi};
+    nc_bi  = r_bi.n_ctrl;
+    if nc_bi < 1, continue; end
+    u_bi   = max(r_bi.u_norm_seq, 1e-20);
+    plot(ax9a, 1:nc_bi, u_bi, '-', 'Color', c_ball(bi,:), 'LineWidth', 1.0, ...
+        'DisplayName', sprintf('$r_\\mathrm{ball}=%d$ m', r_ball_vec(bi)));
+end
+xlabel(ax9a, 'Step $k$',             'Interpreter', 'latex');
+ylabel(ax9a, '$\|u_k\|$ [m/s$^2$]', 'Interpreter', 'latex');
+title(ax9a, 'Thrust profiles (log scale)', 'Interpreter', 'latex');
+legend(ax9a, 'Interpreter', 'latex', 'Location', 'northeast', 'FontSize', 7);
+
+ax9b = subplot(1, 2, 2);
+hold(ax9b, 'on'); grid(ax9b, 'on');
+ball_dv        = cellfun(@(r) r.dv,             ball_res);
+ball_conv      = cellfun(@(r) r.conv_step,      ball_res);
+ball_tp_frac   = cellfun(@(r) r.turnpike_fraction, ball_res);
+ball_conv(isnan(ball_conv)) = NaN;
+
+yyaxis(ax9b, 'left');
+plot(ax9b, r_ball_vec, ball_dv, '-o', 'Color', c_A1, 'LineWidth', 1.4, ...
+    'MarkerSize', 6, 'DisplayName', '$\Delta v$ [m/s]');
+ylabel(ax9b, 'Total $\Delta v$ [m/s]', 'Interpreter', 'latex');
+
+yyaxis(ax9b, 'right');
+plot(ax9b, r_ball_vec, ball_tp_frac, '-s', 'Color', [0.4 0.4 0.4], 'LineWidth', 1.4, ...
+    'MarkerSize', 6, 'DisplayName', 'Turnpike fraction');
+ylabel(ax9b, 'Turnpike fraction [-]');
+
+xlabel(ax9b, 'Ball radius $r_\mathrm{ball}$ [m]', 'Interpreter', 'latex');
+title(ax9b, '$\Delta v$ and turnpike fraction vs $r_\mathrm{ball}$', 'Interpreter', 'latex');
+legend(ax9b, 'Interpreter', 'latex', 'Location', 'best', 'FontSize', 8);
+
+sgtitle(fig9, 'Shrinking terminal ball — effect on thrust profile and turnpike', ...
+    'Interpreter', 'latex');
+if exist('matlab2tikz', 'file')
+    matlab2tikz('results/figures/scenario4/shrinking_ball.tikz', ...
+        'figurehandle', fig9, 'showInfo', false);
+end
+
+%% Figure 7 — Run C thrust profile (log scale)
+% Shows the energy-minimising arc shaped by the CLF terminal cost.
+% Without a ball, the profile reflects the trade-off between fuel cost and
+% terminal Lyapunov decrease: early thrust to build relative velocity, then
+% a sustained cruise toward x_switch as P_clf pulls the terminal state in.
+tp_label_C = 'CLF-guided cruise';
+
+fig7 = figure('Name', 'S4 — C Thrust Profile');
+ax7  = axes(fig7);
+hold(ax7,'on'); grid(ax7,'on');
+set(ax7, 'YScale', 'log');
+k_vec_C  = 1:n_ctrl_C;
+u_plot_C = max(resC.u_norm_seq, 1e-20);
+stem(ax7, k_vec_C, u_plot_C, 'Color', c_C, 'LineWidth', 0.8, ...
+    'MarkerSize', 3, 'DisplayName', '$\|u_k\|$');
+if ~isempty(resC.turnpike_steps)
+    yl7 = ylim(ax7);
+    if yl7(1) <= 0 || ~isfinite(log10(yl7(1)))
+        pv7 = u_plot_C(u_plot_C>1e-20);
+        if ~isempty(pv7), yl7(1)=min(pv7)*0.01; ylim(ax7,yl7); yl7=ylim(ax7); end
+    end
+    tp_lo7 = resC.turnpike_steps(1)-0.5;  tp_hi7 = resC.turnpike_steps(end)+0.5;
+    h_p7 = patch(ax7,[tp_lo7 tp_hi7 tp_hi7 tp_lo7],[yl7(1) yl7(1) yl7(2) yl7(2)], ...
+        [0.8 0.8 0.8],'FaceAlpha',0.35,'EdgeColor','none','HandleVisibility','off');
+    uistack(h_p7,'bottom');
+    ym7 = 10^(0.5*(log10(yl7(1))+log10(yl7(2))));
+    text(ax7, mean([tp_lo7,tp_hi7]), ym7, tp_label_C, ...
+        'HorizontalAlignment','center','FontSize',8,'Color',[0.2 0.2 0.2]);
+end
+xlabel(ax7, 'Step $k$',             'Interpreter', 'latex');
+ylabel(ax7, '$\|u_k\|$ [m/s$^2$]', 'Interpreter', 'latex');
+title(ax7, 'C — $V_f=e^\top P_{\mathrm{clf}}e$ EMPC, pure energy, $N=20$, no ball', ...
+    'Interpreter', 'latex');
+legend(ax7, 'Interpreter', 'latex', 'Location', 'northeast');
+if exist('matlab2tikz', 'file')
+    matlab2tikz('results/figures/scenario4/C_thrust_profile.tikz', ...
+        'figurehandle', fig7, 'showInfo', false);
+end
+
 %% PNG export
 [~, ~] = mkdir('results/figures/scenario4');
 print(fig1, 'results/figures/scenario4/AB_hill_frame',    '-dpng', '-r150');
@@ -523,6 +804,9 @@ print(fig3, 'results/figures/scenario4/A1_thrust_profile','-dpng', '-r150');
 print(fig4, 'results/figures/scenario4/B_hill_frame',     '-dpng', '-r150');
 print(fig5, 'results/figures/scenario4/horizon_sweep',    '-dpng', '-r150');
 print(fig6, 'results/figures/scenario4/A1_vs_A1ps',       '-dpng', '-r150');
+print(fig7, 'results/figures/scenario4/C_thrust_profile', '-dpng', '-r150');
+print(fig8, 'results/figures/scenario4/ps_sensitivity',   '-dpng', '-r150');
+print(fig9, 'results/figures/scenario4/shrinking_ball',   '-dpng', '-r150');
 fprintf('PNG figures saved to results/figures/scenario4/\n\n');
 
 %% ── JSON export ───────────────────────────────────────────────────────────────
@@ -531,19 +815,23 @@ fprintf('PNG figures saved to results/figures/scenario4/\n\n');
 % requires local functions after all executable script code).
 
 % ball_evidence: A1/A2 pass A2.dv (load-bearing proof); B_ball passes dX_B_max (slack proof).
+% v_f_zero flag (last arg): true = P=0 (no terminal cost), false = P=P_clf.
 json_data.runA1 = make_run_entry(resA1, 'A1', 'pure_energy', true, 0, N, ...
-    dt, x0, x_switch, u_max, con_A1.terminal_ball.r_switch, false, resA2.dv);
+    dt, x0, x_switch, u_max, con_A1.terminal_ball.r_switch, false, resA2.dv, true);
 
 json_data.runA2 = make_run_entry(resA2, 'A2', 'pure_energy', false, 0, N, ...
-    dt, x0, x_switch, u_max, NaN, false, NaN);
+    dt, x0, x_switch, u_max, NaN, false, NaN, true);
 
 json_data.runB_noball = make_run_entry(resB_noball, 'B_noball', ...
     sprintf('energy_rho_c_%.0e', rho_c), false, rho_c, N_B_noball, ...
-    dt, x0, x_switch, u_max, NaN, false, NaN);
+    dt, x0, x_switch, u_max, NaN, false, NaN, true);
 
 json_data.runB_ball = make_run_entry(resB_ball, 'B_ball', ...
     sprintf('energy_rho_c_%.0e', rho_c), true, rho_c, N, ...
-    dt, x0, x_switch, u_max, r_switch_ball_B, false, dX_B_max);
+    dt, x0, x_switch, u_max, r_switch_ball_B, false, dX_B_max, true);
+
+json_data.runC = make_run_entry(resC, 'C', 'energy_clf_terminal', false, 0, N, ...
+    dt, x0, x_switch, u_max, NaN, false, NaN, false);
 
 json_data.sweep_horizon = struct( ...
     'N',           sw_N, ...
@@ -564,11 +852,13 @@ fprintf('JSON exported to exports/scenarios/sim_scenario4_closing.json\n');
 
 function s = make_run_entry(res, run_label, cost_label, ball_on, rho_c_val, N_used, ...
                              dt_val, x0_val, x_switch_val, u_max_val, r_ball_val, ...
-                             use_ps, ball_evidence)
+                             use_ps, ball_evidence, v_f_zero)
 % ball_evidence meaning depends on run:
 %   A1 : resA2.dv  — A2 Δv≈0 proves ball is load-bearing in A1
 %   B_ball : dX_B_max — max pos deviation vs B_noball proves ball is slack
 %   others : NaN
+% v_f_zero: true = P=0 (no terminal cost); false = CLF terminal cost active.
+    if nargin < 14, v_f_zero = true; end
     s.metadata = struct( ...
         'run',                run_label, ...
         'cost',               cost_label, ...
@@ -581,7 +871,7 @@ function s = make_run_entry(res, run_label, cost_label, ball_on, rho_c_val, N_us
         'u_max',              u_max_val, ...
         'r_ball',             r_ball_val, ...
         'use_passive_safety', use_ps, ...
-        'V_f_zero',           true);
+        'V_f_zero',           v_f_zero);
     s.results = struct( ...
         'total_dv_ms',            res.dv, ...
         'n_steps_to_convergence', res.conv_step, ...
