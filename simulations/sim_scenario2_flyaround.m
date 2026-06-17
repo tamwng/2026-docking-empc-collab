@@ -164,6 +164,125 @@ phase_err_mean_last = mean(phase_err_last);
 fprintf('\nPhase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
     phase_err_max_last, phase_err_mean_last);
 
+%% ── RUN 4 — NMC manifold IC, pure fuel, no terminal constraint ───────────────
+% IC is placed exactly on Π* (satisfies vy = -2n·x, vx = 0).
+% Under pure fuel cost the globally optimal input is U* = 0 for every step.
+% The chaser rides the free CWH dynamics and stays on Π* indefinitely.
+% No terminal constraint needed — orbit knowledge is encoded in the IC itself.
+fprintf('\n════════════════════════════════════════════════════════════\n');
+fprintf(' S2 Run 4 — IC on NMC manifold, pure fuel, no terminal constraint\n');
+fprintf(' Expected: u*=0, chaser stays on Pi* (orbit "captured for free")\n');
+fprintf('════════════════════════════════════════════════════════════\n');
+
+x0_r4 = [b_nmc; 0; 0; 0; -2*n*b_nmc; 0];   % starting point of Π*: x=b, vy=-2nb
+fprintf('IC: [%.1f; 0; 0; 0; %.5f; 0]  (on Pi* manifold)\n', b_nmc, -2*n*b_nmc);
+
+params_r4        = params_base;
+params_r4.x0     = x0_r4;
+
+run_cfg_r4.use_nmc_manifold      = false;
+run_cfg_r4.use_periodic_terminal = false;
+run_cfg_r4.x_star                = [];
+run_cfg_r4.n_sim_override        = 3*P;
+run_cfg_r4.use_band              = false;
+
+r4 = run_flyaround(run_cfg_r4, matrices, params_r4);
+
+%% Phase error Run 4 — should be ~0 throughout (machine-epsilon scale)
+n_sim_r4      = r4.n_sim;
+phase_err_r4  = zeros(1, n_sim_r4 + 1);
+for k = 1 : n_sim_r4 + 1
+    col              = mod(k-1, P) + 1;
+    phase_err_r4(k)  = norm(r4.x_log(:, k) - x_star(:, col));
+end
+fprintf('Run 4 phase error:  max = %.2e m   mean = %.2e m  (expect machine-eps)\n', ...
+    max(phase_err_r4), mean(phase_err_r4));
+
+%% ── RUNS 3a / 3b / 3c — "failure mode" suite ────────────────────────────────
+% Three configurations that do NOT acquire an NMC orbit, demonstrating that
+% neither a state band nor a state cost alone can substitute for the periodic
+% terminal constraint of Run 2.
+%
+%   3a: band (‖r(k)‖ ≥ 75 m) + small Q  → cheapest feasible equilibrium is
+%       the V-bar point [0; 75; 0; 0; 0; 0]; NOT an orbit.
+%   3b: band + pure fuel               → u*=0, chaser drifts freely under CWH.
+%   3c: small Q, no band               → regulation toward origin (like std MPC).
+
+%% State cost matrices shared by 3a and 3c
+q_state = 1e-6;
+Q_state = q_state * blkdiag(eye(3), zeros(3));   % position-only penalty
+Qbar    = kron(eye(N), Q_state);                  % block-diagonal over horizon
+H_Q     = 2 * (Su' * Qbar * Su + eye(3*N));       % fuel + state
+H_Q     = (H_Q + H_Q') / 2;
+F_mat_Q = 2 * Su' * Qbar * Sx;                    % f_vec(k) = F_mat * x(k)
+
+n_sim_3  = 3*P;   % 3 orbits — enough to see asymptotic behaviour
+
+%% RUN 3a — band + small Q
+fprintf('\n════════════════════════════════════════════════════════════\n');
+fprintf(' S2 Run 3a — band (r_min=75 m) + small Q\n');
+fprintf(' Expected: V-bar equilibrium [0; 75; 0; 0; 0; 0], NOT an orbit\n');
+fprintf('════════════════════════════════════════════════════════════\n');
+
+matrices_3a       = matrices;
+matrices_3a.H     = H_Q;
+matrices_3a.F_mat = F_mat_Q;
+
+params_3a         = params_base;
+params_3a.x0      = x0;
+params_3a.rho_min = 75;
+params_3a.rho_max = 1e6;
+
+run_cfg_3a.use_nmc_manifold      = false;
+run_cfg_3a.use_periodic_terminal = false;
+run_cfg_3a.x_star                = [];
+run_cfg_3a.n_sim_override        = n_sim_3;
+run_cfg_3a.use_band              = true;
+
+r3a = run_flyaround(run_cfg_3a, matrices_3a, params_3a);
+
+%% RUN 3b — band + pure fuel
+fprintf('\n════════════════════════════════════════════════════════════\n');
+fprintf(' S2 Run 3b — band (r_min=75 m) + pure fuel\n');
+fprintf(' Expected: u*=0, free CWH drift (no orbit selection)\n');
+fprintf('════════════════════════════════════════════════════════════\n');
+
+params_3b         = params_base;
+params_3b.x0      = x0;
+params_3b.rho_min = 75;
+params_3b.rho_max = 1e6;
+
+run_cfg_3b.use_nmc_manifold      = false;
+run_cfg_3b.use_periodic_terminal = false;
+run_cfg_3b.x_star                = [];
+run_cfg_3b.n_sim_override        = 2*P;
+run_cfg_3b.use_band              = true;
+
+r3b = run_flyaround(run_cfg_3b, matrices, params_3b);
+
+%% RUN 3c — small Q, no band
+fprintf('\n════════════════════════════════════════════════════════════\n');
+fprintf(' S2 Run 3c — small Q, no band\n');
+fprintf(' Expected: regulation to origin (not an orbit)\n');
+fprintf('════════════════════════════════════════════════════════════\n');
+
+matrices_3c       = matrices;
+matrices_3c.H     = H_Q;
+matrices_3c.F_mat = F_mat_Q;
+
+params_3c         = params_base;
+params_3c.x0      = x0;
+params_3c.rho_min = 0;
+params_3c.rho_max = 1e6;
+
+run_cfg_3c.use_nmc_manifold      = false;
+run_cfg_3c.use_periodic_terminal = false;
+run_cfg_3c.x_star                = [];
+run_cfg_3c.n_sim_override        = n_sim_3;
+run_cfg_3c.use_band              = false;
+
+r3c = run_flyaround(run_cfg_3c, matrices_3c, params_3c);
+
 %% ── FIGURES ──────────────────────────────────────────────────────────────────
 fig_dir = fullfile(script_dir, '..', 'results', 'figures', 's2_flyaround');
 if ~exist(fig_dir, 'dir'); mkdir(fig_dir); end
@@ -279,6 +398,103 @@ exportgraphics(fig4, fullfile(fig_dir, 'cumulative_dv.png'), 'Resolution', 300);
 
 fprintf('Figures saved to %s\n', fig_dir);
 
+%% Fig 5 — Run 4: manifold IC → free orbit maintenance
+c_r4        = [0.50 0.00 0.50];   % purple
+time_s_r4   = (0 : n_sim_r4) * dt;
+
+fig5 = figure('Name', 'S2 — Run 4: manifold IC');
+tl5b = tiledlayout(fig5, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+% Hill frame: trajectory should lie on top of Π*
+ax5b1 = nexttile(tl5b);
+hold(ax5b1, 'on'); grid(ax5b1, 'on'); axis(ax5b1, 'equal');
+plot(ax5b1, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 3.0, ...
+    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
+plot(ax5b1, r4.x_log(1,:), r4.x_log(2,:), 'Color', c_r4, 'LineWidth', 1.2, ...
+    'DisplayName', 'Run 4: trajectory (u^*=0)');
+plot(ax5b1, x0_r4(1), x0_r4(2), 'o', 'Color', c_r4, 'MarkerSize', 8, ...
+    'MarkerFaceColor', c_r4, 'DisplayName', 'IC (on \Pi^*)');
+plot(ax5b1, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax5b1, 'r_x (radial) [m]');
+ylabel(ax5b1, 'r_y (along-track) [m]');
+title(ax5b1, 'Run 4: IC on \Pi^* — trajectory coincides with \Pi^*');
+legend(ax5b1, 'Location', 'northeast');
+
+% Phase error: should be numerical noise
+ax5b2 = nexttile(tl5b);
+hold(ax5b2, 'on'); grid(ax5b2, 'on');
+semilogy(ax5b2, time_s_r4, phase_err_r4 + 1e-16, 'Color', c_r4, 'LineWidth', 1.2);
+xlabel(ax5b2, 'Time [s]');
+ylabel(ax5b2, '||x(k) - x^*_{k \rm mod P}|| [m]');
+title(ax5b2, 'Phase error (expect \approx 0)');
+ylim(ax5b2, [1e-16, 1e-3]);
+
+sgtitle(fig5, 'S2 Run 4 — NMC manifold IC: orbit maintained with u^* = 0');
+exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.pdf'), 'ContentType', 'vector');
+exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.png'), 'Resolution', 300);
+
+%% Fig 6 — Failure-mode suite: runs 3a / 3b / 3c
+c_3a = [0.13 0.63 0.37];   % green
+c_3b = [0.49 0.18 0.56];   % purple
+c_3c = [0.93 0.53 0.18];   % orange
+
+n_sim_3a = r3a.n_sim;
+n_sim_3b = r3b.n_sim;
+n_sim_3c = r3c.n_sim;
+
+fig6 = figure('Name', 'S2 — Failure modes (Runs 3a/3b/3c)');
+tl6  = tiledlayout(fig6, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+% 3a — band + Q → V-bar equilibrium at boundary
+ax6a = nexttile(tl6);
+hold(ax6a, 'on'); grid(ax6a, 'on'); axis(ax6a, 'equal');
+plot(ax6a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
+    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
+plot(ax6a, r3a.x_log(1,:), r3a.x_log(2,:), 'Color', c_3a, 'LineWidth', 1.0, ...
+    'DisplayName', '3a trajectory');
+plot(ax6a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
+    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
+plot(ax6a, r3a.x_log(1,end), r3a.x_log(2,end), '^', 'Color', c_3a, ...
+    'MarkerSize', 8, 'MarkerFaceColor', c_3a, 'DisplayName', 'Final state');
+plot(ax6a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax6a, 'r_x [m]'); ylabel(ax6a, 'r_y [m]');
+title(ax6a, '3a: band + Q  \rightarrow V-bar eq. at boundary');
+legend(ax6a, 'Location', 'northeast', 'FontSize', 7);
+
+% 3b — band + fuel → free drift
+ax6b = nexttile(tl6);
+hold(ax6b, 'on'); grid(ax6b, 'on'); axis(ax6b, 'equal');
+plot(ax6b, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
+    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
+plot(ax6b, r3b.x_log(1,:), r3b.x_log(2,:), 'Color', c_3b, 'LineWidth', 1.0, ...
+    'DisplayName', '3b trajectory (drift)');
+plot(ax6b, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
+    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
+plot(ax6b, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax6b, 'r_x [m]'); ylabel(ax6b, 'r_y [m]');
+title(ax6b, '3b: band + fuel  \rightarrow free drift (u^*=0)');
+legend(ax6b, 'Location', 'northeast', 'FontSize', 7);
+
+% 3c — no band, small Q → regulation to origin
+ax6c = nexttile(tl6);
+hold(ax6c, 'on'); grid(ax6c, 'on'); axis(ax6c, 'equal');
+plot(ax6c, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
+    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
+plot(ax6c, r3c.x_log(1,:), r3c.x_log(2,:), 'Color', c_3c, 'LineWidth', 1.0, ...
+    'DisplayName', '3c trajectory');
+plot(ax6c, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
+    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
+plot(ax6c, r3c.x_log(1,end), r3c.x_log(2,end), '^', 'Color', c_3c, ...
+    'MarkerSize', 8, 'MarkerFaceColor', c_3c, 'DisplayName', 'Final state');
+plot(ax6c, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax6c, 'r_x [m]'); ylabel(ax6c, 'r_y [m]');
+title(ax6c, '3c: Q only  \rightarrow regulation to origin');
+legend(ax6c, 'Location', 'northeast', 'FontSize', 7);
+
+sgtitle(fig6, 'S2 — Why the periodic terminal constraint is necessary');
+exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.pdf'), 'ContentType', 'vector');
+exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.png'), 'Resolution', 300);
+
 %% ── JSON EXPORT ───────────────────────────────────────────────────────────────
 u_lo_r1 = max(1, n_sim_r1 - P);
 u_lo_r2 = max(1, n_sim_r2 - P);
@@ -320,7 +536,51 @@ res2 = struct( ...
     'phase_err_mean_last_m',  phase_err_mean_last, ...
     'control_converged',      mean(r2.u_norm(u_lo_r2:end)) < 1e-4);
 
-data = struct('metadata', meta, 'run1', res1, 'run2', res2);
+res3a = struct( ...
+    'terminal',               'none', ...
+    'band',                   'r_min=75m, no outer', ...
+    'cost',                   sprintf('fuel + Q (q=%.0e, position only)', q_state), ...
+    'n_sim_steps',            n_sim_3a, ...
+    'delta_v_total_m_s',      r3a.dv_total, ...
+    'final_range_m',          r3a.range_log(end), ...
+    'infeasible_qp_steps',    sum(r3a.exitflag_log <= 0), ...
+    'note',                   'Converges to V-bar equilibrium at band boundary — NOT an NMC orbit');
+
+res3b = struct( ...
+    'terminal',               'none', ...
+    'band',                   'r_min=75m, no outer', ...
+    'cost',                   'pure fuel', ...
+    'n_sim_steps',            n_sim_3b, ...
+    'delta_v_total_m_s',      r3b.dv_total, ...
+    'final_range_m',          r3b.range_log(end), ...
+    'infeasible_qp_steps',    sum(r3b.exitflag_log <= 0), ...
+    'note',                   'u*=0 globally optimal; chaser drifts freely under CWH dynamics');
+
+res3c = struct( ...
+    'terminal',               'none', ...
+    'band',                   'none', ...
+    'cost',                   sprintf('fuel + Q (q=%.0e, position only)', q_state), ...
+    'n_sim_steps',            n_sim_3c, ...
+    'delta_v_total_m_s',      r3c.dv_total, ...
+    'final_range_m',          r3c.range_log(end), ...
+    'infeasible_qp_steps',    sum(r3c.exitflag_log <= 0), ...
+    'note',                   'Regulation to origin — no constraint forces orbital motion');
+
+res4 = struct( ...
+    'terminal',               'none', ...
+    'band',                   'none', ...
+    'cost',                   'pure fuel', ...
+    'IC',                     x0_r4', ...
+    'IC_note',                'on Pi* manifold: x=b_nmc, vy=-2*n*b_nmc', ...
+    'n_sim_steps',            n_sim_r4, ...
+    'delta_v_total_m_s',      r4.dv_total, ...
+    'phase_err_max_m',        max(phase_err_r4), ...
+    'phase_err_mean_m',       mean(phase_err_r4), ...
+    'infeasible_qp_steps',    sum(r4.exitflag_log <= 0), ...
+    'note',                   'IC on NMC manifold: U*=0 everywhere, Pi* maintained at zero fuel cost');
+
+data = struct('metadata', meta, 'run1', res1, 'run2', res2, 'run4', res4, ...
+              'run3a', res3a, 'run3b', res3b, 'run3c', res3c);
 
 json_str    = jsonencode(data, 'PrettyPrint', true);
 export_path = fullfile(script_dir, '..', 'exports', 'scenarios', ...

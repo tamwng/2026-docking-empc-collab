@@ -21,9 +21,15 @@ Su         = matrices.Su;
 Sx_pos_all = matrices.Sx_pos_all;
 Su_pos_all = matrices.Su_pos_all;
 H          = matrices.H;
-f_vec      = matrices.f_vec;
 A_u        = matrices.A_u;
 b_u        = matrices.b_u;
+
+% F_mat: f_vec at step k = F_mat * x(k).  Zeros for fuel-only cost.
+if isfield(matrices, 'F_mat')
+    F_mat = matrices.F_mat;
+else
+    F_mat = zeros(size(H, 1), 6);
+end
 
 %% Unpack params
 x0      = params.x0;
@@ -126,7 +132,8 @@ for k = 1:n_sim
     end
 
     % 4. Solve QP
-    [U_opt, ~, exitflag] = quadprog(H, f_vec, A_ineq, b_ineq, Aeq, beq, [], [], U_warm, opts);
+    f_vec_k = F_mat * x_log(:, k);
+    [U_opt, ~, exitflag] = quadprog(H, f_vec_k, A_ineq, b_ineq, Aeq, beq, [], [], U_warm, opts);
     exitflag_log(k) = exitflag;
 
     % 5. Apply first control; warm-start shift

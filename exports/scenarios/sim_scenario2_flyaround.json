@@ -1,7 +1,7 @@
 {
   "metadata": {
     "scenario": "S2_flyaround",
-    "date": "2026-06-17 14:06:40",
+    "date": "2026-06-17 16:01:12",
     "dt_s": 60.270164086747734,
     "P_orbit_steps": 92,
     "T_orbit_s": 5544.8550959807917,
@@ -42,5 +42,55 @@
     "phase_err_max_last_m": 0.05983549870070709,
     "phase_err_mean_last_m": 0.023758381352939336,
     "control_converged": true
+  },
+  "run4": {
+    "terminal": "none",
+    "band": "none",
+    "cost": "pure fuel",
+    "IC": [
+      75,
+      0,
+      0,
+      0,
+      -0.16997338609625637,
+      0
+    ],
+    "IC_note": "on Pi* manifold: x=b_nmc, vy=-2*n*b_nmc",
+    "n_sim_steps": 276,
+    "delta_v_total_m_s": 1.7827616079694735E-9,
+    "phase_err_max_m": 2.7558999902017483E-5,
+    "phase_err_mean_m": 9.3613985785181169E-6,
+    "infeasible_qp_steps": 0,
+    "note": "IC on NMC manifold: U*=0 everywhere, Pi* maintained at zero fuel cost"
+  },
+  "run3a": {
+    "terminal": "none",
+    "band": "r_min=75m, no outer",
+    "cost": "fuel + Q (q=1e-06, position only)",
+    "n_sim_steps": 276,
+    "delta_v_total_m_s": 10.097354079222121,
+    "final_range_m": 75.000017550583081,
+    "infeasible_qp_steps": 0,
+    "note": "Converges to V-bar equilibrium at band boundary — NOT an NMC orbit"
+  },
+  "run3b": {
+    "terminal": "none",
+    "band": "r_min=75m, no outer",
+    "cost": "pure fuel",
+    "n_sim_steps": 184,
+    "delta_v_total_m_s": 0.089043524638837038,
+    "final_range_m": 78.190084014591591,
+    "infeasible_qp_steps": 0,
+    "note": "u*=0 globally optimal; chaser drifts freely under CWH dynamics"
+  },
+  "run3c": {
+    "terminal": "none",
+    "band": "none",
+    "cost": "fuel + Q (q=1e-06, position only)",
+    "n_sim_steps": 276,
+    "delta_v_total_m_s": 5.0037364326305536,
+    "final_range_m": 2.5320388343695653E-7,
+    "infeasible_qp_steps": 0,
+    "note": "Regulation to origin — no constraint forces orbital motion"
   }
 }
