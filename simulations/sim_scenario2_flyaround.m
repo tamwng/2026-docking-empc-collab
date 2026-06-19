@@ -15,7 +15,7 @@
 %        b = 75 m (along-track amplitude = 150 m), computed by forward
 %        propagation of the NMC IC under A_d.
 %   Controller drives chaser from the V-bar hold to Π* and stabilises it.
-%   Asymptotic stability follows from Zanon–Grüne–Diehl (2015) Thm 4.6.
+%   Asymptotic stability follows from Keerthi–Gilbert / Theorem 2.24.
 
 clear; clc;
 script_dir = fileparts(mfilename('fullpath'));
@@ -37,6 +37,11 @@ Ac = [0      0     0    1     0    0  ;
 Bc = [zeros(3,3); eye(3)];
 [A_d, B_d] = discretize(Ac, Bc, dt);
 
+% Orbit closure check: verifies that the NMC IC lies in the eigenvalue-1
+% eigenspace of A_d, i.e. A_d^P maps this specific IC back to itself.
+% This is NOT equivalent to A_d^P = I — the full-state period map has secular
+% along-track drift for generic states (‖A_d^P − I‖_F ≈ 1.7e4).  The test
+% only confirms that the prescribed Π* closes under A_d at dt = T/P.
 x_test   = [100; 0; 0; 0; -2*n*100; 0];
 residual = norm(A_d^P * x_test - x_test);
 fprintf('NMT closure residual: %.2e  (must be < 1e-4)\n', residual);
@@ -134,7 +139,7 @@ r1 = run_flyaround(run_cfg_r1, matrices, params_r1);
 %% ── RUN 2 — Periodic terminal to Π* (orbit stabilisation) ───────────────────
 fprintf('\n════════════════════════════════════════════════════════════\n');
 fprintf(' S2 Run 2 — Periodic terminal constraint → stabilise Pi*\n');
-fprintf(' (Zanon–Gruene–Diehl 2015 Thm 4.6)\n');
+fprintf(' (Keerthi–Gilbert / Theorem 2.24)\n');
 fprintf('════════════════════════════════════════════════════════════\n');
 fprintf('IC: [0; 300; 0; 0; 0; 0]   Pi*: b = %d m radial / %d m along-track\n', ...
     b_nmc, 2*b_nmc);
@@ -197,6 +202,64 @@ for k = 1 : n_sim_r4 + 1
 end
 fprintf('Run 4 phase error:  max = %.2e m   mean = %.2e m  (expect machine-eps)\n', ...
     max(phase_err_r4), mean(phase_err_r4));
+
+%% ── RUN 5 — Regularised dissipativity route (periodic stage cost) ────────────
+% Stage cost: ℓ_aug(x,u,k) = ‖u‖² + ε‖x − x*_k‖²
+%
+% Strict P-periodic dissipativity certificate (Köhler–Müller–Allgöwer 2018, Ass. 1):
+%   Storage:  λ_k ≡ 0  (set p_0 = 0; recursion p_k = A_d'*p_{k+1} gives p_k = 0 ∀k).
+%   Optimal periodic cost: ℓ*_k = ‖0‖² + ε‖x*_k − x*_k‖² = 0.
+%   Rotated cost:  L_k(x,u) = ‖u‖² + ε‖x − x*_k‖² ≥ ε‖x − x*_k‖² = ρ(|x − x*_k|).
+%   → strictly positive definite around Π* with trivial storage; no appeal to A_d^P = I.
+%
+% Phase-synchronisation prevents the "waiting" trap (Müller–Grüne 2016, Example 4):
+%   the per-step penalty ε‖x − x*_{k mod P}‖² is tied to absolute time, so
+%   deferring thrust is penalised at every stage, not just at the horizon end.
+%
+% No terminal constraint — practical asymptotic stability via Corollary 4.
+% Trade-off vs Run 2: ε-neighbourhood guarantee (not exact), no hard equality rows.
+fprintf('\n════════════════════════════════════════════════════════════\n');
+fprintf(' S2 Run 5 — Periodic stage cost ell_aug=||u||^2+eps||x-x*_k||^2\n');
+fprintf(' (Koehler-Mueller-Allgower 2018, Ass. 1/Cor. 4 — no terminal cstr.)\n');
+fprintf('════════════════════════════════════════════════════════════\n');
+
+eps_r5       = 1e-4;
+Q_r5         = eps_r5 * eye(6);
+Qbar_r5      = kron(eye(N), Q_r5);
+H_r5         = 2 * (Su' * Qbar_r5 * Su + eye(3*N));
+H_r5         = (H_r5 + H_r5') / 2;
+F_mat_r5     = 2 * Su' * Qbar_r5 * Sx;      % state-dependent part of f_vec
+f_ref_mat_r5 = -2 * Su' * Qbar_r5;          % 3N × 6N: ref-dependent part
+
+matrices_r5              = matrices;
+matrices_r5.H            = H_r5;
+matrices_r5.F_mat        = F_mat_r5;
+matrices_r5.f_ref_mat    = f_ref_mat_r5;
+
+params_r5     = params_base;
+params_r5.x0  = x0;
+
+run_cfg_r5.use_nmc_manifold      = false;
+run_cfg_r5.use_periodic_terminal = false;
+run_cfg_r5.x_star                = x_star;
+run_cfg_r5.n_sim_override        = [];
+run_cfg_r5.use_band              = false;
+
+r5 = run_flyaround(run_cfg_r5, matrices_r5, params_r5);
+
+%% Phase error Run 5
+n_sim_r5      = r5.n_sim;
+phase_err_r5  = zeros(1, n_sim_r5 + 1);
+for k = 1 : n_sim_r5 + 1
+    col              = mod(k-1, P) + 1;
+    phase_err_r5(k)  = norm(r5.x_log(:, k) - x_star(:, col));
+end
+last_P_start_r5      = max(1, n_sim_r5 - P + 1);
+phase_err_r5_last    = phase_err_r5(last_P_start_r5 : end);
+phase_err_r5_max     = max(phase_err_r5_last);
+phase_err_r5_mean    = mean(phase_err_r5_last);
+fprintf('\nRun 5 phase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
+    phase_err_r5_max, phase_err_r5_mean);
 
 %% ── RUNS 3a / 3b / 3c — "failure mode" suite ────────────────────────────────
 % Three configurations that do NOT acquire an NMC orbit, demonstrating that
@@ -364,7 +427,7 @@ hold(ax2, 'on'); grid(ax2, 'on');
 semilogy(ax2, time_s_r2, phase_err, 'Color', c_r2, 'LineWidth', 1.2);
 xlabel(ax2, 'Time [s]');
 ylabel(ax2, '||x(k) - x^*_{k \rm mod P}|| [m]');
-title(ax2, 'Convergence to \Pi^* — Zanon–Gruene–Diehl Thm 4.6');
+title(ax2, 'Convergence to \Pi^* — Keerthi-Gilbert / Theorem 2.24');
 ylim(ax2, [1e-2, 1e3]);
 exportgraphics(fig2, fullfile(fig_dir, 'phase_error.pdf'), 'ContentType', 'vector');
 exportgraphics(fig2, fullfile(fig_dir, 'phase_error.png'), 'Resolution', 300);
@@ -432,6 +495,59 @@ ylim(ax5b2, [1e-16, 1e-3]);
 sgtitle(fig5, 'S2 Run 4 — NMC manifold IC: orbit maintained with u^* = 0');
 exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.pdf'), 'ContentType', 'vector');
 exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.png'), 'Resolution', 300);
+
+%% Fig 7 — Run 5 vs Run 2: periodic stage cost vs terminal equality
+c_r5        = [0.80 0.20 0.00];   % dark orange-red
+time_s_r5   = (0 : n_sim_r5) * dt;
+
+fig7 = figure('Name', 'S2 — Run 5 vs Run 2');
+tl7  = tiledlayout(fig7, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+% Hill frame: Run 5 should converge to Π* without terminal constraint
+ax7a = nexttile(tl7);
+hold(ax7a, 'on'); grid(ax7a, 'on'); axis(ax7a, 'equal');
+plot(ax7a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
+    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
+plot(ax7a, r2.x_log(1,:), r2.x_log(2,:), 'Color', c_r2, 'LineWidth', 0.8, ...
+    'DisplayName', 'Run 2 (terminal eq.)');
+plot(ax7a, r5.x_log(1,:), r5.x_log(2,:), 'Color', c_r5, 'LineWidth', 1.0, ...
+    'DisplayName', 'Run 5 (periodic \ell_{aug})');
+plot(ax7a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
+    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
+plot(ax7a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax7a, 'r_x [m]'); ylabel(ax7a, 'r_y [m]');
+title(ax7a, 'Hill frame: Run 2 vs Run 5');
+legend(ax7a, 'Location', 'northeast', 'FontSize', 7);
+
+% Phase error comparison
+ax7b = nexttile(tl7);
+hold(ax7b, 'on'); grid(ax7b, 'on');
+semilogy(ax7b, time_s_r2, phase_err,    'Color', c_r2, 'LineWidth', 1.2, ...
+    'DisplayName', 'Run 2 (terminal eq.)');
+semilogy(ax7b, time_s_r5, phase_err_r5, 'Color', c_r5, 'LineWidth', 1.2, ...
+    'DisplayName', 'Run 5 (periodic \ell_{aug})');
+xlabel(ax7b, 'Time [s]');
+ylabel(ax7b, '||x(k) - x^*_{k \rm mod P}|| [m]');
+title(ax7b, 'Phase error convergence');
+legend(ax7b, 'Location', 'northeast', 'FontSize', 7);
+ylim(ax7b, [1e-3, 1e3]);
+
+% Control effort comparison
+ax7c = nexttile(tl7);
+hold(ax7c, 'on'); grid(ax7c, 'on');
+semilogy(ax7c, time_s_r2(1:n_sim_r2), r2.u_norm, 'Color', c_r2, 'LineWidth', 1.2, ...
+    'DisplayName', 'Run 2');
+semilogy(ax7c, time_s_r5(1:n_sim_r5), r5.u_norm, 'Color', c_r5, 'LineWidth', 1.2, ...
+    'DisplayName', 'Run 5');
+xlabel(ax7c, 'Time [s]');
+ylabel(ax7c, '||u|| [m/s^2]');
+title(ax7c, 'Control effort');
+legend(ax7c, 'Location', 'northeast', 'FontSize', 7);
+ylim(ax7c, [1e-11, 1e-2]);
+
+sgtitle(fig7, sprintf('S2: Run 2 (Keerthi-Gilbert) vs Run 5 (periodic \\ell_{aug}, \\epsilon=%.0e)', eps_r5));
+exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.pdf'), 'ContentType', 'vector');
+exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.png'), 'Resolution', 300);
 
 %% Fig 6 — Failure-mode suite: runs 3a / 3b / 3c
 c_3a = [0.13 0.63 0.37];   % green
@@ -579,8 +695,22 @@ res4 = struct( ...
     'infeasible_qp_steps',    sum(r4.exitflag_log <= 0), ...
     'note',                   'IC on NMC manifold: U*=0 everywhere, Pi* maintained at zero fuel cost');
 
+res5 = struct( ...
+    'terminal',               'none', ...
+    'band',                   'none', ...
+    'cost',                   sprintf('fuel + eps*||x-x*_k||^2  (eps=%.0e)', eps_r5), ...
+    'theory',                 'Koehler-Mueller-Allgower 2018 Ass.1/Cor.4 periodic dissipativity', ...
+    'n_sim_steps',            n_sim_r5, ...
+    'delta_v_total_m_s',      r5.dv_total, ...
+    'phase_err_max_last_m',   phase_err_r5_max, ...
+    'phase_err_mean_last_m',  phase_err_r5_mean, ...
+    'b_est_m',                r5.b_est, ...
+    'range_ratio_2to1',       r5.ratio_2to1, ...
+    'infeasible_qp_steps',    sum(r5.exitflag_log <= 0), ...
+    'note',                   'No terminal constraint; convergence via periodic strict dissipativity');
+
 data = struct('metadata', meta, 'run1', res1, 'run2', res2, 'run4', res4, ...
-              'run3a', res3a, 'run3b', res3b, 'run3c', res3c);
+              'run5', res5, 'run3a', res3a, 'run3b', res3b, 'run3c', res3c);
 
 json_str    = jsonencode(data, 'PrettyPrint', true);
 export_path = fullfile(script_dir, '..', 'exports', 'scenarios', ...

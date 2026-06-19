@@ -1,7 +1,7 @@
 {
   "metadata": {
     "scenario": "S2_flyaround",
-    "date": "2026-06-17 16:01:12",
+    "date": "2026-06-19 09:34:30",
     "dt_s": 60.270164086747734,
     "P_orbit_steps": 92,
     "T_orbit_s": 5544.8550959807917,
@@ -62,6 +62,20 @@
     "phase_err_mean_m": 9.3613985785181169E-6,
     "infeasible_qp_steps": 0,
     "note": "IC on NMC manifold: U*=0 everywhere, Pi* maintained at zero fuel cost"
+  },
+  "run5": {
+    "terminal": "none",
+    "band": "none",
+    "cost": "fuel + eps*||x-x*_k||^2  (eps=1e-04)",
+    "theory": "Koehler-Mueller-Allgower 2018 Ass.1/Cor.4 periodic dissipativity",
+    "n_sim_steps": 552,
+    "delta_v_total_m_s": 5.9101156499990983,
+    "phase_err_max_last_m": 8.3179138652236584E-6,
+    "phase_err_mean_last_m": 3.7837939523951813E-6,
+    "b_est_m": 74.999998796749153,
+    "range_ratio_2to1": 2.000000088447937,
+    "infeasible_qp_steps": 0,
+    "note": "No terminal constraint; convergence via periodic strict dissipativity"
   },
   "run3a": {
     "terminal": "none",

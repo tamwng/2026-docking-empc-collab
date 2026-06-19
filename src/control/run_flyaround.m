@@ -49,8 +49,19 @@ use_nmc      = run_cfg.use_nmc_manifold;
 use_periodic = run_cfg.use_periodic_terminal;
 use_band     = ~isfield(run_cfg, 'use_band') || run_cfg.use_band;
 x_star       = [];
-if use_periodic && isfield(run_cfg, 'x_star')
-    x_star = run_cfg.x_star;   % 6 × P
+if isfield(run_cfg, 'x_star') && ~isempty(run_cfg.x_star)
+    x_star = run_cfg.x_star;   % 6 × P  (used by terminal equality and stage cost routes)
+end
+
+% f_ref_mat: reference-dependent linear term in f_vec.
+% f_ref_k = f_ref_mat * X_ref_k  where X_ref_k is the stacked 6N horizon reference.
+% Non-empty only for the periodic stage cost route (Run 5).
+if isfield(matrices, 'f_ref_mat') && ~isempty(x_star)
+    f_ref_mat    = matrices.f_ref_mat;   % 3N × 6N
+    has_ref_cost = true;
+else
+    f_ref_mat    = [];
+    has_ref_cost = false;
 end
 
 n_x = 6;
@@ -113,10 +124,10 @@ for k = 1:n_sim
 
     % 3. Equality constraints depending on run configuration
     if use_nmc && use_periodic && ~isempty(x_star)
-        % Run 3: pin terminal state to Π*(k mod P) — Zanon–Grüne–Diehl (2015) §4
-        % Terminal at step k is N steps ahead, so orbit phase = mod(k+N-1, P).
-        % When N=P this equals mod(k-1, P) — same orbit column, since N is an exact
-        % period. The 6-row equality subsumes the 2-row NMC manifold constraint.
+        % Run 2: pin terminal state to Π*(k+N-1 mod P) — Keerthi–Gilbert /
+        % Theorem 2.24 (periodic terminal equality → closed-loop stability).
+        % When N=P the phase mod(k+N-1,P) = mod(k-1,P), closing exactly one period.
+        % The 6-row equality subsumes the 2-row NMC manifold constraint.
         x_ref_col = x_star(:, mod(k + N - 1, P) + 1);
         Aeq = Su_term;
         beq = x_ref_col - Sx_term * x_log(:, k);
@@ -133,6 +144,11 @@ for k = 1:n_sim
 
     % 4. Solve QP
     f_vec_k = F_mat * x_log(:, k);
+    if has_ref_cost
+        cols    = mod(k - 1 + (1:N), P) + 1;
+        X_ref_k = reshape(x_star(:, cols), [], 1);   % 6N × 1
+        f_vec_k = f_vec_k + f_ref_mat * X_ref_k;
+    end
     [U_opt, ~, exitflag] = quadprog(H, f_vec_k, A_ineq, b_ineq, Aeq, beq, [], [], U_warm, opts);
     exitflag_log(k) = exitflag;
 
