@@ -1,0 +1,119 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.85000,0.33000,0.10000}%
+\definecolor{mycolor2}{rgb}{0.00000,0.68000,0.68000}%
+\definecolor{mycolor3}{rgb}{0.20000,0.63000,0.17000}%
+\definecolor{mycolor4}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=3.137in,
+height=3.226in,
+at={(1.219in,0.435in)},
+scale only axis,
+xmin=0,
+xmax=300,
+xlabel style={font=\color{mycolor4}},
+xlabel={KOS radius $r_\mathrm{KOS}$ [m]},
+ymin=-5,
+ymax=105,
+ylabel style={font=\color{mycolor4}},
+ylabel={Passive-safe fraction [\\%]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor4}},
+title={ps\_frac vs $r_\mathrm{KOS}$  ($N=20$)},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids,
+legend style={at={(0.03,0.03)}, anchor=south west, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.4pt, mark size=2.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+10	100\\
+25	95.0819672131148\\
+50	88.5245901639344\\
+75	72.1311475409836\\
+100	62.2950819672131\\
+150	45.9016393442623\\
+200	37.7049180327869\\
+300	18.0327868852459\\
+};
+\addlegendentry{A1}
+
+\addplot [color=mycolor2, line width=1.4pt, mark size=2.5pt, mark=o, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+10	100\\
+25	100\\
+50	100\\
+75	89.1891891891892\\
+100	64.8648648648649\\
+150	40.5405405405405\\
+200	29.7297297297297\\
+300	13.5135135135135\\
+};
+\addlegendentry{C}
+
+\addplot [color=mycolor3, line width=1.4pt, mark size=2.5pt, mark=o, mark options={solid, mycolor3}]
+  table[row sep=crcr]{%
+10	100\\
+25	100\\
+50	100\\
+75	100\\
+100	100\\
+150	100\\
+200	100\\
+300	83.3333333333333\\
+};
+\addlegendentry{B-noball}
+
+\addplot [color=black, dashed, line width=0.8pt, forget plot]
+  table[row sep=crcr]{%
+50	-5\\
+50	105\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=3.137in,
+height=3.226in,
+at={(5.347in,0.435in)},
+scale only axis,
+xmin=0,
+xmax=50,
+xlabel style={font=\color{mycolor4}},
+xlabel={Prediction horizon $N$},
+ymin=-5,
+ymax=105,
+ylabel style={font=\color{mycolor4}},
+ylabel={Passive-safe fraction [\\%]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor4}},
+title={Run C: ps\_frac vs $N$  ($r_\mathrm{KOS}=50$ m)},
+axis x line*=bottom,
+axis y line*=left,
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor2, line width=1.4pt, mark=square, mark options={solid, mycolor2}, forget plot]
+  table[row sep=crcr]{%
+5	100\\
+10	100\\
+15	100\\
+20	100\\
+30	85.4838709677419\\
+40	75.2577319587629\\
+};
+\addplot [color=black, dashed, line width=0.8pt, forget plot]
+  table[row sep=crcr]{%
+20	-5\\
+20	105\\
+};
+\addplot [color=black, dashed, line width=0.8pt, forget plot]
+  table[row sep=crcr]{%
+50	-5\\
+50	105\\
+};
+\end{axis}
+\end{tikzpicture}%
