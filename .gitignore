@@ -9,9 +9,11 @@ slprj/
 *.slxc
 *.slx.autosave
 
-# Results (optional)
-results/figures/*.png
-results/figures/*.pdf
+# Generated figure outputs — reproducible from scripts, not tracked
+# TikZ files (.tikz) ARE tracked because the thesis LaTeX inputs them directly.
+results/figures/**/*.pdf
+results/figures/**/*.png
+results/figures/**/*.fig
 
 # MAtlab2tikz-master
 src/matlab2tikz-master
