@@ -1,28 +1,21 @@
 % sim_scenario2_flyaround.m
-% Scenario 2 — NMC Fly-Around (two-run EMPC study)
+% Scenario 2 — NMC Fly-Around (IC: V-bar hold [0;300;0;0;0;0])
 %
-% Demonstrates the role of the periodic terminal constraint in eMPC for
-% natural motion circumnavigation orbit stabilisation.
-%
-% Run 1 — Degeneracy (no terminal constraint):
-%   IC: V-bar hold at [0;300;0;0;0;0] (CWH equilibrium).
-%   Fuel-only stage cost ℓ(u)=‖u‖², U*=0 globally optimal.
-%   Chaser stays put; entire passive-orbit family achieves ℓ_p=0.
-%
-% Run 2 — Orbit stabilisation (periodic terminal equality):
-%   Same IC. Terminal state pinned to Π*(k+N-1 mod P) at each step.
-%   Π* = analytically prescribed NMC 2:1 ellipse with radial semi-axis
-%        b = 75 m (along-track amplitude = 150 m), computed by forward
-%        propagation of the NMC IC under A_d.
-%   Controller drives chaser from the V-bar hold to Π* and stabilises it.
-%   Asymptotic stability follows from Keerthi–Gilbert / Theorem 2.24.
+% Run 1  — No terminal constraint: u*=0, chaser stays at V-bar hold (CWH equilibrium).
+% Run 2  — Periodic terminal equality x(N)=Π*(k+N-1 mod P): converges to NMC orbit.
+% Run 3a — Band ‖r‖≥75 m + small Q: converges to V-bar equilibrium, not an orbit.
+% Run 3b — Band + pure fuel: u*=0, free CWH drift (no orbit selection).
+% Run 3c — Small Q, no band: regulation toward origin (like std MPC, not orbit).
+% Run 4  — IC on Π* manifold, pure fuel, no terminal constraint: u*=0, free orbit maintenance.
+% Run 5  — Augmented stage cost ℓ=‖u‖²+ε‖x−x*_k‖²: strict P-periodic dissipativity,
+%          no terminal constraint (Köhler–Müller–Allgöwer 2018).
 
 clear; clc;
 script_dir = fileparts(mfilename('fullpath'));
 addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
-constants;   % provides n, T, a, mu, ...
+constants;  
 
-%% ── Discretisation ───────────────────────────────────────────────────────────
+%%  Discretisation
 % P chosen so that dt = T/P gives an exact integer number of steps per period,
 % ensuring the NMC orbit closes exactly under A_d.
 P  = 92;
@@ -37,17 +30,13 @@ Ac = [0      0     0    1     0    0  ;
 Bc = [zeros(3,3); eye(3)];
 [A_d, B_d] = discretize(Ac, Bc, dt);
 
-% Orbit closure check: verifies that the NMC IC lies in the eigenvalue-1
-% eigenspace of A_d, i.e. A_d^P maps this specific IC back to itself.
-% This is NOT equivalent to A_d^P = I — the full-state period map has secular
-% along-track drift for generic states (‖A_d^P − I‖_F ≈ 1.7e4).  The test
-% only confirms that the prescribed Π* closes under A_d at dt = T/P.
+%check
 x_test   = [100; 0; 0; 0; -2*n*100; 0];
 residual = norm(A_d^P * x_test - x_test);
 fprintf('NMT closure residual: %.2e  (must be < 1e-4)\n', residual);
 assert(residual < 1e-4, 'Discrete NMT does not close — check dt and P');
 
-%% ── Prescribed NMC orbit Π* ──────────────────────────────────────────────────
+%% Prescribed NMC orbit Π* 
 % 2:1 ellipse in Hill frame: x in [-b, b] radial, y in [-2b, 2b] along-track.
 % IC on NMC manifold: vx=0, vy+2n*x=0 → start at [b;0;0;0;-2nb;0].
 % Propagated by A_d to get the full P-step periodic orbit exactly.
@@ -63,14 +52,14 @@ assert(closure_res_star < 1e-6, 'Pi* does not close under A_d');
 
 
 
-%% ── QP dimensions and parameters ────────────────────────────────────────────
+%% QP dimensions and parameters
 u_max = 1e-2;    % [m/s²]  symmetric per-axis thrust bound
 N     = P;       % horizon = one full orbital period
-n_sim = 6*P;     % total simulation length (6 orbital periods)
+n_sim = 6*P;     % total simulation length
 n_x   = 6;
 n_u   = 3;
 
-%% ── Condensed prediction matrices Sx (6N×6) and Su (6N×3N) ──────────────────
+%% Condensed prediction matrices Sx (6N×6) and Su (6N×3N)
 Sx = zeros(n_x*N, n_x);
 Su = zeros(n_x*N, n_u*N);
 Ad_pow = eye(n_x);
@@ -82,7 +71,7 @@ for i = 1:N
     end
 end
 
-% Position-row extracts (kept for struct compatibility with run_flyaround)
+% Position-row extracts
 pos_idx = zeros(1, 3*N);
 for ki = 1:N
     pos_idx((ki-1)*3+1 : ki*3) = (ki-1)*6+1 : (ki-1)*6+3;
@@ -111,7 +100,7 @@ matrices.b_u        = b_u;
 
 x0 = [25; 335; 0; 0; 0; 0];   % V-bar hold — CWH equilibrium (shared IC)
 
-params_base.rho_min = 50;     % unused (use_band=false) — kept for struct completeness
+params_base.rho_min = 50;    
 params_base.rho_max = 200;
 params_base.u_max   = u_max;
 params_base.N       = N;
@@ -120,10 +109,9 @@ params_base.n       = n;
 params_base.dt      = dt;
 params_base.n_sim   = n_sim;
 
-%% ── RUN 1 — No terminal constraint (degeneracy demo) ─────────────────────────
-fprintf('\n════════════════════════════════════════════════════════════\n');
+%% RUN 1 — No terminal constraint 
+
 fprintf(' S2 Run 1 — No terminal constraint (V-bar hold, chaser stays put)\n');
-fprintf('════════════════════════════════════════════════════════════\n');
 
 params_r1     = params_base;
 params_r1.x0  = x0;
@@ -136,11 +124,8 @@ run_cfg_r1.use_band              = false;
 
 r1 = run_flyaround(run_cfg_r1, matrices, params_r1);
 
-%% ── RUN 2 — Periodic terminal to Π* (orbit stabilisation) ───────────────────
-fprintf('\n════════════════════════════════════════════════════════════\n');
+%% RUN 2 — Periodic terminal to Π* 
 fprintf(' S2 Run 2 — Periodic terminal constraint → stabilise Pi*\n');
-fprintf(' (Keerthi–Gilbert / Theorem 2.24)\n');
-fprintf('════════════════════════════════════════════════════════════\n');
 fprintf('IC: [0; 300; 0; 0; 0; 0]   Pi*: b = %d m radial / %d m along-track\n', ...
     b_nmc, 2*b_nmc);
 
@@ -155,7 +140,7 @@ run_cfg_r2.use_band              = false;
 
 r2 = run_flyaround(run_cfg_r2, matrices, params_r2);
 
-%% ── Phase error — empirical convergence verification ────────────────────────
+% Phase error 
 n_sim_r2  = r2.n_sim;
 phase_err = zeros(1, n_sim_r2 + 1);
 for k = 1 : n_sim_r2 + 1
@@ -169,15 +154,10 @@ phase_err_mean_last = mean(phase_err_last);
 fprintf('\nPhase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
     phase_err_max_last, phase_err_mean_last);
 
-%% ── RUN 4 — NMC manifold IC, pure fuel, no terminal constraint ───────────────
+%%  RUN 4 — NMC manifold IC, pure fuel, no terminal constraint
 % IC is placed exactly on Π* (satisfies vy = -2n·x, vx = 0).
-% Under pure fuel cost the globally optimal input is U* = 0 for every step.
-% The chaser rides the free CWH dynamics and stays on Π* indefinitely.
-% No terminal constraint needed — orbit knowledge is encoded in the IC itself.
-fprintf('\n════════════════════════════════════════════════════════════\n');
+
 fprintf(' S2 Run 4 — IC on NMC manifold, pure fuel, no terminal constraint\n');
-fprintf(' Expected: u*=0, chaser stays on Pi* (orbit "captured for free")\n');
-fprintf('════════════════════════════════════════════════════════════\n');
 
 x0_r4 = [b_nmc; 0; 0; 0; -2*n*b_nmc; 0];   % starting point of Π*: x=b, vy=-2nb
 fprintf('IC: [%.1f; 0; 0; 0; %.5f; 0]  (on Pi* manifold)\n', b_nmc, -2*n*b_nmc);
@@ -193,7 +173,7 @@ run_cfg_r4.use_band              = false;
 
 r4 = run_flyaround(run_cfg_r4, matrices, params_r4);
 
-%% Phase error Run 4 — should be ~0 throughout (machine-epsilon scale)
+% Phase error Run 4 
 n_sim_r4      = r4.n_sim;
 phase_err_r4  = zeros(1, n_sim_r4 + 1);
 for k = 1 : n_sim_r4 + 1
@@ -203,25 +183,13 @@ end
 fprintf('Run 4 phase error:  max = %.2e m   mean = %.2e m  (expect machine-eps)\n', ...
     max(phase_err_r4), mean(phase_err_r4));
 
-%% ── RUN 5 — Regularised dissipativity route (periodic stage cost) ────────────
+%% RUN 5 — Regularised dissipativity route (periodic stage cost) 
 % Stage cost: ℓ_aug(x,u,k) = ‖u‖² + ε‖x − x*_k‖²
-%
-% Strict P-periodic dissipativity certificate (Köhler–Müller–Allgöwer 2018, Ass. 1):
-%   Storage:  λ_k ≡ 0  (set p_0 = 0; recursion p_k = A_d'*p_{k+1} gives p_k = 0 ∀k).
-%   Optimal periodic cost: ℓ*_k = ‖0‖² + ε‖x*_k − x*_k‖² = 0.
-%   Rotated cost:  L_k(x,u) = ‖u‖² + ε‖x − x*_k‖² ≥ ε‖x − x*_k‖² = ρ(|x − x*_k|).
-%   → strictly positive definite around Π* with trivial storage; no appeal to A_d^P = I.
-%
 % Phase-synchronisation prevents the "waiting" trap (Müller–Grüne 2016, Example 4):
-%   the per-step penalty ε‖x − x*_{k mod P}‖² is tied to absolute time, so
-%   deferring thrust is penalised at every stage, not just at the horizon end.
-%
-% No terminal constraint — practical asymptotic stability via Corollary 4.
-% Trade-off vs Run 2: ε-neighbourhood guarantee (not exact), no hard equality rows.
-fprintf('\n════════════════════════════════════════════════════════════\n');
+
 fprintf(' S2 Run 5 — Periodic stage cost ell_aug=||u||^2+eps||x-x*_k||^2\n');
 fprintf(' (Koehler-Mueller-Allgower 2018, Ass. 1/Cor. 4 — no terminal cstr.)\n');
-fprintf('════════════════════════════════════════════════════════════\n');
+
 
 eps_r5       = 1e-4;
 Q_r5         = eps_r5 * eye(6);
@@ -247,7 +215,7 @@ run_cfg_r5.use_band              = false;
 
 r5 = run_flyaround(run_cfg_r5, matrices_r5, params_r5);
 
-%% Phase error Run 5
+% Phase error Run 5
 n_sim_r5      = r5.n_sim;
 phase_err_r5  = zeros(1, n_sim_r5 + 1);
 for k = 1 : n_sim_r5 + 1
@@ -261,7 +229,7 @@ phase_err_r5_mean    = mean(phase_err_r5_last);
 fprintf('\nRun 5 phase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
     phase_err_r5_max, phase_err_r5_mean);
 
-%% ── RUNS 3a / 3b / 3c — "failure mode" suite ────────────────────────────────
+%% RUNS 3a / 3b / 3c 
 % Three configurations that do NOT acquire an NMC orbit, demonstrating that
 % neither a state band nor a state cost alone can substitute for the periodic
 % terminal constraint of Run 2.
@@ -282,11 +250,8 @@ F_mat_Q = 2 * Su' * Qbar * Sx;                    % f_vec(k) = F_mat * x(k)
 n_sim_3  = 3*P;   % 3 orbits — enough to see asymptotic behaviour
 
 %% RUN 3a — band + small Q
-fprintf('\n════════════════════════════════════════════════════════════\n');
-fprintf(' S2 Run 3a — band (r_min=75 m) + small Q\n');
-fprintf(' Expected: V-bar equilibrium [0; 75; 0; 0; 0; 0], NOT an orbit\n');
-fprintf('════════════════════════════════════════════════════════════\n');
 
+fprintf(' S2 Run 3a — band (r_min=75 m) + small Q\n');
 matrices_3a       = matrices;
 matrices_3a.H     = H_Q;
 matrices_3a.F_mat = F_mat_Q;
@@ -305,10 +270,9 @@ run_cfg_3a.use_band              = true;
 r3a = run_flyaround(run_cfg_3a, matrices_3a, params_3a);
 
 %% RUN 3b — band + pure fuel
-fprintf('\n════════════════════════════════════════════════════════════\n');
+
 fprintf(' S2 Run 3b — band (r_min=75 m) + pure fuel\n');
-fprintf(' Expected: u*=0, free CWH drift (no orbit selection)\n');
-fprintf('════════════════════════════════════════════════════════════\n');
+
 
 params_3b         = params_base;
 params_3b.x0      = x0;
@@ -324,10 +288,8 @@ run_cfg_3b.use_band              = true;
 r3b = run_flyaround(run_cfg_3b, matrices, params_3b);
 
 %% RUN 3c — small Q, no band
-fprintf('\n════════════════════════════════════════════════════════════\n');
+
 fprintf(' S2 Run 3c — small Q, no band\n');
-fprintf(' Expected: regulation to origin (not an orbit)\n');
-fprintf('════════════════════════════════════════════════════════════\n');
 
 matrices_3c       = matrices;
 matrices_3c.H     = H_Q;
@@ -346,18 +308,18 @@ run_cfg_3c.use_band              = false;
 
 r3c = run_flyaround(run_cfg_3c, matrices_3c, params_3c);
 
-%% ── FIGURES ──────────────────────────────────────────────────────────────────
+%% FIGURES
 fig_dir = fullfile(script_dir, '..', 'results', 'figures', 's2_flyaround');
 if ~exist(fig_dir, 'dir'); mkdir(fig_dir); end
 
-c_r2   = [0.00 0.45 0.70];   % blue  — Run 2 trajectory
-c_star = [0.93 0.69 0.13];   % gold  — Π*
-c_r1   = [0.85 0.33 0.10];   % red   — Run 1 IC marker
+c_r2   = [0.00 0.45 0.70];  
+c_star = [0.93 0.69 0.13];   
+c_r1   = [0.85 0.33 0.10];   
 
 n_sim_r1  = r1.n_sim;
 time_s_r2 = (0 : n_sim_r2) * dt;
 
-%% Fig 1 — Hill-frame: Run 1 stuck vs Run 2 converging to Π*
+% Fig 1 — Hill-frame: Run 1 stuck vs Run 2 converging to Π*
 fig1 = figure('Name', 'S2 — Hill-frame');
 ax1  = axes(fig1);
 hold(ax1, 'on'); grid(ax1, 'on'); axis(ax1, 'equal');
@@ -378,7 +340,7 @@ legend(ax1, 'Location', 'northeast');
 exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.pdf'), 'ContentType', 'vector');
 exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.png'), 'Resolution', 300);
 
-%% Fig 5 — Non-equilibrium IC drift (Run 1 detail)
+% Fig 5 — Non-equilibrium IC drift (Run 1 detail)
 time_s_r1 = (0 : n_sim_r1) * dt;
 
 fig5 = figure('Name', 'S2 — Non-equilibrium drift (Run 1)');
@@ -420,7 +382,7 @@ legend(ax5b, 'Location', 'northeast');
 exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.pdf'), 'ContentType', 'vector');
 exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.png'), 'Resolution', 300);
 
-%% Fig 2 — Phase error (Zanon–Grüne–Diehl convergence)
+% Fig 2 — Phase error 
 fig2 = figure('Name', 'S2 — Phase error');
 ax2  = axes(fig2);
 hold(ax2, 'on'); grid(ax2, 'on');
@@ -432,7 +394,7 @@ ylim(ax2, [1e-2, 1e3]);
 exportgraphics(fig2, fullfile(fig_dir, 'phase_error.pdf'), 'ContentType', 'vector');
 exportgraphics(fig2, fullfile(fig_dir, 'phase_error.png'), 'Resolution', 300);
 
-%% Fig 3 — Control effort Run 2 (log scale)
+% Fig 3 — Control effort Run 2 (log scale)
 fig3 = figure('Name', 'S2 — Control effort');
 ax3  = axes(fig3);
 hold(ax3, 'on'); grid(ax3, 'on');
@@ -448,7 +410,7 @@ ylim(ax3, [1e-11, 1e-4]);
 exportgraphics(fig3, fullfile(fig_dir, 'control_effort.pdf'), 'ContentType', 'vector');
 exportgraphics(fig3, fullfile(fig_dir, 'control_effort.png'), 'Resolution', 300);
 
-%% Fig 4 — Cumulative ΔV Run 2
+% Fig 4 — Cumulative ΔV Run 2
 fig4 = figure('Name', 'S2 — Cumulative DeltaV');
 ax4  = axes(fig4);
 hold(ax4, 'on'); grid(ax4, 'on');
@@ -461,7 +423,7 @@ exportgraphics(fig4, fullfile(fig_dir, 'cumulative_dv.png'), 'Resolution', 300);
 
 fprintf('Figures saved to %s\n', fig_dir);
 
-%% Fig 5 — Run 4: manifold IC → free orbit maintenance
+% Fig 5 — Run 4: manifold IC → free orbit maintenance
 c_r4        = [0.50 0.00 0.50];   % purple
 time_s_r4   = (0 : n_sim_r4) * dt;
 
@@ -496,7 +458,7 @@ sgtitle(fig5, 'S2 Run 4 — NMC manifold IC: orbit maintained with u^* = 0');
 exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.pdf'), 'ContentType', 'vector');
 exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.png'), 'Resolution', 300);
 
-%% Fig 7 — Run 5 vs Run 2: periodic stage cost vs terminal equality
+% Fig 7 — Run 5 vs Run 2: periodic stage cost vs terminal equality
 c_r5        = [0.80 0.20 0.00];   % dark orange-red
 time_s_r5   = (0 : n_sim_r5) * dt;
 
@@ -549,10 +511,10 @@ sgtitle(fig7, sprintf('S2: Run 2 (Keerthi-Gilbert) vs Run 5 (periodic \\ell_{aug
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.pdf'), 'ContentType', 'vector');
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.png'), 'Resolution', 300);
 
-%% Fig 6 — Failure-mode suite: runs 3a / 3b / 3c
-c_3a = [0.13 0.63 0.37];   % green
-c_3b = [0.49 0.18 0.56];   % purple
-c_3c = [0.93 0.53 0.18];   % orange
+% Fig 6 — Failure-mode suite: runs 3a / 3b / 3c
+c_3a = [0.13 0.63 0.37];  
+c_3b = [0.49 0.18 0.56];  
+c_3c = [0.93 0.53 0.18];   
 
 n_sim_3a = r3a.n_sim;
 n_sim_3b = r3b.n_sim;
@@ -611,7 +573,7 @@ sgtitle(fig6, 'S2 — Why the periodic terminal constraint is necessary');
 exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.pdf'), 'ContentType', 'vector');
 exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.png'), 'Resolution', 300);
 
-%% ── JSON EXPORT ───────────────────────────────────────────────────────────────
+%% JSON EXPORT
 u_lo_r1 = max(1, n_sim_r1 - P);
 u_lo_r2 = max(1, n_sim_r2 - P);
 

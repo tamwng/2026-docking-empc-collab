@@ -1,46 +1,58 @@
-function res = run_closing(cost_struct, con, params)
-% run_closing.m
+function res = run_docking(cost_struct, con, params)
+% run_docking.m
+% Single MPC/EMPC docking-phase run (CWH dynamics, condensed QP via mpc_regulation).
+%
+% Drives e_k = x_k − x_dock → 0 (x_dock is the docking port, typically origin).
+% Convergence criterion: norm(e_k) < conv_tol (default 1 m)
 %
 % Inputs
 %   cost_struct — .Q [6×6]  .R [3×3]  .P [6×6]
+%                 When con.terminal_eq=true, P is overridden to zero internally
+%                 by mpc_regulation (terminal cost replaced by equality).
 %   con         — constraint config struct:
-%                   .u_max                  (required)
-%                   .y_min_active           (bool, default false)
-%                   .los_cone.active        (bool, default false)
-%                   .use_terminal_ball      (bool)
-%                   .terminal_ball.r_switch (if use_terminal_ball)
-%                   .use_avg_power          (bool; non-binding, tracked only)
-%                   .avg_power.P_avail      (if use_avg_power)
-%                   .use_passive_safety     (bool)
-%                   .passive_safety.*       (if use_passive_safety; Phi_array
-%                                            precomputed lazily if absent)
+%                   .u_max              [required] symmetric thrust bound [m/s²]
+%                   .y_min_active       [bool, default false]
+%                   .los_cone.active    [bool, default false]
+%                   .terminal_eq        [bool] hard x(N)=x_dock equality
+%                   .use_passive_safety [bool]
+%                   .passive_safety.*   (lazily populated if absent)
 %   params      — run parameters:
-%                   .x0  .x_switch  .dt  .N  .u_max  .t_final
-%                   .r_KOS             (optional, default 50 m)
-%                   .N_safe            (optional, default 554)
-%                   .n_steps_override  (optional, caps run length)
+%                   .x0       [6×1] initial state (Hill frame)
+%                   .x_dock   [6×1] docking port target (typically zeros(6,1))
+%                   .dt       [s] sampling time
+%                   .N        prediction horizon
+%                   .u_max    [m/s²] thrust bound
+%                   .t_final  [s] max simulation time
+%                   .conv_tol (optional, default 1.0 m)
+%                   .r_KOS    (optional, default 5 m)
+%                   .N_safe   (optional, default 554 steps ≈ 1 orbital period)
+%                   .n_steps_override (optional, caps run length)
+%                   .verbose  (optional, default true)
 %
 % Output: res struct
-%   .X .U .ef .flags .avg_power .is_safe  — [*×n_run] trimmed arrays
+%   .X .U .ef .flags .is_safe  — [*×n_run] trimmed arrays
 %   .dv .term_dist .ps_frac .conv_step    — scalars
 %   .u_norm_seq .all_X_pred               — [1×n_ctrl] / cell
 %   .turnpike_steps .turnpike_fraction    — vector / scalar
-%   .tp_label                             — string (auto-detected plateau style)
+%   .tp_label                             — string
 %   .t_vec                                — [1×n_run] time in seconds
 %   .n_ctrl                               — n_run - 1
+%   .n_ps_h                               — [1×n_ctrl] PS rows added per step
 
-%% Constant
+%% Constants
 constants;
 
 %% Unpack params
 x0      = params.x0;
-x_switch = params.x_switch;
+x_dock  = params.x_dock;
 dt      = params.dt;
 N       = params.N;
 u_max   = params.u_max;
 t_final = params.t_final;
-r_KOS   = 50;   if isfield(params, 'r_KOS'),  r_KOS  = params.r_KOS;  end
-N_safe  = 554;  if isfield(params, 'N_safe'), N_safe = params.N_safe; end
+
+conv_tol = 1.0; if isfield(params, 'conv_tol'), conv_tol = params.conv_tol; end
+r_KOS    = 5.0; if isfield(params, 'r_KOS'),    r_KOS    = params.r_KOS;    end
+N_safe   = 554; if isfield(params, 'N_safe'),   N_safe   = params.N_safe;   end
 
 n_steps = round(t_final / dt);
 if isfield(params, 'n_steps_override') && ~isempty(params.n_steps_override)
@@ -66,26 +78,23 @@ for j = 1:N_safe
 end
 
 %% Resolve constraint toggles
-use_avg_power      = isfield(con, 'use_avg_power')      && con.use_avg_power;
-use_terminal_ball  = isfield(con, 'use_terminal_ball')  && con.use_terminal_ball;
 use_passive_safety = isfield(con, 'use_passive_safety') && con.use_passive_safety;
+use_terminal_eq    = isfield(con, 'terminal_eq')        && con.terminal_eq;
 
 %% Set .active flags consumed by constraints.m
 con.u_max = u_max;
 if ~isfield(con, 'y_min_active'),          con.y_min_active    = false; end
 if ~isfield(con, 'los_cone'),              con.los_cone.active = false;
 elseif ~isfield(con.los_cone, 'active'),   con.los_cone.active = false; end
-
-if use_terminal_ball
-    con.terminal_ball.active = true;
-elseif isfield(con, 'terminal_ball')
-    con.terminal_ball.active = false;
+if con.los_cone.active
+    if ~isfield(con.los_cone, 'half_angle'), con.los_cone.half_angle = pi/6; end  % 30 deg default
+    if ~isfield(con.los_cone, 'n_faces'),    con.los_cone.n_faces    = 10;   end
 end
 
 if use_passive_safety
     con.passive_safety.active = true;
     if ~isfield(con.passive_safety, 'Phi_array')
-        fprintf('Precomputing CW STMs (%d matrices)... ', N_safe);
+        fprintf('  Precomputing CW STMs (%d matrices)... ', N_safe);
         Phi_ps = zeros(6, 6, N_safe);
         for i = 1:N_safe
             Phi_ps(:,:,i) = cw_stm(n, i * dt);
@@ -96,16 +105,9 @@ if use_passive_safety
     if ~isfield(con.passive_safety, 'C_pos'),         con.passive_safety.C_pos         = [eye(3), zeros(3,3)]; end
     if ~isfield(con.passive_safety, 'r_KOS'),         con.passive_safety.r_KOS         = r_KOS;                end
     if ~isfield(con.passive_safety, 'safety_margin'), con.passive_safety.safety_margin  = 0;                   end
-    if ~isfield(con.passive_safety, 'x_switch'),      con.passive_safety.x_switch       = x_switch;            end
+    if ~isfield(con.passive_safety, 'x_switch'),      con.passive_safety.x_switch       = x_dock;              end
 elseif isfield(con, 'passive_safety')
     con.passive_safety.active = false;
-end
-
-% avg_power
-P_avail = 0;
-if use_avg_power
-    P_avail = con.avg_power.P_avail;
-    con.avg_power.U_warm = zeros(3*N, 1);
 end
 
 %% Allocate trajectories
@@ -114,63 +116,58 @@ X          = zeros(6, n_steps + 1);
 U          = zeros(3, n_steps + 1);
 ef         = zeros(1, n_steps + 1);
 flags_arr  = zeros(1, n_steps + 1);
-avg_power  = zeros(1, n_steps + 1);
 n_ps_h     = zeros(1, n_steps);
 u_norm_seq = zeros(1, n_steps);
 all_X_pred = cell(1, n_steps);
 
 X(:,1)    = x0;
-e_k       = x0 - x_switch;
+e_k       = x0 - x_dock;
 conv_step = NaN;
 n_run     = 0;
 
-%% Verbose flag — suppress per-step table and summary for sweep runs
+%% Verbose flag — suppress for sweep runs
 verbose = true;
 if isfield(params, 'verbose'), verbose = params.verbose; end
 
-%% EMPC loop
+%% MPC / EMPC loop
 if verbose
     fprintf('\n  %5s  %10s  %12s  %8s  %4s  %6s  %8s\n', ...
-        'step', '||u||', 'avg_power', 'active', 'n_ps', 'flag', 'time[s]');
+        'step', '||u||', '||e||', 'term_eq', 'n_ps', 'flag', 'time[s]');
 end
 
 for k = 1:n_steps
     ef(k) = norm(e_k);
 
-    if ef(k) < 50
+    if ef(k) < conv_tol
         conv_step = k;
         n_run     = k;
         break;
     end
 
-    if use_avg_power
-        con.avg_power.U_warm = U_warm;
-    end
     if use_passive_safety
-        con.passive_safety.U_warm = U_warm;
+        con.passive_safety.U_warm  = U_warm;
+        con.passive_safety.x_switch = x_dock;   % actual-coord offset
     end
 
     t0 = tic;
     [u_opt, U_opt, X_pred_k, exitflag, n_ps_step] = mpc_regulation( ...
         e_k, Ad, Bd, cost_struct.Q, cost_struct.R, cost_struct.P, N, con);
-    solve_t        = toc(t0);
-    flags_arr(k)   = exitflag;
-    n_ps_h(k)      = n_ps_step;
-    u_norm_seq(k)  = norm(u_opt);
-    all_X_pred{k}  = X_pred_k + x_switch;   % error → Hill frame
-
-    avg_power(k) = (1/N) * norm(U_opt)^2;
-    active = use_avg_power && (avg_power(k) >= 0.999 * P_avail);
+    solve_t       = toc(t0);
+    flags_arr(k)  = exitflag;
+    n_ps_h(k)     = n_ps_step;
+    u_norm_seq(k) = norm(u_opt);
+    all_X_pred{k} = X_pred_k + x_dock;   % error → Hill frame
 
     if verbose
         fprintf('  %5d  %10.3e  %12.3e  %8s  %4d  %6d  %8.4f\n', ...
-            k, u_norm_seq(k), avg_power(k), mat2str(active), n_ps_step, exitflag, solve_t);
+            k, u_norm_seq(k), ef(k), mat2str(use_terminal_eq), ...
+            n_ps_step, exitflag, solve_t);
     end
 
     U_warm   = [U_opt(4:end); U_opt(end-2:end)];
     U(:,k)   = u_opt;
     X(:,k+1) = Ad * X(:,k) + Bd * u_opt;
-    e_k      = X(:,k+1) - x_switch;
+    e_k      = X(:,k+1) - x_dock;
     n_run    = k + 1;
 end
 
@@ -179,29 +176,30 @@ X          = X(:,        1:n_run);
 U          = U(:,        1:n_run);
 ef         = ef(         1:n_run);
 flags      = flags_arr(  1:n_run);
-avg_power  = avg_power(  1:n_run);
 n_ctrl     = n_run - 1;
 n_ps_h     = n_ps_h(     1:n_ctrl);
 u_norm_seq = u_norm_seq( 1:n_ctrl);
 all_X_pred = all_X_pred( 1:n_ctrl);
 
 %% Post-hoc passive safety check
-is_safe   = check_passive_safety(X, n_run, Ad_pow_safe, r_KOS, N_safe);
+% Propagates each logged state forward N_safe free-drift steps; flags safe
+% iff the drift trajectory never enters the r_KOS sphere around x_dock.
+is_safe   = check_passive_safety(X - x_dock, n_run, Ad_pow_safe, r_KOS, N_safe);
 ps_frac   = mean(is_safe);
 dv        = sum(vecnorm(U(:, 1:n_ctrl), 2, 1)) * dt;
-term_dist = norm(X(:,end) - x_switch);
+term_dist = norm(X(:,end) - x_dock);
 t_vec     = (0:n_run-1) * dt;
 
 %% Console summary
 if verbose
     fprintf('\n── Summary ──────────────────────────────────────────────────\n');
     if ~isnan(conv_step)
-        fprintf('  Converged at step %d  (%.2f h)\n', conv_step, t_vec(conv_step)/3600);
+        fprintf('  Converged at step %d  (%.1f min)\n', conv_step, t_vec(conv_step)/60);
     else
-        fprintf('  DID NOT CONVERGE in %d steps.\n', n_steps);
+        fprintf('  DID NOT CONVERGE in %d steps (%.1f min).\n', n_steps, n_steps*dt/60);
     end
     fprintf('  Total Δv:           %.4f m/s\n', dv);
-    fprintf('  Terminal distance:  %.2f m\n',   term_dist);
+    fprintf('  Terminal distance:  %.4f m\n',   term_dist);
     fprintf('  Passive safe:       %.1f%%\n',   ps_frac * 100);
     if use_passive_safety && any(n_ps_h > 0)
         fprintf('  PS rows — avg: %.1f / max: %d\n', mean(n_ps_h), max(n_ps_h));
@@ -215,7 +213,7 @@ if verbose
     fprintf('─────────────────────────────────────────────────────────────\n\n');
 end
 
-%% Turnpike detection
+%% Turnpike detection (plateau in log(||u||) for near-zero-Q cost)
 u_thresh          = 1e-4 * u_max;
 tp_mask           = u_norm_seq < u_thresh;
 turnpike_steps    = find(tp_mask);
@@ -237,12 +235,12 @@ if isempty(turnpike_steps) && n_ctrl >= 5
         tp_label          = 'Turnpike (steady cruise)';
     end
 end
+
 %% Pack result struct
 res.X                 = X;
 res.U                 = U;
 res.ef                = ef;
 res.flags             = flags;
-res.avg_power         = avg_power;
 res.is_safe           = is_safe;
 res.dv                = dv;
 res.term_dist         = term_dist;

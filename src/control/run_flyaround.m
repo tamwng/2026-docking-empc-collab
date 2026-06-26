@@ -124,20 +124,16 @@ for k = 1:n_sim
 
     % 3. Equality constraints depending on run configuration
     if use_nmc && use_periodic && ~isempty(x_star)
-        % Run 2: pin terminal state to Π*(k+N-1 mod P) — Keerthi–Gilbert /
-        % Theorem 2.24 (periodic terminal equality → closed-loop stability).
-        % When N=P the phase mod(k+N-1,P) = mod(k-1,P), closing exactly one period.
-        % The 6-row equality subsumes the 2-row NMC manifold constraint.
+        % Run 2: pin terminal state to Π*(k+N-1 mod P)
         x_ref_col = x_star(:, mod(k + N - 1, P) + 1);
         Aeq = Su_term;
         beq = x_ref_col - Sx_term * x_log(:, k);
     elseif use_nmc
-        % Run 2: NMC manifold equality only — forces endpoint onto the manifold
-        % without specifying which orbit
+        % Run 2: NMC manifold equality only
         Aeq = Aeq_nmc;
         beq = -Sx_term_nmc * x_log(:, k);
     else
-        % Run 1: no terminal constraint — degenerate case, U*=0 is globally optimal
+        % Run 1: no terminal constraint
         Aeq = [];
         beq = [];
     end
@@ -189,7 +185,7 @@ last_orbit_start = max(1, n_sim - P);
 u_mean_last = mean(u_norm(last_orbit_start : end));
 u_max_last  =  max(u_norm(last_orbit_start : end));
 
-%% Summary (mirrors the existing sim_scenario2_flyaround summary block)
+%% Summary
 fprintf('Total ΔV:       %.4f m/s\n', dv_total);
 fprintf('  Injection ΔV: %.4f m/s  (steps 1–%d)\n', dv_inject, inject_end);
 fprintf('  Steady-state: %.4f m/s  (steps %d–%d)\n', dv_steady, inject_end+1, n_sim);
