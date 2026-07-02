@@ -8,15 +8,17 @@ function orbital_viz()
 %%  CONSTANTS 
 RE = 6378.137;      % Earth mean equatorial radius [km]
 
-%%  PLAYBACK STATE 
+%%  PLAYBACK STATE
 pb_t    = [];       % time vector [s], Nx1
-pb_Xt    = [];      % target ECI state   
+pb_Xt    = [];      % target ECI state
 pb_Rho   = [];      % chaser LVLH state
 pb_idx  = 1;        % current frame index
 pb_meta = [];       % metadata struct from JSON
 running = false;    % is animation currently playing?
 
 pb_tick_acc = 0;        % tick accumulator for real-time pacing
+prox_zoom   = false;    % true = center ECI view on target, auto-scale to range
+r_max_orbit = 1;        % [km] full-orbit axis half-range, set on JSON load
 
 %% FIGURE 
 fig = figure('Name', 'RPO Trajectory Visualizer', ...
@@ -34,10 +36,10 @@ ax3d = axes('Parent', fig, ...
     'FontSize', 7, 'FontName', 'Courier New');
 hold(ax3d, 'on'); grid(ax3d, 'on'); axis(ax3d, 'equal');
 view(ax3d, 35, 25);
-xlabel(ax3d, 'X (km)', 'FontSize', 7);
-ylabel(ax3d, 'Y (km)', 'FontSize', 7);
-zlabel(ax3d, 'Z (km)', 'FontSize', 7);
-title(ax3d, 'ECI FRAME', ...
+xlabel(ax3d, 'Radial x [m]',      'FontSize', 7, 'Color', [0.69 0.80 0.91]);
+ylabel(ax3d, 'Along-track y [m]', 'FontSize', 7, 'Color', [0.69 0.80 0.91]);
+zlabel(ax3d, 'Cross-track z [m]', 'FontSize', 7, 'Color', [0.69 0.80 0.91]);
+title(ax3d, 'HILL FRAME — 3D RELATIVE TRAJECTORY', ...
     'Color', [0 0.78 1], 'FontName', 'Courier New', 'FontSize', 9);
  
 %%  2D PLOT 1: Radial vs Along-track (Hill frame)
@@ -66,31 +68,28 @@ ylabel(ax_dt, 'Relative distance [m]', 'FontSize', 7, 'Color', [0.69 0.80 0.91])
 title(ax_dt, 'RELATIVE DISTANCE vs TIME', ...
     'Color', [0 0.78 1], 'FontName', 'Courier New', 'FontSize', 8);
 
-%%  EARTH 
-[ue, ve] = meshgrid(linspace(0, 2*pi, 36), linspace(0, pi, 18));
-mesh(ax3d, RE*sin(ve).*cos(ue), RE*sin(ve).*sin(ue), RE*cos(ve), ...
-    'EdgeColor', [0.10 0.23 0.35], 'FaceColor', [0.04 0.08 0.14], ...
-    'EdgeAlpha', 0.4, 'FaceAlpha', 0.6);
+% Origin marker — target is always at (0,0,0) in Hill frame
+plot3(ax3d, 0, 0, 0, '+', 'Color', [0 0.78 1], 'MarkerSize', 12, 'LineWidth', 1.5);
 
-%%  PLOT ARTISTS 
-% Target spacecraft
-h_trail_t = plot3(ax3d, nan, nan, nan, 'Color', [0 0.78 1], ...
-                  'LineWidth', 1.0, 'LineStyle', '-');
+%%  PLOT ARTISTS  (Hill-frame 3D)
+% Full mission relative trajectory — very dim static trail drawn on load
+h_trail_t = plot3(ax3d, nan, nan, nan, 'Color', [0.07 0.14 0.20], ...
+                  'LineWidth', 0.4, 'LineStyle', '-');   % unused; kept for handle parity
 h_sc_t    = plot3(ax3d, nan, nan, nan, 'o', 'Color', [0 0.78 1], ...
-                  'MarkerFaceColor', [0 0.78 1], 'MarkerSize', 8);
-h_rad_t   = plot3(ax3d, nan, nan, nan, 'Color', [0.10 0.25 0.35], 'LineWidth', 0.6);
- 
-% Chaser spacecraft — orange
-h_trail_c = plot3(ax3d, nan, nan, nan, 'Color', [1 0.55 0], ...
-                  'LineWidth', 1.0, 'LineStyle', '--');
+                  'MarkerFaceColor', [0 0.78 1], 'MarkerSize', 6);  % target (origin)
+h_rad_t   = plot3(ax3d, nan, nan, nan, 'Color', [0.05 0.10 0.15], 'LineWidth', 0.3);
+
+% Chaser: dim full-path trail, bright animated dot
+h_trail_c = plot3(ax3d, nan, nan, nan, 'Color', [0.65 0.35 0.06], ...
+                  'LineWidth', 0.8, 'LineStyle', '-');
 h_sc_c    = plot3(ax3d, nan, nan, nan, 'o', 'Color', [1 0.55 0], ...
                   'MarkerFaceColor', [1 0.55 0], 'MarkerSize', 8);
-h_rad_c   = plot3(ax3d, nan, nan, nan, 'Color', [0.30 0.18 0.05], 'LineWidth', 0.6);
- 
-% Line connecting chaser to target — shows relative distance visually
-h_los = plot3(ax3d, nan, nan, nan, 'Color', [0.8 0.8 0.8], ...
-              'LineWidth', 0.8, 'LineStyle', ':');
- 
+h_rad_c   = plot3(ax3d, nan, nan, nan, 'Color', [0.10 0.06 0.02], 'LineWidth', 0.3);
+
+% Range line: origin → chaser
+h_los = plot3(ax3d, nan, nan, nan, 'Color', [0.20 0.28 0.35], ...
+              'LineWidth', 0.7, 'LineStyle', ':');
+
 legend(ax3d, [h_sc_t, h_sc_c], {'Target', 'Chaser'}, ...
     'TextColor', [0.69 0.80 0.91], 'Color', [0.04 0.07 0.13], ...
     'EdgeColor', [0.10 0.18 0.28], 'FontSize', 7, 'Location', 'northwest');
@@ -180,6 +179,12 @@ btn_reset = uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'BackgroundColor', [0.04 0.08 0.14], 'ForegroundColor', [0.69 0.80 0.91], ...
     'FontName', 'Courier New', 'FontSize', 8);
 
+% btn_zoom = toggle between full-orbit ECI view and proximity view centred on target
+btn_zoom = uicontrol(fig, 'Style', 'togglebutton', 'Units', 'normalized', ...
+    'Position', [0.03 0.025 0.09 0.045], 'String', 'PROX ZOOM', ...
+    'BackgroundColor', [0.04 0.08 0.14], 'ForegroundColor', [0.29 0.42 0.53], ...
+    'FontName', 'Courier New', 'FontSize', 8);
+
 % sl_spd  = playback speed slider (1x to 200x)
 % vh_spd  = label showing current speed
 uicontrol(fig, 'Style', 'text', 'Units', 'normalized', ...
@@ -250,14 +255,14 @@ set(sl_spd, 'Callback', @(~,~) update_speed());
         pos_c_m  = lvlh_to_eci(pos_t_m, vel_t_m, rho_m);
         pos_c_km = pos_c_m / 1000;      % chaser ECI position [km]
  
-        % Update 3D 
-        set(h_sc_t,  'XData', pos_t_km(1), 'YData', pos_t_km(2), 'ZData', pos_t_km(3));
-        set(h_rad_t, 'XData', [0 pos_t_km(1)], 'YData', [0 pos_t_km(2)], 'ZData', [0 pos_t_km(3)]);
-        set(h_sc_c,  'XData', pos_c_km(1), 'YData', pos_c_km(2), 'ZData', pos_c_km(3));
-        set(h_rad_c, 'XData', [0 pos_c_km(1)], 'YData', [0 pos_c_km(2)], 'ZData', [0 pos_c_km(3)]);
-        set(h_los,   'XData', [pos_t_km(1) pos_c_km(1)], ...
-                     'YData', [pos_t_km(2) pos_c_km(2)], ...
-                     'ZData', [pos_t_km(3) pos_c_km(3)]);
+        % Update 3D — Hill frame: target at origin, chaser at rho_m [m]
+        set(h_sc_t,  'XData', 0,        'YData', 0,        'ZData', 0);
+        set(h_rad_t, 'XData', nan,      'YData', nan,      'ZData', nan);
+        set(h_sc_c,  'XData', rho_m(1), 'YData', rho_m(2), 'ZData', rho_m(3));
+        set(h_rad_c, 'XData', nan,      'YData', nan,      'ZData', nan);
+        set(h_los,   'XData', [0 rho_m(1)], ...
+                     'YData', [0 rho_m(2)], ...
+                     'ZData', [0 rho_m(3)]);
  
         % Update Plot 1: live dot on x-y phase plot
         set(h_xy_dot, 'XData', rho_m(2), 'YData', rho_m(1));
@@ -267,10 +272,6 @@ set(sl_spd, 'Callback', @(~,~) update_speed());
         rel_d = norm(rho_m);
         set(h_dt_dot, 'XData', t_now, 'YData', rel_d);
  
-        % line of sight between chaser and target
-        set(h_los, 'XData', [pos_t_km(1) pos_c_km(1)], ...
-                   'YData', [pos_t_km(2) pos_c_km(2)], ...
-                   'ZData', [pos_t_km(3) pos_c_km(3)]);
  
         % Telemetry 
         t_alt  = norm(pos_t_km) - RE;       % target altitude [km]
@@ -303,6 +304,12 @@ set(sl_spd, 'Callback', @(~,~) update_speed());
             h_tval_c(k).String = vals_c{k};
         end
  
+        % Proximity zoom: auto-scale Hill-frame view to 3× current range [m]
+        if prox_zoom
+            d_m = max(norm(rho_m) * 3, 50);   % 3× range in m, min 50 m
+            axis(ax3d, [-d_m d_m -d_m d_m -d_m d_m]);
+        end
+
         % Frame advance
         sim_dt       = pb_t(2) - pb_t(1);
         ticks_needed = sim_dt / (0.05 * sl_spd.Value);
@@ -311,7 +318,7 @@ set(sl_spd, 'Callback', @(~,~) update_speed());
             pb_idx      = pb_idx + max(1, round(pb_tick_acc / ticks_needed));
             pb_tick_acc = 0;
         end
- 
+
         drawnow limitrate;
     end
 
@@ -342,29 +349,17 @@ set(sl_spd, 'Callback', @(~,~) update_speed());
             pb_meta = data.metadata;
         end
  
-        % draw full target trajectory
-        pos_t_all = pb_Xt(:, 1:3) / 1000;      % Nx3 [km]
-        set(h_trail_t, 'XData', pos_t_all(:,1)', ...
-                       'YData', pos_t_all(:,2)', ...
-                       'ZData', pos_t_all(:,3)');
- 
-        % compute and draw full chaser trajectory
-        n = size(pb_Xt, 1);
-        pos_c_all = zeros(n, 3);
-        for k = 1:n
-            pt = pb_Xt(k, 1:3)';
-            vt = pb_Xt(k, 4:6)';
-            rc = pb_Rho(k, 1:3)';
-            pos_c_all(k, :) = lvlh_to_eci(pt, vt, rc)' / 1000;    % [km]
-        end
-        set(h_trail_c, 'XData', pos_c_all(:,1)', ...
-                       'YData', pos_c_all(:,2)', ...
-                       'ZData', pos_c_all(:,3)');
- 
-        % fit axes to both trajectories combined
-        all_pos = [pos_t_all; pos_c_all];
-        r_max   = max(vecnorm(all_pos, 2, 2)) * 1.15;
-        axis(ax3d, [-r_max r_max -r_max r_max -r_max r_max]);
+        % Draw full Hill-frame relative trajectory as dim static trail [m]
+        rho_xyz = pb_Rho(:, 1:3);     % N × 3 [m]
+        set(h_trail_t, 'XData', nan, 'YData', nan, 'ZData', nan);  % unused
+        set(h_trail_c, 'XData', rho_xyz(:,1)', ...
+                       'YData', rho_xyz(:,2)', ...
+                       'ZData', rho_xyz(:,3)');
+
+        % Fit axis to relative trajectory extent [m]
+        r_hill      = max(vecnorm(rho_xyz, 2, 2)) * 1.2;
+        r_max_orbit = r_hill;
+        axis(ax3d, [-r_hill r_hill -r_hill r_hill -r_hill r_hill]);
 
         % Draw full Hill frame trail on Plot 1 (x vs y)
         rho_y = pb_Rho(:, 2);   % along-track
@@ -400,7 +395,21 @@ set(btn_load,  'Callback', @load_json);
 set(btn_play,  'Callback', @(~,~) set_running(true));
 set(btn_pause, 'Callback', @(~,~) set_running(false));
 set(btn_reset, 'Callback', @(~,~) do_reset());
+set(btn_zoom,  'Callback', @toggle_zoom);
 set(fig,       'CloseRequestFcn', @on_close);
+
+    function toggle_zoom(src, ~)
+        prox_zoom = logical(src.Value);
+        if prox_zoom
+            src.ForegroundColor = [1 0.55 0];   % orange = proximity mode active
+        else
+            src.ForegroundColor = [0.29 0.42 0.53];
+            if r_max_orbit > 0
+                axis(ax3d, [-r_max_orbit r_max_orbit -r_max_orbit r_max_orbit ...
+                            -r_max_orbit r_max_orbit]);
+            end
+        end
+    end
 
     function set_running(val)
         running = val;

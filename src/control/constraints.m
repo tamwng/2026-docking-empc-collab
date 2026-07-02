@@ -19,6 +19,9 @@ function [A_ineq, b_ineq, lb, ub, n_ps_added] = constraints(x0, Sx, Su, N, n_u, 
 %            .los_cone.n_faces    [optional] faces in inner polygon (e.g. 10)
 %            .los_cone.apex       [optional] cone apex [x;y;z], default [0;0;0]
 %
+%            .approach_corridor.active [optional] rectangular tube along V-bar (bool)
+%            .approach_corridor.d_max  [optional] half-width [m] (|x|,|z| <= d_max)
+%
 % Output:
 %   A_ineq - inequality LHS [n_con x n_u*N]  ([] if no state constraints)
 %   b_ineq - inequality RHS [n_con x 1]       ([] if no state constraints)
@@ -87,6 +90,22 @@ if isfield(con, 'los_cone') && con.los_cone.active
 
     A_list{end+1} = Acone * Su;
     b_list{end+1} = bcone - Acone * Sx * x0;
+end
+
+%% Approach corridor: rectangular tube along the V-bar axis
+% Box constraint on radial (x) and cross-track (z) at every horizon step;
+% y (along-track) is unconstrained.  Adds 4N rows (±x, ±z at each step).
+if isfield(con, 'approach_corridor') && con.approach_corridor.active
+    d_max  = con.approach_corridor.d_max;
+    C_x    = kron(eye(N), [1,0,0,0,0,0]);   % [N × n_x*N]
+    C_z    = kron(eye(N), [0,0,1,0,0,0]);   % [N × n_x*N]
+    free_x = C_x * Sx * x0;                 % free-response x component [N×1]
+    free_z = C_z * Sx * x0;                 % free-response z component [N×1]
+    A_list{end+1} = [ C_x * Su; -C_x * Su; C_z * Su; -C_z * Su];
+    b_list{end+1} = [ d_max*ones(N,1) - free_x;
+                      d_max*ones(N,1) + free_x;
+                      d_max*ones(N,1) - free_z;
+                      d_max*ones(N,1) + free_z];
 end
 
 %% Terminal ball: position-only L-inf box  -r <= e_pos(N) <= r
