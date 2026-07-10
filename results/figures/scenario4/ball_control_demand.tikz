@@ -1,0 +1,63 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06667,0.44314,0.74510}%
+\definecolor{mycolor2}{rgb}{0.86667,0.32941,0.00000}%
+\definecolor{mycolor3}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=7.677in,
+height=4.865in,
+at={(1.288in,0.657in)},
+scale only axis,
+x dir=reverse,
+xmin=50,
+xmax=500,
+xlabel style={font=\color{mycolor3}},
+xlabel={Terminal ball radius $r_{\mathrm{ball}}$ [m]},
+every outer y axis line/.append style={mycolor2},
+every y tick label/.append style={font=\color{mycolor2}},
+every y tick/.append style={mycolor2},
+ymin=0.004,
+ymax=0.01,
+ylabel style={font=\color{mycolor2}},
+ylabel={Peak $\|u\|$ [m/s$^2$]},
+axis background/.style={fill=white},
+title style={font=\bfseries\color{mycolor3}},
+title={Terminal ball: convergence speed vs control demand},
+axis x line*=bottom,
+axis y line*=right,
+xmajorgrids,
+ymajorgrids,
+legend style={at={(0.5,0.97)}, anchor=north, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+500	2.03333333333333\\
+300	2.03333333333333\\
+200	2.03333333333333\\
+150	2.03333333333333\\
+100	2.03333333333333\\
+50	2\\
+};
+\addlegendentry{Convergence time}
+
+\addplot [color=mycolor2, line width=1.5pt, mark=square, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+500	0.0043787885890881\\
+300	0.00455036521565198\\
+200	0.00463648291977361\\
+150	0.00467961628129169\\
+100	0.00472290633649745\\
+50	0.00476613349012576\\
+};
+\addlegendentry{Peak $\|u\|$}
+
+\addplot [color=mycolor3, dotted, forget plot]
+  table[row sep=crcr]{%
+50	0.01\\
+500	0.01\\
+};
+\end{axis}
+\end{tikzpicture}%

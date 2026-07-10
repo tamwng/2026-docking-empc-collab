@@ -92,7 +92,7 @@ end
 %% first control input (1:3 vector for MPC)
 u_opt = U_opt(1:n_u);
 
-%% ── Reconstruct predicted trajectory ─────────────────────────────────────
+%% Reconstruct predicted trajectory
 X_pred = zeros(n_x, N+1);
 X_pred(:, 1) = x0;
 for i = 1:N

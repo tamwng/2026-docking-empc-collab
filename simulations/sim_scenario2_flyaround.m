@@ -98,7 +98,7 @@ matrices.f_vec      = f_vec;
 matrices.A_u        = A_u;
 matrices.b_u        = b_u;
 
-x0 = [25; 335; 0; 0; 0; 0];   % V-bar hold — CWH equilibrium (shared IC)
+x0 = [0; 300; 0; 0; 0; 0];   % V-bar hold — CWH equilibrium (shared IC)
 
 params_base.rho_min = 50;    
 params_base.rho_max = 200;
@@ -229,7 +229,60 @@ phase_err_r5_mean    = mean(phase_err_r5_last);
 fprintf('\nRun 5 phase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
     phase_err_r5_max, phase_err_r5_mean);
 
-%% RUNS 3a / 3b / 3c 
+%% RUN T — Standard Tracking MPC baseline (quadratic cost, tracks Pi*)
+fprintf(' S2 Run T — Standard Tracking MPC (tracks Pi*, quadratic cost)\n');
+
+Q_track = eye(6);          % penalise full state error to the reference
+R_track = eye(3);          % control effort (same scale as R_eco in Runs 2/5)
+[~, P_track] = lqr_controller(A_d, B_d, Q_track, R_track);
+
+% Short horizon on purpose: the condensed CWH Su over a full period (N=P=92)
+% makes Su'*Q*Su severely ill-conditioned with Q=I, which stalls quadprog
+% (exitflag 0 every step). N_track=20 keeps the tracking QP well-conditioned
+% and matches the horizon used in Scenarios 1 & 4. (Runs 2/5 tolerate N=P only
+% because their fuel-dominant Hessian stays H≈2I.)
+N_track = 20;
+
+con_track.u_max = u_max;
+con_track.u_ss  = zeros(3, 1);      % NMC is zero-input: suppress feedforward
+
+x_track = zeros(6, n_sim + 1);
+u_track = zeros(3, n_sim);
+x_track(:, 1) = x0;
+for k = 1:n_sim
+    cols   = mod(k - 1 + (1:N_track), P) + 1;    % phase-synced N_track-step preview
+    R_prev = x_star(:, cols);                     % 6 x N_track
+    u_k    = mpc_tracking(x_track(:, k), R_prev, A_d, B_d, ...
+                          Q_track, R_track, P_track, N_track, con_track);
+    u_track(:, k)     = u_k;
+    x_track(:, k + 1) = A_d * x_track(:, k) + B_d * u_k;
+end
+
+dv_track    = sum(vecnorm(u_track, 2, 1)) * dt;
+phase_err_T = zeros(1, n_sim + 1);
+for k = 1:n_sim + 1
+    col            = mod(k - 1, P) + 1;
+    phase_err_T(k) = norm(x_track(:, k) - x_star(:, col));
+end
+
+%% Capture-time comparison: Tracking vs Run 2 vs Run 5 (shared IC)
+capture_tol = 5;     % [m] phase-error threshold defining "orbit captured"
+cap_T  = capture_step(phase_err_T,  capture_tol);
+cap_r2 = capture_step(phase_err,    capture_tol);
+cap_r5 = capture_step(phase_err_r5, capture_tol);
+dv_r2  = r2.dv_total;
+dv_r5  = r5.dv_total;
+
+fprintf('\n── Tracking vs Run 2 vs Run 5  (shared IC, capture tol = %d m) ─────\n', capture_tol);
+fprintf('  %-26s  %9s  %9s  %13s\n', 'Controller', 'dv[m/s]', 'vs track', 'capture');
+fprintf('  %-26s  %9.4f  %9s  %13s\n', 'Standard Tracking MPC', dv_track, '—', cap_str(cap_T, P));
+fprintf('  %-26s  %9.4f  %8.1f%%  %13s\n', 'Run 2 (terminal eq.)', dv_r2, ...
+    100*(dv_track - dv_r2)/dv_track, cap_str(cap_r2, P));
+fprintf('  %-26s  %9.4f  %8.1f%%  %13s\n', 'Run 5 (periodic aug.)', dv_r5, ...
+    100*(dv_track - dv_r5)/dv_track, cap_str(cap_r5, P));
+fprintf('────────────────────────────────────────────────────────────────────\n\n');
+
+%% RUNS 3a / 3b / 3c
 % Three configurations that do NOT acquire an NMC orbit, demonstrating that
 % neither a state band nor a state cost alone can substitute for the periodic
 % terminal constraint of Run 2.
@@ -473,7 +526,7 @@ plot(ax7a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2
 plot(ax7a, r2.x_log(1,:), r2.x_log(2,:), 'Color', c_r2, 'LineWidth', 0.8, ...
     'DisplayName', 'Run 2 (terminal eq.)');
 plot(ax7a, r5.x_log(1,:), r5.x_log(2,:), 'Color', c_r5, 'LineWidth', 1.0, ...
-    'DisplayName', 'Run 5 (periodic \ell_{aug})');
+    'DisplayName', 'Run 5 (periodic ℓ_{aug})');
 plot(ax7a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
     'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
 plot(ax7a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
@@ -487,7 +540,7 @@ hold(ax7b, 'on'); grid(ax7b, 'on');
 semilogy(ax7b, time_s_r2, phase_err,    'Color', c_r2, 'LineWidth', 1.2, ...
     'DisplayName', 'Run 2 (terminal eq.)');
 semilogy(ax7b, time_s_r5, phase_err_r5, 'Color', c_r5, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 5 (periodic \ell_{aug})');
+    'DisplayName', 'Run 5 (periodic ℓ_{aug})');
 xlabel(ax7b, 'Time [s]');
 ylabel(ax7b, '||x(k) - x^*_{k \rm mod P}|| [m]');
 title(ax7b, 'Phase error convergence');
@@ -507,9 +560,50 @@ title(ax7c, 'Control effort');
 legend(ax7c, 'Location', 'northeast', 'FontSize', 7);
 ylim(ax7c, [1e-11, 1e-2]);
 
-sgtitle(fig7, sprintf('S2: Run 2 (Keerthi-Gilbert) vs Run 5 (periodic \\ell_{aug}, \\epsilon=%.0e)', eps_r5));
+sgtitle(fig7, sprintf('S2: Run 2 (Keerthi-Gilbert) vs Run 5 (periodic ℓ_{aug}, \\epsilon=%.0e)', eps_r5));
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.pdf'), 'ContentType', 'vector');
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.png'), 'Resolution', 300);
+
+% Fig 8 — Standard Tracking MPC vs Run 2 vs Run 5: Hill-frame overlay + table
+c_track = [0.55 0.10 0.75];   % purple — standard tracking baseline
+
+fig8 = figure('Name', 'Op 2 — Tracking vs Run 2 vs Run 5');
+ax8  = axes(fig8); hold(ax8, 'on'); grid(ax8, 'on'); axis(ax8, 'equal');
+plot(ax8, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
+    'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
+plot(ax8, x_track(1,:), x_track(2,:), '-', 'Color', c_track, 'LineWidth', 1.0, ...
+    'DisplayName', sprintf('Tracking MPC (%.3f m/s)', dv_track));
+plot(ax8, r2.x_log(1,:), r2.x_log(2,:), '-', 'Color', c_r2, 'LineWidth', 1.0, ...
+    'DisplayName', sprintf('Run 2 (terminal eq., %.3f m/s)', dv_r2));
+plot(ax8, r5.x_log(1,:), r5.x_log(2,:), '-', 'Color', c_r5, 'LineWidth', 1.0, ...
+    'DisplayName', sprintf('Run 5 ($\\ell_{\\mathrm{aug}}$, %.3f m/s)', dv_r5));
+plot(ax8, x0(1), x0(2), 's', 'Color', [0.4 0.4 0.4], 'MarkerFaceColor', [0.4 0.4 0.4], ...
+    'MarkerSize', 8, 'DisplayName', 'IC (shared)');
+plot(ax8, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax8, '$r_x$ (radial) [m]', 'Interpreter', 'latex');
+ylabel(ax8, '$r_y$ (along-track) [m]', 'Interpreter', 'latex');
+title(ax8, 'S2: Standard Tracking MPC vs Run 2 vs Run 5', 'Interpreter', 'latex');
+legend(ax8, 'Location', 'northeast', 'FontSize', 8, 'Interpreter', 'latex');
+exportgraphics(fig8, fullfile(fig_dir, 'tracking_vs_run2_run5.pdf'), 'ContentType', 'vector');
+exportgraphics(fig8, fullfile(fig_dir, 'tracking_vs_run2_run5.png'), 'Resolution', 300);
+if exist('matlab2tikz', 'file')
+    matlab2tikz(fullfile(fig_dir, 'tracking_vs_run2_run5.tikz'), ...
+        'figurehandle', fig8, 'showInfo', false, 'parseStrings', false);
+end
+
+% LaTeX comparison table (Tracking vs Run 2 vs Run 5)
+fid_ct = fopen(fullfile(fig_dir, 'tracking_comparison_table.tex'), 'w');
+fprintf(fid_ct, '%% Auto-generated by sim_scenario2_flyaround.m\n');
+fprintf(fid_ct, '\\begin{tabular}{l r r r}\n\\toprule\n');
+fprintf(fid_ct, ['Controller & $\\Delta v$ [m/s] & saving vs track.\\ [\\%%] & ', ...
+    'capture [orbits] \\\\\n\\midrule\n']);
+fprintf(fid_ct, 'Standard Tracking MPC & %.4f & -- & %s \\\\\n', dv_track, cap_tex(cap_T, P));
+fprintf(fid_ct, 'Run 2 (terminal eq.) & %.4f & %.1f & %s \\\\\n', ...
+    dv_r2, 100*(dv_track - dv_r2)/dv_track, cap_tex(cap_r2, P));
+fprintf(fid_ct, 'Run 5 (periodic $\\ell_{\\mathrm{aug}}$) & %.4f & %.1f & %s \\\\\n', ...
+    dv_r5, 100*(dv_track - dv_r5)/dv_track, cap_tex(cap_r5, P));
+fprintf(fid_ct, '\\bottomrule\n\\end{tabular}\n');
+fclose(fid_ct);
 
 % Fig 6 — Failure-mode suite: runs 3a / 3b / 3c
 c_3a = [0.13 0.63 0.37];  
@@ -572,6 +666,33 @@ legend(ax6c, 'Location', 'northeast', 'FontSize', 7);
 sgtitle(fig6, 'S2 — Why the periodic terminal constraint is necessary');
 exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.pdf'), 'ContentType', 'vector');
 exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.png'), 'Resolution', 300);
+
+% Fig 6b — Failure modes overlaid in a single Hill-frame (3a/3b/3c)
+% Single axes: legend placed 'eastoutside' so it never covers the trajectories
+% (3b drifts far, so the data can span a wide range — keep the legend clear).
+fig6b  = figure('Name', 'Op 2 — Failure modes overlay (3a/3b/3c)');
+ax6bb  = axes(fig6b); hold(ax6bb, 'on'); grid(ax6bb, 'on'); axis(ax6bb, 'equal');
+plot(ax6bb, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.8, ...
+    'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
+plot(ax6bb, r3a.x_log(1,:), r3a.x_log(2,:), '-', 'Color', c_3a, 'LineWidth', 1.2, ...
+    'DisplayName', '3a: band $+\,Q \rightarrow$ V-bar eq.');
+plot(ax6bb, r3b.x_log(1,:), r3b.x_log(2,:), '-', 'Color', c_3b, 'LineWidth', 1.2, ...
+    'DisplayName', '3b: band $+$ fuel $\rightarrow$ drift');
+plot(ax6bb, r3c.x_log(1,:), r3c.x_log(2,:), '-', 'Color', c_3c, 'LineWidth', 1.2, ...
+    'DisplayName', '3c: $Q$ only $\rightarrow$ origin');
+plot(ax6bb, x0(1), x0(2), 's', 'Color', [0.4 0.4 0.4], 'MarkerFaceColor', [0.4 0.4 0.4], ...
+    'MarkerSize', 8, 'DisplayName', 'IC (shared)');
+plot(ax6bb, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
+xlabel(ax6bb, '$r_x$ (radial) [m]', 'Interpreter', 'latex');
+ylabel(ax6bb, '$r_y$ (along-track) [m]', 'Interpreter', 'latex');
+title(ax6bb, 'S2: Failure modes -- none acquires $\Pi^*$', 'Interpreter', 'latex');
+legend(ax6bb, 'Location', 'northeast', 'FontSize', 8, 'Interpreter', 'latex');
+exportgraphics(fig6b, fullfile(fig_dir, 'failure_modes_overlay.pdf'), 'ContentType', 'vector');
+exportgraphics(fig6b, fullfile(fig_dir, 'failure_modes_overlay.png'), 'Resolution', 300);
+if exist('matlab2tikz', 'file')
+    matlab2tikz(fullfile(fig_dir, 'failure_modes_overlay.tikz'), ...
+        'figurehandle', fig6b, 'showInfo', false, 'parseStrings', false);
+end
 
 %% JSON EXPORT
 u_lo_r1 = max(1, n_sim_r1 - P);
@@ -671,8 +792,23 @@ res5 = struct( ...
     'infeasible_qp_steps',    sum(r5.exitflag_log <= 0), ...
     'note',                   'No terminal constraint; convergence via periodic strict dissipativity');
 
+resT = struct( ...
+    'controller',             'standard_tracking_mpc', ...
+    'cost',                   'e''Qe + u''Ru  (Q=I6, R=I3, P=DARE)', ...
+    'IC',                     x0', ...
+    'n_sim_steps',            n_sim, ...
+    'delta_v_total_m_s',      dv_track, ...
+    'dv_saving_run2_pct',     100*(dv_track - dv_r2)/dv_track, ...
+    'dv_saving_run5_pct',     100*(dv_track - dv_r5)/dv_track, ...
+    'capture_orbits',         (cap_T  - 1)/P, ...
+    'capture_orbits_run2',    (cap_r2 - 1)/P, ...
+    'capture_orbits_run5',    (cap_r5 - 1)/P, ...
+    'capture_tol_m',          capture_tol, ...
+    'phase_err_last_m',       phase_err_T(end), ...
+    'note',                   'Standard tracking MPC baseline for Runs 2 & 5; shared IC x0');
+
 data = struct('metadata', meta, 'run1', res1, 'run2', res2, 'run4', res4, ...
-              'run5', res5, 'run3a', res3a, 'run3b', res3b, 'run3c', res3c);
+              'run5', res5, 'runT', resT, 'run3a', res3a, 'run3b', res3b, 'run3c', res3c);
 
 json_str    = jsonencode(data, 'PrettyPrint', true);
 export_path = fullfile(script_dir, '..', 'exports', 'scenarios', ...
@@ -681,3 +817,25 @@ fid = fopen(export_path, 'w');
 fprintf(fid, '%s', json_str);
 fclose(fid);
 fprintf('JSON exported to %s\n', export_path);
+
+%% Local functions
+
+function ks = capture_step(perr, tol)
+% First step index from which the phase error stays at/below tol for the
+% remainder of the run (i.e. the orbit is captured and held). NaN if never.
+    below = perr <= tol;
+    ks    = NaN;
+    for k = 1:numel(below)
+        if all(below(k:end)); ks = k; break; end
+    end
+end
+
+function s = cap_str(k, P)
+% Console string for a capture step, expressed in orbital periods.
+    if isnan(k); s = 'not captured'; else; s = sprintf('%.2f orb', (k-1)/P); end
+end
+
+function s = cap_tex(k, P)
+% LaTeX-table string for a capture step, in orbital periods.
+    if isnan(k); s = 'n/a'; else; s = sprintf('%.2f', (k-1)/P); end
+end

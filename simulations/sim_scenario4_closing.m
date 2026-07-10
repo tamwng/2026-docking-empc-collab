@@ -9,6 +9,7 @@
 % Run C      — pure fuel, CLF terminal cost Vf=e'P_clf e, no ball: asymptotically
 %               stable without strict dissipativity (Amrit et al. 2011).
 % Run A1-ps  — A1 config + passive safety SCA: verifies ps_frac ≈ 100%.
+% Run MPC    — standard regulation MPC (Q,R≠0, LQR terminal cost): fuel-hungry baseline.
 % Sweeps     — horizon/ρc tradeoff (B-noball), ball radius (A1),
 %              passive safety vs N and vs r_KOS (Run C).
 
@@ -81,7 +82,7 @@ params_base.r_KOS    = r_KOS;
 con_A1.u_max                  = u_max;
 con_A1.y_min_active           = false;
 con_A1.los_cone.active        = false;
-con_A1.use_avg_power          = true;
+con_A1.use_avg_power          = false;
 con_A1.avg_power.P_avail      = P_avail;
 con_A1.use_terminal_ball      = true;
 con_A1.terminal_ball.r_switch = 200;   % [m] L-inf position ball
@@ -97,7 +98,7 @@ resA1 = run_closing(cost_A, con_A1, params_A1);
 con_A2.u_max              = u_max;
 con_A2.y_min_active       = false;
 con_A2.los_cone.active    = false;
-con_A2.use_avg_power      = true;
+con_A2.use_avg_power      = false;
 con_A2.avg_power.P_avail  = P_avail;
 con_A2.use_terminal_ball  = false;
 con_A2.use_passive_safety = false;
@@ -121,7 +122,7 @@ N_B_noball = N;
 con_B_noball.u_max              = u_max;
 con_B_noball.y_min_active       = false;
 con_B_noball.los_cone.active    = false;
-con_B_noball.use_avg_power      = true;
+con_B_noball.use_avg_power      = false;
 con_B_noball.avg_power.P_avail  = P_avail;
 con_B_noball.use_terminal_ball  = false;
 con_B_noball.use_passive_safety = false;
@@ -176,6 +177,23 @@ params_C = params_base;
 fprintf(' Run C — energy ℓ=‖u‖², CLF terminal cost V_f=e''P_clf e\n');
 resC = run_closing(cost_C, con_C, params_C);
 
+%% Run MPC: Standard regulation MPC (comparison baseline)
+
+cost_std = struct('Q', Q_dare, 'R', R_dare, 'P', P_clf);
+
+con_MPC.u_max              = u_max;
+con_MPC.y_min_active       = false;
+con_MPC.los_cone.active    = false;
+con_MPC.use_avg_power      = true;
+con_MPC.avg_power.P_avail  = P_avail;
+con_MPC.use_terminal_ball  = false;
+con_MPC.use_passive_safety = false;
+
+params_MPC = params_base;
+
+fprintf(' Run MPC — standard regulation ℓ=e''Qe+u''Ru  (Q,R = DARE weights, P = LQR cost-to-go)\n');
+resMPC = run_closing(cost_std, con_MPC, params_MPC);
+
 
 %% Postprocessing
 
@@ -188,11 +206,11 @@ fprintf('\nBall-role evidence:\n');
 fprintf('  A2 total Δv (no ball, Q=P=0):     %.2e m/s  → ball is load-bearing in A1\n', resA2.dv);
 fprintf('  ||pos(B-noball) - pos(B-ball)||:  %.2e m   → ball is slack in B-ball\n\n', dX_B_max);
 
-% MPC comparison
-fprintf('Running standard regulation MPC (comparison baseline)...\n');
-p_mpc = struct('x0', x0, 'x_switch', x_switch, 'dt', dt, ...
-               'N', N, 'u_max', u_max, 't_final', t_final);
-[X_mpc, U_mpc, t_mpc, dv_mpc] = sim_mpc_regulation(p_mpc);
+% MPC comparison — reuse the first-class Run MPC (resMPC) computed above
+X_mpc  = resMPC.X;
+U_mpc  = resMPC.U;
+t_mpc  = resMPC.t_vec;
+dv_mpc = resMPC.dv;
 
 fprintf('\n── Δv summary ───────────────────────────────────────────────\n');
 fprintf('  %-32s  %10s\n', 'Run', 'Δv [m/s]');
@@ -439,27 +457,61 @@ if exist('matlab2tikz', 'file')
         'figurehandle', fig3, 'showInfo', false);
 end
 
-% Figure 4 — Hill-frame: A1 + B-noball + B-ball + C
-fig4 = figure('Name', 'S4 — Hill Frame: A1, B-noball, B-ball, C');
-ax4  = axes(fig4);
-hold(ax4,'on'); grid(ax4,'on'); axis(ax4,'equal');
-plot(ax4, resA1.X(2,:),       resA1.X(1,:),       '-',  'Color', c_A1,  'LineWidth', 1.2, ...
+% Figure 4 — Hill-frame: A1, B-noball, C, MPC  (full view + switch-point zoom)
+conv_tol_s4 = 50;         % [m] run_closing convergence threshold
+zoom_hw     = 150;        % [m] half-width of the switch-point zoom window
+
+fig4 = figure('Name', 'S4 — Hill Frame: A1, B-noball, C, MPC (full + zoom)');
+fig4.Position(3:4) = [760, 300];
+
+% Panel A: full trajectory (IC → switch)
+ax4a = subplot(1, 2, 1);
+hold(ax4a,'on'); grid(ax4a,'on'); axis(ax4a,'equal');
+plot(ax4a, resA1.X(2,:),       resA1.X(1,:),       '-', 'Color', c_A1, 'LineWidth', 1.2, ...
     'DisplayName', 'A1 — energy, ball ON');
-plot(ax4, resB_noball.X(2,:), resB_noball.X(1,:),  '-',  'Color', c_Bnb,  'LineWidth', 1.2, ...
-    'DisplayName', sprintf('B-noball (\\rho_c=%.0e, N=%d)', rho_c, N_B_noball));
-plot(ax4, resB_ball.X(2,:),   resB_ball.X(1,:),    '--', 'Color', c_Bbal, 'LineWidth', 1.2, ...
-    'DisplayName', sprintf('B-ball (\\rho_c=%.0e, ball slack)', rho_c));
-plot(ax4, resC.X(2,:),        resC.X(1,:),         '-',  'Color', c_C,    'LineWidth', 1.2, ...
+plot(ax4a, resB_noball.X(2,:), resB_noball.X(1,:), '-', 'Color', c_Bnb, 'LineWidth', 1.2, ...
+    'DisplayName', sprintf('B-noball ($\\rho_c$=%.0e, N=%d)', rho_c, N_B_noball));
+plot(ax4a, resC.X(2,:),        resC.X(1,:),        '-', 'Color', c_C,  'LineWidth', 1.2, ...
     'DisplayName', 'C — energy + CLF $V_f$');
-plot(ax4, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
-    'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 6, 'HandleVisibility', 'off');
-plot(ax4, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
+plot(ax4a, resMPC.X(2,:),      resMPC.X(1,:),      '-', 'Color', c_mpc, 'LineWidth', 1.2, ...
+    'DisplayName', 'MPC — standard regulation');
+plot(ax4a, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
+    'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 6, 'DisplayName', 'IC (10 km)');
+plot(ax4a, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
     'MarkerFaceColor', [0.2 0.6 0.2], 'MarkerSize', 7, 'DisplayName', 'Switch point');
-plot(ax4, 0, 0, '+k', 'MarkerSize', 9, 'LineWidth', 1.5, 'DisplayName', 'Target');
-xlabel(ax4, 'Along-track $y$ [m]', 'Interpreter', 'latex');
-ylabel(ax4, 'Radial $x$ [m]',      'Interpreter', 'latex');
-title(ax4, 'Hill-Frame Trajectory — A1, B-noball, B-ball, C', 'Interpreter', 'latex');
-legend(ax4, 'Location', 'northeast', 'Interpreter', 'latex');
+plot(ax4a, 0, 0, '+k', 'MarkerSize', 9, 'LineWidth', 1.5, 'DisplayName', 'Target');
+% Dashed rectangle showing the zoom window
+rectangle(ax4a, 'Position', [x_switch(2)-zoom_hw, x_switch(1)-zoom_hw, 2*zoom_hw, 2*zoom_hw], ...
+    'EdgeColor', [0.4 0.4 0.4], 'LineStyle', '--', 'LineWidth', 0.8);
+xlabel(ax4a, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+ylabel(ax4a, 'Radial $x$ [m]',      'Interpreter', 'latex');
+title(ax4a, 'Full closing trajectory', 'Interpreter', 'latex');
+legend(ax4a, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 6);
+
+% Panel B: zoom on the switch point
+ax4b = subplot(1, 2, 2);
+hold(ax4b,'on'); grid(ax4b,'on'); axis(ax4b,'equal');
+plot(ax4b, resA1.X(2,:),       resA1.X(1,:),       '-', 'Color', c_A1, 'LineWidth', 1.2, ...
+    'DisplayName', 'A1 — energy, ball ON');
+plot(ax4b, resB_noball.X(2,:), resB_noball.X(1,:), '-', 'Color', c_Bnb, 'LineWidth', 1.2, ...
+    'DisplayName', sprintf('B-noball ($\\rho_c$=%.0e, N=%d)', rho_c, N_B_noball));
+plot(ax4b, resC.X(2,:),        resC.X(1,:),        '-', 'Color', c_C,  'LineWidth', 1.2, ...
+    'DisplayName', 'C — energy + CLF $V_f$');
+plot(ax4b, resMPC.X(2,:),      resMPC.X(1,:),      '-', 'Color', c_mpc, 'LineWidth', 1.2, ...
+    'DisplayName', 'MPC — standard regulation');
+theta_c = linspace(0, 2*pi, 200);
+plot(ax4b, x_switch(2)+conv_tol_s4*cos(theta_c), x_switch(1)+conv_tol_s4*sin(theta_c), ...
+    ':k', 'LineWidth', 0.9, 'DisplayName', sprintf('conv. tol %d m', conv_tol_s4));
+plot(ax4b, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
+    'MarkerFaceColor', [0.2 0.6 0.2], 'MarkerSize', 8, 'DisplayName', 'Switch point');
+xlim(ax4b, x_switch(2) + [-zoom_hw, zoom_hw]);
+ylim(ax4b, x_switch(1) + [-zoom_hw, zoom_hw]);
+xlabel(ax4b, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+ylabel(ax4b, 'Radial $x$ [m]',      'Interpreter', 'latex');
+title(ax4b, 'Zoom: switch-point arrival', 'Interpreter', 'latex');
+legend(ax4b, 'Location', 'southeast', 'Interpreter', 'latex', 'FontSize', 6);
+
+sgtitle(fig4, 'Hill-Frame Trajectory — A1, B-noball, C, MPC', 'Interpreter', 'latex');
 if exist('matlab2tikz', 'file')
     matlab2tikz('results/figures/scenario4/B_hill_frame.tikz', ...
         'figurehandle', fig4, 'showInfo', false);
@@ -707,6 +759,88 @@ if exist('matlab2tikz', 'file')
         'figurehandle', fig9, 'showInfo', false);
 end
 
+% Figure 10 — Terminal ball as an actuator-authority knob (table + focused plot)
+% Turnpike framing dropped: characterise how shrinking the ball trades
+% convergence time against peak control effort, with a feasibility floor
+% (peak thrust rises toward u_max as the ball tightens, then the QP goes
+% infeasible / DNF).
+out_dir_s4 = 'results/figures/scenario4';
+[~, ~]     = mkdir(out_dir_s4);
+
+ball_dv      = zeros(1, n_ball);
+ball_peaku   = zeros(1, n_ball);
+ball_satfrac = zeros(1, n_ball);
+ball_tconv_h = nan(1, n_ball);
+ball_ok      = false(1, n_ball);
+
+fprintf('\n── Terminal-ball sweep: control demand vs radius ──────────────\n');
+fprintf('  %8s  %6s  %9s  %9s  %10s  %6s\n', ...
+    'r_ball', 'conv', 't_conv[h]', 'dv[m/s]', 'peak|u|', 'sat%');
+for bi = 1:n_ball
+    r = ball_res{bi};
+    ball_dv(bi)    = r.dv;
+    ball_peaku(bi) = max([r.u_norm_seq, 0]);
+    if r.n_ctrl >= 1
+        sat = any(abs(r.U(:, 1:r.n_ctrl)) >= 0.999*u_max, 1);   % per-axis saturation
+        ball_satfrac(bi) = mean(sat);
+    end
+    ball_ok(bi) = ~isnan(r.conv_step);
+    if ball_ok(bi), ball_tconv_h(bi) = r.conv_step * dt / 3600; end
+    conv_str = 'DNF'; if ball_ok(bi), conv_str = sprintf('%d', r.conv_step); end
+    fprintf('  %6d m  %6s  %9.2f  %9.4f  %10.2e  %5.0f%%\n', ...
+        r_ball_vec(bi), conv_str, ball_tconv_h(bi), ball_dv(bi), ...
+        ball_peaku(bi), 100*ball_satfrac(bi));
+end
+fprintf('───────────────────────────────────────────────────────────────\n');
+
+% LaTeX table for the report (plain yes/no — no pifont dependency)
+fid_bt = fopen(fullfile(out_dir_s4, 'ball_sweep_table.tex'), 'w');
+fprintf(fid_bt, '%% Auto-generated by sim_scenario4_closing.m\n');
+fprintf(fid_bt, '\\begin{tabular}{r c r r r r}\n\\toprule\n');
+fprintf(fid_bt, ['$r_{\\mathrm{ball}}$ [m] & converged & $t_{\\mathrm{conv}}$ [h] & ', ...
+    '$\\Delta v$ [m/s] & peak $\\|u\\|$ [m/s$^2$] & sat.\\ [\\%%] \\\\\n\\midrule\n']);
+for bi = 1:n_ball
+    conv_tex  = 'no';  if ball_ok(bi), conv_tex  = 'yes'; end
+    tconv_tex = '--';  if ball_ok(bi), tconv_tex = sprintf('%.2f', ball_tconv_h(bi)); end
+    fprintf(fid_bt, '%d & %s & %s & %.4f & %.2e & %.0f \\\\\n', ...
+        r_ball_vec(bi), conv_tex, tconv_tex, ball_dv(bi), ball_peaku(bi), 100*ball_satfrac(bi));
+end
+fprintf(fid_bt, '\\bottomrule\n\\end{tabular}\n');
+fclose(fid_bt);
+
+% Focused figure: convergence time vs control demand vs ball radius
+fig10 = figure('Name', 'S4 — Terminal ball: control demand vs radius');
+ax10  = axes(fig10); hold(ax10, 'on'); grid(ax10, 'on');
+set(ax10, 'XDir', 'reverse');   % shrinking ball reads left→right
+
+yyaxis(ax10, 'left');
+plot(ax10, r_ball_vec(ball_ok), ball_tconv_h(ball_ok), '-o', ...
+    'LineWidth', 1.5, 'MarkerSize', 6, 'DisplayName', 'Convergence time');
+ylabel(ax10, 'Convergence time [h]', 'Interpreter', 'latex');
+
+yyaxis(ax10, 'right');
+plot(ax10, r_ball_vec, ball_peaku, '-s', ...
+    'LineWidth', 1.5, 'MarkerSize', 6, 'DisplayName', 'Peak $\|u\|$');
+yline(ax10, u_max, ':', '$u_{\max}$ (per axis)', ...
+    'Interpreter', 'latex', 'HandleVisibility', 'off');
+ylabel(ax10, 'Peak $\|u\|$ [m/s$^2$]', 'Interpreter', 'latex');
+
+if any(~ball_ok)
+    yl10 = ylim(ax10);
+    plot(ax10, r_ball_vec(~ball_ok), yl10(1)*ones(1, sum(~ball_ok)), 'x', ...
+        'Color', [0.8 0 0], 'MarkerSize', 10, 'LineWidth', 1.5, ...
+        'DisplayName', 'infeasible (DNF)');
+end
+
+xlabel(ax10, 'Terminal ball radius $r_{\mathrm{ball}}$ [m]', 'Interpreter', 'latex');
+title(ax10, 'Terminal ball: convergence speed vs control demand', 'Interpreter', 'latex');
+legend(ax10, 'Interpreter', 'latex', 'Location', 'north');
+
+if exist('matlab2tikz', 'file')
+    matlab2tikz(fullfile(out_dir_s4, 'ball_control_demand.tikz'), ...
+        'figurehandle', fig10, 'showInfo', false);
+end
+
 % Figure 7 — Run C thrust profile (log scale)
 tp_label_C = 'CLF-guided cruise';
 
@@ -753,6 +887,7 @@ print(fig6, 'results/figures/scenario4/A1_vs_A1ps',       '-dpng', '-r150');
 print(fig7, 'results/figures/scenario4/C_thrust_profile', '-dpng', '-r150');
 print(fig8, 'results/figures/scenario4/ps_sensitivity',   '-dpng', '-r150');
 print(fig9, 'results/figures/scenario4/shrinking_ball',   '-dpng', '-r150');
+print(fig10,'results/figures/scenario4/ball_control_demand','-dpng', '-r150');
 fprintf('PNG figures saved to results/figures/scenario4/\n\n');
 
 %% JSON export 
@@ -772,6 +907,9 @@ json_data.runB_ball = make_run_entry(resB_ball, 'B_ball', ...
 
 json_data.runC = make_run_entry(resC, 'C', 'energy_clf_terminal', false, 0, N, ...
     dt, x0, x_switch, u_max, NaN, false, NaN, false);
+
+json_data.runMPC = make_run_entry(resMPC, 'MPC', 'standard_regulation_Qdare_Rdare', ...
+    false, 0, N, dt, x0, x_switch, u_max, NaN, false, NaN, false);
 
 json_data.sweep_horizon = struct( ...
     'N',           sw_N, ...
