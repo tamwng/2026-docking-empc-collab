@@ -9,7 +9,8 @@
 %   S1 — [1]  standard MPC  [2] EMPC+CLF (default)
 %
 % Each phase gate then pauses for a GO/HOLD decision before proceeding.
-% Approach corridor (|x|,|z| ≤ d_corr) is always active during docking.
+% Phase configs mirror the standalone sim_scenario{4,2,1}_*.m scripts.
+% Docking enforces the LoS approach cone (30°, +V-bar) and y ≥ 0.
 
 clear; clc;
 
@@ -31,7 +32,7 @@ N_S1     = 20;         % MPC horizon — docking
 u_max    = 1e-2;       % [m/s²] thrust bound, all phases
 r_KOS    = 50;         % [m] keep-out sphere — closing phase
 b_target = 75;         % [m] NMC orbit radial semi-axis target
-d_corr   = 20;         % [m] approach corridor half-width for docking
+los_deg  = 30;         % [deg] docking LoS approach-cone half-angle
 rho_c    = 1e-11;      % state regularisation weight (B-noball option)
 eps_r5   = 1e-4;       % augmented stage cost weight (Run 5 option)
 P_avail  = 1e-5;       % [m²/s⁴] avg-power budget (tracking only)
@@ -74,7 +75,7 @@ s4_choice = select_option(3, 3);
 con_S4.u_max              = u_max;
 con_S4.y_min_active       = false;
 con_S4.los_cone.active    = false;
-con_S4.use_avg_power      = true;
+con_S4.use_avg_power      = false;
 con_S4.avg_power.P_avail  = P_avail;
 con_S4.use_passive_safety = false;
 
@@ -301,7 +302,7 @@ end
 
 %% ═══════════════════════════════════════════════════════════════════════
 %%  PHASE 3 — Docking from FKP
-%%  Approach corridor (|x|,|z| <= d_corr) always active.
+%%  LoS approach cone (30°, +V-bar) + y >= 0 active (matches standalone S1).
 %% ═══════════════════════════════════════════════════════════════════════
 
 fprintf('\n═══════════════════════════════════════════════════════════\n');
@@ -313,13 +314,13 @@ fprintf('    [2] Run 3   — EMPC, hard terminal eq.   Q=0, R=I, P=0, x(N)=dock\
 fprintf('    (Both produce near-identical V-bar trajectories; mechanism differs.)\n\n');
 s1_choice = select_option(2, 1);
 
-% Base constraint struct (approach corridor always on)
-con_S1.u_max                    = u_max;
-con_S1.y_min_active             = false;
-con_S1.los_cone.active          = false;
-con_S1.use_passive_safety       = false;
-con_S1.approach_corridor.active = true;
-con_S1.approach_corridor.d_max  = d_corr;
+% Base constraint struct — mirrors standalone sim_scenario1_docking.m:
+% LoS approach cone (30°, +V-bar) + y ≥ 0 half-space; no approach corridor.
+con_S1.u_max               = u_max;
+con_S1.y_min_active        = true;
+con_S1.los_cone.active     = true;
+con_S1.los_cone.half_angle = deg2rad(los_deg);   % along-track approach cone
+con_S1.use_passive_safety  = false;
 
 params_S1.x0       = x_FKP;
 params_S1.x_dock   = zeros(6, 1);
@@ -328,7 +329,7 @@ params_S1.N        = N_S1;
 params_S1.u_max    = u_max;
 params_S1.t_final  = 3 * T;
 params_S1.r_KOS    = 5;
-params_S1.conv_tol = 0.1;
+params_S1.conv_tol = 1.0;   % [m] position-error tol (matches standalone)
 
 switch s1_choice
     case 1   % Run 2: EMPC, CLF terminal cost (default)
@@ -462,7 +463,7 @@ viz_data.metadata = struct( ...
     'dv_S1_ms',        dv_S1, ...
     'dv_total_ms',     dv_total_mission, ...
     'b_nmc_m',         b_established, ...
-    'corridor_dmax_m', d_corr, ...
+    'los_cone_deg',    los_deg, ...
     'n_frames',        N_all, ...
     'dt_hint_s',       dt_S4);   % animation pacing hint (first step)
 

@@ -7,18 +7,11 @@
 %
 % Run 2 — EMPC, CLF terminal cost (Q = 0):
 %   Stage cost ℓ = u'R_eco u  (pure fuel, R_eco = I).
-%   (Amrit, Rawlings & Angeli 2011, Thm 1).  Fuel-optimal trajectory;
-%   convergence guaranteed by CLF contraction without strict dissipativity.
-%   No approach corridor constraint — pure fuel-optimal path.
 %
 % Run 3 — EMPC + hard terminal equality  x(N) = x_dock:
 %   Same economic stage cost as Run 2 (Q=0, R=I) but with an explicit
 %   equality constraint pinning the predicted terminal state to the docking
 %   port at every receding step.
-%   Finding: Run 3 ≈ Run 2 — for the V-bar approach, the minimum-fuel
-%   trajectory naturally arrives at the origin, so P_clf acts as an implicit
-%   soft terminal equality.  CLF contraction is sufficient; no hard constraint
-%   needed.  Ref: Keerthi & Gilbert (1988); Chen & Allgöwer (1998).
 
 clear; clc;
 
@@ -38,6 +31,7 @@ u_max  = 1e-2;                  % [m/s²] symmetric per-axis thrust bound
 r_KOS  = 5;                     % [m]   keep-out sphere radius (capture ball)
 N_safe = 554;                   % post-hoc free-drift horizon ≈ 1 orbital period
 t_final = 1.5 * T;              % [s]   max run time (all runs converge well within this)
+los_half_angle = pi/6;          % [rad] LoS approach-cone half-angle (30 deg)
 
 %% CWH matrices (for DARE / CLF verification)
 Ac_cwh = [0      0     0    1     0    0  ;
@@ -84,35 +78,38 @@ params_base.u_max   = u_max;
 params_base.t_final = t_final;
 params_base.r_KOS    = r_KOS;
 params_base.N_safe   = N_safe;
-params_base.conv_tol = 0.1;
+params_base.conv_tol = 1.0;
 
-%% Run 1 — Standard MPC (Q ≠ 0, P = P_clf from DARE)
+%% Run 1 — Standard MPC 
 
-con1.u_max              = u_max;
-con1.y_min_active       = false;
-con1.los_cone.active    = false;
-con1.use_passive_safety = false;
+con1.u_max               = u_max;
+con1.y_min_active        = true;
+con1.los_cone.active     = true;
+con1.los_cone.half_angle = los_half_angle;
+con1.use_passive_safety  = false;
 
-fprintf(' Run 1 — Standard MPC  (Q != 0, R large, P = P_clf)\n');
+fprintf(' Run 1 — Standard MPC');
 res1 = run_docking(cost_std, con1, params_base);
 
 %% Run 2 — EMPC, CLF terminal cost  (Q = 0, R = I, P = P_clf)
 
-con2.u_max              = u_max;
-con2.y_min_active       = false;
-con2.los_cone.active    = false;
-con2.use_passive_safety = false;
+con2.u_max               = u_max;
+con2.y_min_active        = true;
+con2.los_cone.active     = true;
+con2.los_cone.half_angle = los_half_angle;
+con2.use_passive_safety  = false;
 
 fprintf(' Run 2 — EMPC  (Q = 0, R = I, P = P_clf)\n');
 res2 = run_docking(cost_empc, con2, params_base);
 
 %% Run 3 — EMPC + hard terminal equality  (Q = 0, R = I, P = 0, x(N)=x_dock)
 
-con3.u_max              = u_max;
-con3.y_min_active       = false;
-con3.los_cone.active    = false;
-con3.terminal_eq        = true;
-con3.use_passive_safety = false;
+con3.u_max               = u_max;
+con3.y_min_active        = true;
+con3.los_cone.active     = true;
+con3.los_cone.half_angle = los_half_angle;
+con3.terminal_eq         = true;
+con3.use_passive_safety  = false;
 
 fprintf(' Run 3 — EMPC + hard terminal equality\n');
 res3 = run_docking(cost_dock, con3, params_base);
@@ -135,6 +132,21 @@ fprintf('  Run 2 vs Run 1 dv saving: %.1f%%\n', dv_saving_2vs1);
 fprintf('  Run 3 vs Run 1 dv saving: %.1f%%\n', dv_saving_3vs1);
 fprintf('─────────────────────────────────────────────────────────────────\n\n');
 
+% Comparison table — Δv, convergence (steps / time), terminal distance
+run_labels = {'Run 1 - Std MPC'; 'Run 2 - EMPC CLF'; 'Run 3 - EMPC+term.eq'};
+dv_col     = [res1.dv;        res2.dv;        res3.dv];
+step_col   = [res1.conv_step; res2.conv_step; res3.conv_step];
+tmin_col   = step_col * dt / 60;                                  % convergence time [min]
+tdist_col  = [norm(res1.X(1:3,end)); norm(res2.X(1:3,end)); ...   % terminal position dist [m]
+              norm(res3.X(1:3,end))];
+
+T_cmp = table(dv_col, step_col, tmin_col, tdist_col, ...
+    'VariableNames', {'dv_ms', 'conv_steps', 'conv_time_min', 'term_dist_m'}, ...
+    'RowNames', run_labels);
+fprintf('── Comparison table ──────────────────────────────────────────────\n');
+disp(T_cmp);
+fprintf('──────────────────────────────────────────────────────────────────\n\n');
+
 % Colours 
 c1 = [0.12 0.47 0.71];  
 c2 = [0.00 0.68 0.68];   
@@ -148,38 +160,36 @@ t1_min = res1.t_vec / 60;
 t2_min = res2.t_vec / 60;
 t3_min = res3.t_vec / 60;
 
-%  Figure 1: Hill-frame trajectory overlay (y–x plane) 
+%  Figure 1: Hill-frame trajectory (y–x plane) — full approach + terminal zoom
+% LoS cone cross-section (z = 0): docking axis along +y, edges x = ±y·tan(alpha).
+alpha_deg = round(rad2deg(los_half_angle));
+y_cone    = linspace(0, x0(2) * 1.05, 60);
+edge_cone = y_cone * tan(los_half_angle);
+cone      = struct('y', y_cone, 'edge', edge_cone, 'alpha_deg', alpha_deg);
+cols      = {c1, c2, c3};
+R         = {res1, res2, res3};
+
 fig1 = figure('Name', 'S1 Docking — Hill-Frame Trajectory');
-ax1  = axes(fig1);
-hold(ax1, 'on'); grid(ax1, 'on'); axis(ax1, 'equal');
+fig1.Position(3:4) = [1050, 460];
 
-plot(ax1, res1.X(2,:), res1.X(1,:), '-',  'Color', c1, 'LineWidth', 1.4, ...
-    'DisplayName', sprintf('Run 1 — Std MPC  (%.4f m/s, step %s)', ...
-        res1.dv, num2str(res1.conv_step)));
-plot(ax1, res2.X(2,:), res2.X(1,:), '-',  'Color', c2, 'LineWidth', 1.4, ...
-    'DisplayName', sprintf('Run 2 — EMPC, CLF $V_f$  (%.4f m/s, step %s)', ...
-        res2.dv, num2str(res2.conv_step)));
-plot(ax1, res3.X(2,:), res3.X(1,:), '--', 'Color', c3, 'LineWidth', 1.4, ...
-    'DisplayName', sprintf('Run 3 — EMPC $+$ term.eq  (%.4f m/s, step %s)', ...
-        res3.dv, num2str(res3.conv_step)));
-
-plot(ax1, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
-    'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
-    'DisplayName', 'IC — V-bar hold (75 m)');
-plot(ax1, 0, 0, 'pk', 'MarkerSize', 10, 'MarkerFaceColor', 'k', ...
-    'DisplayName', 'Docking port (origin)');
-
-theta_c = linspace(0, 2*pi, 200);
-plot(ax1, r_KOS*sin(theta_c), r_KOS*cos(theta_c), ':k', 'LineWidth', 0.8, ...
-    'HandleVisibility', 'off');
-text(ax1, r_KOS + 0.3, 0, sprintf('KOS (%d m)', r_KOS), ...
+% Panel (a): full approach
+ax1a = subplot(1, 2, 1);
+draw_docking_scene(ax1a, R, x0, r_KOS, cols, cone, true);
+title(ax1a, 'Full approach (75 m $\to$ 0 m)', 'Interpreter', 'latex');
+text(ax1a, r_KOS + 1, 0, sprintf('KOS (%d m)', r_KOS), ...
     'FontSize', 8, 'Color', [0.4 0.4 0.4]);
 
-xlabel(ax1, 'Along-track $y$ [m]', 'Interpreter', 'latex');
-ylabel(ax1, 'Radial $x$ [m]',      'Interpreter', 'latex');
-title(ax1,  'Hill-Frame Trajectory — Docking Approach (75 m $\to$ 0 m)', ...
+% Panel (b): terminal zoom (~3× keep-out sphere around the port)
+ax1b   = subplot(1, 2, 2);
+draw_docking_scene(ax1b, R, x0, r_KOS, cols, cone, false);
+zoom_r = 2 * r_KOS;
+xlim(ax1b, [-2, zoom_r]);
+ylim(ax1b, [-zoom_r, zoom_r]);
+title(ax1b, sprintf('Terminal zoom ($\\leq %d$ m)', zoom_r), 'Interpreter', 'latex');
+
+sgtitle(fig1, ...
+    'Hill-Frame Trajectory — Docking Approach (LoS cone shaded)', ...
     'Interpreter', 'latex');
-legend(ax1, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
 
 % Figure 2: Cumulative Δv comparison 
 fig2 = figure('Name', 'S1 Docking — Cumulative Deltav');
@@ -248,8 +258,9 @@ plot(ax4, t2_min, res2.ef, '-',  'Color', c2, 'LineWidth', 1.4, ...
     'DisplayName', 'Run 2 — EMPC, CLF $V_f$');
 plot(ax4, t3_min, res3.ef, '--', 'Color', c3, 'LineWidth', 1.4, ...
     'DisplayName', 'Run 3 — EMPC $+$ term.eq');
-yline(ax4, 0.1, '--k', 'LineWidth', 0.9, 'HandleVisibility', 'off');
-text(ax4, 0, 0.13, 'conv. tol 0.1 m', 'FontSize', 8, 'Color', [0.3 0.3 0.3]);
+yline(ax4, params_base.conv_tol, '--k', 'LineWidth', 0.9, 'HandleVisibility', 'off');
+text(ax4, 0, params_base.conv_tol*1.3, sprintf('conv. tol %.3g m', params_base.conv_tol), ...
+    'FontSize', 8, 'Color', [0.3 0.3 0.3]);
 
 xlabel(ax4, 'Time [min]',                        'Interpreter', 'latex');
 ylabel(ax4, '$\|e_k\|$ [m]',                     'Interpreter', 'latex');
@@ -273,20 +284,75 @@ for bi = 1:3
         'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'FontSize', 9);
 end
 
+% Figure 6: 3-D Hill-frame trajectory with LoS approach cone
+% Trajectories are planar (z = 0); the 3-D view exists to show the LoS
+% constraint as an actual cone (radius = y·tan(alpha) about the +y axis).
+fig6 = figure('Name', 'S1 Docking — 3D Hill Trajectory');
+ax6  = axes(fig6);
+hold(ax6, 'on'); grid(ax6, 'on');
+
+% LoS cone surface — axis along +y (along-track), plotted (y, x, z)
+ny = 32; nth = 30;
+[YG, TH] = meshgrid(linspace(0, x0(2)*1.02, ny), linspace(0, 2*pi, nth));
+RG = YG * tan(los_half_angle);
+surf(ax6, YG, RG.*cos(TH), RG.*sin(TH), ...
+    'FaceColor', [0.95 0.90 0.55], 'FaceAlpha', 0.15, ...
+    'EdgeColor', [0.80 0.75 0.45], 'EdgeAlpha', 0.30, 'LineWidth', 0.3, ...
+    'DisplayName', sprintf('LoS cone ($\\pm%d^\\circ$)', alpha_deg));
+
+styles6 = {'-', '-', '--'};
+names6  = {'Run 1 — Std MPC', 'Run 2 — EMPC, CLF $V_f$', 'Run 3 — EMPC $+$ term.eq'};
+for i = 1:3
+    plot3(ax6, R{i}.X(2,:), R{i}.X(1,:), R{i}.X(3,:), styles6{i}, ...
+        'Color', cols{i}, 'LineWidth', 1.6, 'DisplayName', names6{i});
+end
+
+plot3(ax6, x0(2), x0(1), x0(3), 'o', 'Color', [0.4 0.4 0.4], ...
+    'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
+    'DisplayName', 'IC — V-bar hold (75 m)');
+plot3(ax6, 0, 0, 0, 'pk', 'MarkerSize', 11, 'MarkerFaceColor', 'k', ...
+    'DisplayName', 'Docking port (origin)');
+
+xlabel(ax6, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+ylabel(ax6, 'Radial $x$ [m]',      'Interpreter', 'latex');
+zlabel(ax6, 'Cross-track $z$ [m]', 'Interpreter', 'latex');
+title(ax6,  'Hill-Frame Trajectory with LoS Cone (3-D)', 'Interpreter', 'latex');
+legend(ax6, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
+daspect(ax6, [1 1 1]);
+view(ax6, -35, 22);
+
 % PNG export
 out_dir = 'results/figures/s1_docking';
 [~, ~]  = mkdir(out_dir);
 print(fig1, fullfile(out_dir, 'hill_trajectory'), '-dpng', '-r150');
+print(fig6, fullfile(out_dir, 'hill_trajectory_3d'), '-dpng', '-r150');
 print(fig2, fullfile(out_dir, 'cumulative_dv'),   '-dpng', '-r150');
 print(fig3, fullfile(out_dir, 'thrust_profiles'), '-dpng', '-r150');
 print(fig4, fullfile(out_dir, 'error_decay'),     '-dpng', '-r150');
 print(fig5, fullfile(out_dir, 'dv_bar_chart'),    '-dpng', '-r150');
 fprintf('PNG figures saved to %s/\n\n', out_dir);
 
+% LaTeX comparison table (booktabs)
+tex_labels = {'Standard MPC', 'EMPC (CLF $V_f$)', 'EMPC $+$ term.\ eq.'};
+tex_path   = fullfile(out_dir, 'comparison_table.tex');
+ftex = fopen(tex_path, 'w');
+fprintf(ftex, '%% Auto-generated by sim_scenario1_docking.m — do not edit by hand.\n');
+fprintf(ftex, '\\begin{tabular}{lrrrr}\n\\toprule\n');
+fprintf(ftex, 'Run & $\\Delta v$ [m/s] & Steps & Time [min] & Term.\\ dist.\\ [m] \\\\\n\\midrule\n');
+for i = 1:3
+    fprintf(ftex, '%s & %.4f & %d & %.2f & %.3e \\\\\n', ...
+        tex_labels{i}, dv_col(i), step_col(i), tmin_col(i), tdist_col(i));
+end
+fprintf(ftex, '\\bottomrule\n\\end{tabular}\n');
+fclose(ftex);
+fprintf('LaTeX comparison table saved to %s\n\n', tex_path);
+
 % TikZ export
 if exist('matlab2tikz', 'file')
     matlab2tikz(fullfile(out_dir, 'hill_trajectory.tikz'), ...
         'figurehandle', fig1, 'showInfo', false);
+    matlab2tikz(fullfile(out_dir, 'hill_trajectory_3d.tikz'), ...
+        'figurehandle', fig6, 'showInfo', false);
     matlab2tikz(fullfile(out_dir, 'cumulative_dv.tikz'), ...
         'figurehandle', fig2, 'showInfo', false);
     matlab2tikz(fullfile(out_dir, 'thrust_profiles.tikz'), ...
@@ -309,7 +375,7 @@ json_data.scenario = struct( ...
     'x_dock',      x_dock', ...
     'u_max',       u_max, ...
     'r_KOS_m',     r_KOS, ...
-    'conv_tol_m',  0.1, ...
+    'conv_tol_m',  params_base.conv_tol, ...
     'N_safe',      N_safe, ...
     'Q_dare',      diag(Q_dare)', ...
     'R_dare',      diag(R_dare)', ...
@@ -337,6 +403,40 @@ fclose(fid);
 fprintf('JSON exported to exports/scenarios/sim_scenario1_docking.json\n');
 
 % Local functions
+
+function draw_docking_scene(ax, R, x0, r_KOS, cols, cone, show_legend)
+% Draws the Hill-frame (y–x) docking scene into axes AX: shaded LoS cone,
+% the three trajectories, KOS circle, initial condition and docking port.
+    hold(ax, 'on'); grid(ax, 'on'); axis(ax, 'equal');
+
+    % LoS approach cone (z = 0 cross-section) as a shaded wedge
+    fill(ax, [cone.y, fliplr(cone.y)], [cone.edge, fliplr(-cone.edge)], ...
+        [0.95 0.90 0.55], 'FaceAlpha', 0.20, 'EdgeColor', [0.75 0.70 0.35], ...
+        'LineWidth', 0.5, ...
+        'DisplayName', sprintf('LoS cone ($\\pm%d^\\circ$)', cone.alpha_deg));
+
+    styles = {'-', '-', '--'};
+    names  = {'Run 1 — Std MPC', 'Run 2 — EMPC, CLF $V_f$', 'Run 3 — EMPC $+$ term.eq'};
+    for i = 1:3
+        plot(ax, R{i}.X(2,:), R{i}.X(1,:), styles{i}, 'Color', cols{i}, ...
+            'LineWidth', 1.4, 'DisplayName', names{i});
+    end
+
+    th = linspace(0, 2*pi, 200);
+    plot(ax, r_KOS*sin(th), r_KOS*cos(th), ':k', 'LineWidth', 0.8, ...
+        'HandleVisibility', 'off');
+    plot(ax, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
+        'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
+        'DisplayName', 'IC — V-bar hold (75 m)');
+    plot(ax, 0, 0, 'pk', 'MarkerSize', 10, 'MarkerFaceColor', 'k', ...
+        'DisplayName', 'Docking port (origin)');
+
+    xlabel(ax, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+    ylabel(ax, 'Radial $x$ [m]',      'Interpreter', 'latex');
+    if show_legend
+        legend(ax, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
+    end
+end
 
 function s = make_run_entry(res, run_label, cost_label, has_terminal_eq, ...
                              N_used, dt_val, x0_val, x_dock_val, u_max_val)

@@ -9,16 +9,16 @@
 \begin{tikzpicture}
 
 \begin{axis}[%
-width=3.416in,
-height=3.566in,
-at={(1.327in,0.481in)},
+width=2.649in,
+height=2.547in,
+at={(1.029in,0.344in)},
 scale only axis,
 xmin=-372.487128333598,
 xmax=10042.7270712322,
 xlabel style={font=\color{mycolor5}},
 xlabel={Along-track $y$ [m]},
-ymin=-4443.57801319249,
-ymax=6426.84394741181,
+ymin=-4014.48240948442,
+ymax=5997.74834370375,
 ylabel style={font=\color{mycolor5}},
 ylabel={Radial $x$ [m]},
 axis background/.style={fill=white},
@@ -227,9 +227,9 @@ legend style={legend cell align=left, align=left}
 \end{axis}
 
 \begin{axis}[%
-width=3.416in,
-height=3.416in,
-at={(5.822in,0.556in)},
+width=2.547in,
+height=2.547in,
+at={(4.566in,0.344in)},
 scale only axis,
 xmin=150,
 xmax=450,
@@ -246,7 +246,7 @@ axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
 ymajorgrids,
-legend style={legend cell align=left, align=left}
+legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align=left}
 ]
 \addplot [color=mycolor1, line width=1.2pt]
   table[row sep=crcr]{%

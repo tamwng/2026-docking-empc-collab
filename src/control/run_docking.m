@@ -3,7 +3,7 @@ function res = run_docking(cost_struct, con, params)
 % Single MPC/EMPC docking-phase run (CWH dynamics, condensed QP via mpc_regulation).
 %
 % Drives e_k = x_k − x_dock → 0 (x_dock is the docking port, typically origin).
-% Convergence criterion: norm(e_k) < conv_tol (default 1 m)
+% Convergence criterion: norm(e_k(1:3)) < conv_tol (position error [m], default 1 m)
 %
 % Inputs
 %   cost_struct — .Q [6×6]  .R [3×3]  .P [6×6]
@@ -136,7 +136,7 @@ if verbose
 end
 
 for k = 1:n_steps
-    ef(k) = norm(e_k);
+    ef(k) = norm(e_k(1:3));   % position error only [m]
 
     if ef(k) < conv_tol
         conv_step = k;

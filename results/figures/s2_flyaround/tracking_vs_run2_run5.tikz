@@ -8,9 +8,9 @@
 \begin{tikzpicture}
 
 \begin{axis}[%
-width=8.146in,
-height=5.161in,
-at={(1.366in,2.098in)},
+width=7.677in,
+height=4.865in,
+at={(1.288in,0.657in)},
 scale only axis,
 xmin=-345.232368017394,
 xmax=366.240482682943,
