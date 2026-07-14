@@ -28,7 +28,7 @@ dt_S1    = 10;         % [s] docking sample time
 N_S4     = 20;         % default MPC horizon — closing (B-noball uses 40)
 P_S2     = 92;         % orbital period in steps
 N_S2     = 92;         % MPC horizon — flyaround (= P)
-N_S1     = 20;         % MPC horizon — docking
+N_S1     = 24;         % MPC horizon — docking (min. feasible for Run 3 term.eq @~150 m FKP)
 u_max    = 1e-2;       % [m/s²] thrust bound, all phases
 r_KOS    = 50;         % [m] keep-out sphere — closing phase
 b_target = 75;         % [m] NMC orbit radial semi-axis target

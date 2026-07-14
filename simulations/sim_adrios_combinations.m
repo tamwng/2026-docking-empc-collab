@@ -23,7 +23,7 @@ constants;   % n, T, a, i, alt, ...
 %% Shared parameters (identical to sim_adrios_full_mission.m)
 dt_S4 = 120;   N_S4 = 20;
 dt_S2 = T/92;  P_S2 = 92;  N_S2 = 92;
-dt_S1 = 10;    N_S1 = 20;
+dt_S1 = 10;    N_S1 = 24;   % min. feasible horizon for Run 3 term.eq @~150 m FKP
 u_max    = 1e-2;
 r_KOS_S4 = 50;
 b_target = 75;

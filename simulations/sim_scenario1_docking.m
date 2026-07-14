@@ -24,8 +24,8 @@ constants;
 
 %% Shared scenario parameters 
 dt     = 10;                    % [s]    close-range sampling time
-N      = 20;                    % prediction horizon
-x0 = [0; 75; 0; 0; 0; 0];      % [m, m/s] V-bar hold at 75 m (start of final approach)
+N      = 24;                    % prediction horizon (min. feasible for Run 3 term.eq @150 m)
+x0 = [0; 150; 0; 0; 0; 0];      % [m, m/s] V-bar hold at 150 m (start of final approach)
 x_dock = zeros(6, 1);           % [m, m/s] docking port at origin
 u_max  = 1e-2;                  % [m/s²] symmetric per-axis thrust bound
 r_KOS  = 5;                     % [m]   keep-out sphere radius (capture ball)
@@ -120,7 +120,7 @@ res3 = run_docking(cost_dock, con3, params_base);
 dv_saving_2vs1 = (res1.dv - res2.dv) / res1.dv * 100;
 dv_saving_3vs1 = (res1.dv - res3.dv) / res1.dv * 100;
 
-fprintf('\n── Deltav summary (75 m -> 0 m docking, dt = %d s, N = %d) ────\n', dt, N);
+fprintf('\n── Deltav summary (150 m -> 0 m docking, dt = %d s, N = %d) ────\n', dt, N);
 fprintf('  %-36s  %8s  %8s  %6s\n', 'Run', 'dv [m/s]', 'steps', 'ps [%]');
 fprintf('  %-36s  %8.4f  %8s  %6.1f\n', 'Run 1 - Standard MPC', ...
     res1.dv, num2str(res1.conv_step), 100*res1.ps_frac);
@@ -175,7 +175,7 @@ fig1.Position(3:4) = [1050, 460];
 % Panel (a): full approach
 ax1a = subplot(1, 2, 1);
 draw_docking_scene(ax1a, R, x0, r_KOS, cols, cone, true);
-title(ax1a, 'Full approach (75 m $\to$ 0 m)', 'Interpreter', 'latex');
+title(ax1a, 'Full approach (150 m $\to$ 0 m)', 'Interpreter', 'latex');
 text(ax1a, r_KOS + 1, 0, sprintf('KOS (%d m)', r_KOS), ...
     'FontSize', 8, 'Color', [0.4 0.4 0.4]);
 
@@ -244,7 +244,7 @@ title(ax3c,  'Run 3 — EMPC $+$ term.~eq',    'Interpreter', 'latex');
 legend(ax3c, 'Interpreter', 'latex', 'Location', 'northeast');
 
 sgtitle(fig3, ...
-    'Thrust profiles — Docking approach 75 m $\to$ 0 m  ($dt=10\,\mathrm{s}$, $N=20$)', ...
+    'Thrust profiles — Docking approach 150 m $\to$ 0 m  ($dt=10\,\mathrm{s}$, $N=24$)', ...
     'Interpreter', 'latex');
 
 % Figure 4: Error norm decay (log scale)
@@ -277,7 +277,7 @@ b5.CData     = [c1; c2; c3];
 set(ax5, 'XTickLabel', {'Run 1  Std MPC', 'Run 2  EMPC CLF', 'Run 3  EMPC+term.eq'});
 grid(ax5, 'on');
 ylabel(ax5, 'Total $\Delta v$ [m/s]', 'Interpreter', 'latex');
-title(ax5, sprintf('$\\Delta v$ — Docking 75 m $\\to$ 0 m  (Run 2: %.0f%% saving vs Run 1)', ...
+title(ax5, sprintf('$\\Delta v$ — Docking 150 m $\\to$ 0 m  (Run 2: %.0f%% saving vs Run 1)', ...
     dv_saving_2vs1), 'Interpreter', 'latex');
 for bi = 1:3
     text(ax5, bi, dv_vals(bi)*1.02, sprintf('%.4f', dv_vals(bi)), ...
@@ -309,7 +309,7 @@ end
 
 plot3(ax6, x0(2), x0(1), x0(3), 'o', 'Color', [0.4 0.4 0.4], ...
     'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
-    'DisplayName', 'IC — V-bar hold (75 m)');
+    'DisplayName', 'IC — V-bar hold (150 m)');
 plot3(ax6, 0, 0, 0, 'pk', 'MarkerSize', 11, 'MarkerFaceColor', 'k', ...
     'DisplayName', 'Docking port (origin)');
 
@@ -367,7 +367,7 @@ end
 % JSON export
 json_data.scenario = struct( ...
     'name',        'S1_docking', ...
-    'description', '75m V-bar hold to docking port — ADRIOS/ClearSpace-1 analogue', ...
+    'description', '150m V-bar hold to docking port — ADRIOS/ClearSpace-1 analogue', ...
     'date',        char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm')), ...
     'dt_s',        dt, ...
     'N',           N, ...
@@ -427,7 +427,7 @@ function draw_docking_scene(ax, R, x0, r_KOS, cols, cone, show_legend)
         'HandleVisibility', 'off');
     plot(ax, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
         'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
-        'DisplayName', 'IC — V-bar hold (75 m)');
+        'DisplayName', 'IC — V-bar hold (150 m)');
     plot(ax, 0, 0, 'pk', 'MarkerSize', 10, 'MarkerFaceColor', 'k', ...
         'DisplayName', 'Docking port (origin)');
 
