@@ -487,13 +487,13 @@ x	y\\
 -0.157842748824051	4.99750794563087\\
 -1.22464679914735e-15	5\\
 };
-\addplot [color=white!40!black, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
+\addplot [color=white!40!black, line width=1.5pt, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
   table[row sep=crcr]{%
 150	0\\
 };
 \addlegendentry{IC — V-bar hold (150 m)}
 
-\addplot [color=black, only marks, mark size=5.0pt, mark=star*, mark options={solid, fill=black, black}]
+\addplot [color=black, line width=1.5pt, only marks, mark size=5.0pt, mark=star*, mark options={solid, fill=black, black}]
   table[row sep=crcr]{%
 0	0\\
 };
@@ -972,11 +972,11 @@ x	y\\
 -0.157842748824051	4.99750794563087\\
 -1.22464679914735e-15	5\\
 };
-\addplot [color=white!40!black, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}, forget plot]
+\addplot [color=white!40!black, line width=1.5pt, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}, forget plot]
   table[row sep=crcr]{%
 150	0\\
 };
-\addplot [color=black, only marks, mark size=5.0pt, mark=star*, mark options={solid, fill=black, black}, forget plot]
+\addplot [color=black, line width=1.5pt, only marks, mark size=5.0pt, mark=star*, mark options={solid, fill=black, black}, forget plot]
   table[row sep=crcr]{%
 0	0\\
 };

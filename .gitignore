@@ -5,6 +5,7 @@
 # MATLAB auto-generated
 *.asv
 *.m~
+*.mat
 slprj/
 *.slxc
 *.slx.autosave
@@ -15,8 +16,7 @@ results/figures/**/*.pdf
 results/figures/**/*.png
 results/figures/**/*.fig
 
-# MAtlab2tikz-master
-src/matlab2tikz-master
+# matlab2tikz is vendored under tools/ (tracked intentionally for figure export)
 exports/figures/
 # IDE
 .vscode/
