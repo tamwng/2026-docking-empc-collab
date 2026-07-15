@@ -1149,4 +1149,20 @@ x	y	z	c\\
  \addlegendentry{Docking port (origin)}
 
 \end{axis}
+
+\begin{axis}[%
+width=9.906in,
+height=5.969in,
+at={(0in,0in)},
+scale only axis,
+xmin=0,
+xmax=1,
+ymin=0,
+ymax=1,
+axis line style={draw=none},
+ticks=none,
+axis x line*=bottom,
+axis y line*=left
+]
+\end{axis}
 \end{tikzpicture}%
