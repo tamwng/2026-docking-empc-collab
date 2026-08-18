@@ -12,7 +12,7 @@
 
 clear; clc;
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'tools', 'matlab2tikz-master', 'src')));
 constants;  
 
 %%  Discretisation
@@ -362,7 +362,7 @@ run_cfg_3c.use_band              = false;
 r3c = run_flyaround(run_cfg_3c, matrices_3c, params_3c);
 
 %% FIGURES
-fig_dir = fullfile(script_dir, '..', 'results', 'figures', 's2_flyaround');
+fig_dir = fullfile(script_dir, '..', '..', 'results', 'figures', 's2_flyaround');
 if ~exist(fig_dir, 'dir'); mkdir(fig_dir); end
 
 c_r2   = [0.00 0.45 0.70];  
@@ -811,7 +811,7 @@ data = struct('metadata', meta, 'run1', res1, 'run2', res2, 'run4', res4, ...
               'run5', res5, 'runT', resT, 'run3a', res3a, 'run3b', res3b, 'run3c', res3c);
 
 json_str    = jsonencode(data, 'PrettyPrint', true);
-export_path = fullfile(script_dir, '..', 'exports', 'scenarios', ...
+export_path = fullfile(script_dir, '..', '..', 'exports', 'scenarios', ...
     'sim_scenario2_flyaround.json');
 fid = fopen(export_path, 'w');
 fprintf(fid, '%s', json_str);

@@ -17,7 +17,7 @@ clear; clc;
 
 %% Path setup + constants
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'tools', 'matlab2tikz-master', 'src')));
 constants;   % n, T, a, i, alt, ...
 
 %% Shared parameters (identical to sim_adrios_full_mission.m)
@@ -197,7 +197,7 @@ fprintf('Min dur: #%d  (%.2f h)     — %s | %s | %s\n', i_best_dur, Res(i_best_
     Res(i_best_dur).c4, Res(i_best_dur).c2, Res(i_best_dur).c1);
 
 %% Exports
-out_dir = fullfile(script_dir, '..', 'results', 'figures', 's_full_mission');
+out_dir = fullfile(script_dir, '..', '..', 'results', 'figures', 's_full_mission');
 [~,~] = mkdir(out_dir);
 
 % LaTeX (booktabs)
@@ -215,7 +215,7 @@ fclose(ftex);
 fprintf('\nLaTeX table -> %s\n', tex_path);
 
 % JSON
-json_path = fullfile(script_dir, '..', 'exports', 'scenarios', 'sim_adrios_combinations.json');
+json_path = fullfile(script_dir, '..', '..', 'exports', 'scenarios', 'sim_adrios_combinations.json');
 jd.metadata = struct('date', char(datetime('now','Format','yyyy-MM-dd HH:mm')), ...
     'n_combinations', n_comb, 'dt_S4', dt_S4, 'dt_S2', dt_S2, 'dt_S1', dt_S1, ...
     'note', 'Total duration is dominated by the ~6-orbit flyaround maintenance phase.');

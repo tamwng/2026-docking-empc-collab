@@ -17,7 +17,7 @@ clear; clc;
 
 %% Path setup
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'tools', 'matlab2tikz-master', 'src')));
 
 %% Constants
 constants;

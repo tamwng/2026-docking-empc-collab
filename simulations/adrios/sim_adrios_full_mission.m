@@ -16,7 +16,7 @@ clear; clc;
 
 %% Path setup
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'tools', 'matlab2tikz-master', 'src')));
 
 %% Constants
 constants;   % loads n, T, mu, etc.
@@ -473,7 +473,7 @@ viz_data.Rho   = Rho_all';    % N × 6  (chaser LVLH / Hill frame)
 viz_data.phase = phase_idx';   % N × 1  (phase tag per frame)
 
 json_str = jsonencode(viz_data, 'PrettyPrint', true);
-out_path = fullfile(script_dir, '..', 'exports', 'scenarios', 'sim_adrios_full_mission.json');
+out_path = fullfile(script_dir, '..', '..', 'exports', 'scenarios', 'sim_adrios_full_mission.json');
 fid = fopen(out_path, 'w');
 fprintf(fid, '%s', json_str);
 fclose(fid);

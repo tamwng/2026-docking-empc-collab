@@ -9,7 +9,7 @@
 
 clear; clc;
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'tools', 'matlab2tikz-master', 'src')));
 constants;   % loads n, T
 
 rho = 75;          % [m]  radial semi-axis of NMC orbit
@@ -81,7 +81,7 @@ legend(ax2, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 9);
 
 %% TikZ export
 fig = gcf;
-out_dir = fullfile(script_dir, '..', 'results', 'figures', 'nmc_free_drift');
+out_dir = fullfile(script_dir, '..', '..', 'results', 'figures', 'nmc_free_drift');
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 if exist('matlab2tikz', 'file')
