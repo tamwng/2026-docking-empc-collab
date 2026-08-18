@@ -5,6 +5,12 @@ function res = run_flyaround_truth(run_cfg, matrices, params, plant)
 % Inputs
 %   run_cfg  — as run_flyaround.m: .use_nmc_manifold .use_periodic_terminal
 %              .use_band .x_star (6xP) .n_sim_override
+%              .terminal_mode (optional) — overrides the terminal ingredient:
+%                 'phase'    periodic Pi* pin x(N)=Pi*(k+N mod P)  [default]
+%                 'fixed'    single fixed Pi* point x(N)=x_star(:,fixed_idx)
+%                 'manifold' NMC drift-free set (vx=0, vy+2n x=0)
+%                 'none'     no terminal equality
+%              .fixed_idx (optional, for 'fixed') — column of x_star, default 1
 %   matrices — CW condensed-QP matrices (.A_d .B_d .Sx .Su .Sx_pos_all
 %              .Su_pos_all .H .A_u .b_u), built exactly as in S2
 %   params   — .x0 .rho_min .rho_max .u_max .N .P .n .dt .n_sim [.verbose]
@@ -18,7 +24,7 @@ function res = run_flyaround_truth(run_cfg, matrices, params, plant)
 constants;
 
 %% Unpack matrices (controller CW model)
-A_d        = matrices.A_d;   %#ok<NASGU>  (kept for interface parity)
+A_d        = matrices.A_d;   %#ok<NASGU> 
 Sx         = matrices.Sx;
 Su         = matrices.Su;
 Sx_pos_all = matrices.Sx_pos_all;
@@ -50,9 +56,24 @@ if isfield(run_cfg, 'x_star') && ~isempty(run_cfg.x_star)
     x_star = run_cfg.x_star;
 end
 
+% Terminal-ingredient mode
+if isfield(run_cfg, 'terminal_mode') && ~isempty(run_cfg.terminal_mode)
+    term_mode = run_cfg.terminal_mode;
+elseif use_nmc && use_periodic && ~isempty(x_star)
+    term_mode = 'phase';
+elseif use_nmc
+    term_mode = 'manifold';
+else
+    term_mode = 'none';
+end
+fixed_idx = 1;
+if isfield(run_cfg, 'fixed_idx') && ~isempty(run_cfg.fixed_idx)
+    fixed_idx = run_cfg.fixed_idx;
+end
+
 n_x = 6;
 
-%% NMC manifold equality matrices (as run_flyaround.m)
+%% NMC manifold equality matrices 
 Sx_term     = Sx((N-1)*n_x+1 : N*n_x, :);
 Su_term     = Su((N-1)*n_x+1 : N*n_x, :);
 Aeq_nmc     = [Su_term(4, :);  Su_term(5, :) + 2*n_orb * Su_term(1, :)];
@@ -110,16 +131,17 @@ for k = 1:n_sim
         A_ineq = A_u;  b_ineq = b_u;
     end
 
-    % 3. Terminal equality (periodic Pi* pin, or NMC manifold, or none)
-    if use_nmc && use_periodic && ~isempty(x_star)
-        x_ref_col = x_star(:, mod(k + N - 1, P) + 1);
-        Aeq = Su_term;
-        beq = x_ref_col - Sx_term * xk;
-    elseif use_nmc
-        Aeq = Aeq_nmc;
-        beq = -Sx_term_nmc * xk;
-    else
-        Aeq = [];  beq = [];
+    % 3. Terminal equality (see term_mode above)
+    switch term_mode
+        case 'phase'      % periodic Pi* pin, phase-synchronised
+            x_ref_col = x_star(:, mod(k + N - 1, P) + 1);
+            Aeq = Su_term;   beq = x_ref_col - Sx_term * xk;
+        case 'fixed'      % single fixed point on Pi*
+            Aeq = Su_term;   beq = x_star(:, fixed_idx) - Sx_term * xk;
+        case 'manifold'   % NMC drift-free set (codim-2)
+            Aeq = Aeq_nmc;   beq = -Sx_term_nmc * xk;
+        otherwise         % 'none'
+            Aeq = [];  beq = [];
     end
 
     % 4. Solve QP (pure fuel: f = 0)
