@@ -26,7 +26,7 @@ clear; clc;
 
 %% Path + constants + (Ad,Bd) --------------------------------------------
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'src')));
 constants;
 dt = 120;                                   % closing sample time
 
@@ -119,7 +119,7 @@ results.item2 = struct('N_list',N_list,'thetaN',thetaN,'Nstar_1em3',Nstar,'tol',
 % Predicted ||e||* ~ c / sqrt(w).  Extract ACTUAL terminal offset from the
 % Run B closing sweep JSON (rho_c in {1e-12,1e-11,1e-10}) and regress
 % log(offset) vs log(w).  Report the TRUE exponent (not the assumed -1/2).
-json_path = fullfile(script_dir, '..', 'exports', 'scenarios', 'sim_scenario4_closing.json');
+json_path = fullfile(script_dir, '..', '..', 'exports', 'scenarios', 'sim_scenario4_closing.json');
 fprintf('\n(3) FUEL-BIAS / STEADY OFFSET  ||e||* vs w  (closing Run B, config A)\n');
 if exist(json_path, 'file')
     J  = jsondecode(fileread(json_path));

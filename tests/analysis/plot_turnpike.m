@@ -27,11 +27,11 @@ clear; clc;
 
 %% Path + constants
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'src')));
-addpath(genpath(fullfile(script_dir, '..', 'tools', 'matlab2tikz-master', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'tools', 'matlab2tikz-master', 'src')));
 constants;                                  % provides n, T
 
-out_dir = fullfile(script_dir, '..', 'results', 'figures', 'turnpike');
+out_dir = fullfile(script_dir, '..', '..', 'results', 'figures', 'turnpike');
 [~, ~]  = mkdir(out_dir);
 
 % The condensed Hessian is dense and very badly conditioned at the long

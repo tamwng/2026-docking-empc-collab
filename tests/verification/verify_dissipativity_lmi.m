@@ -17,7 +17,7 @@ clear; clc;
 
 %% Path + constants 
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'src')));
 constants;                        % provides n, T, ...
 
 dt    = 120;                      % S4 closing sample time [s]

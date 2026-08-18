@@ -19,7 +19,7 @@ cleanup  = onCleanup(@() warning(ws_saved));
 
 %% Path + constants + (Ad,Bd) 
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'src')));
 constants;
 
 dt = 120;                                   % closing sample time [s]

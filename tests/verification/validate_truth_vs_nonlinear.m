@@ -1,11 +1,9 @@
 % validate_truth_vs_nonlinear.m
 %
-% REGRESSION ANCHOR for the Aerospace-Toolbox truth model.
-%
 % With all perturbations OFF, the absolute truth propagator is exact two-body
 % motion. Differencing two such trajectories into the Hill frame (eci2hill.m)
 % must therefore reproduce the EXACT nonlinear Keplerian relative dynamics
-% (relative_motion_nonlinear.m) -- same physics, two independent code paths.
+% (relative_motion_nonlinear.m).
 %
 % This test drives both paths from a single ode113 call over a combined
 % 18-state so they share the identical target trajectory and time grid:
@@ -24,10 +22,8 @@ clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils');
 constants;
-
-fprintf('====================================================\n');
 fprintf(' Truth-model validation: eci2hill vs nonlinear EoM\n');
-fprintf('====================================================\n\n');
+
 
 %% Target: elliptic orbit (exercises radial rate + varying omega)
 e_t = 0.2;

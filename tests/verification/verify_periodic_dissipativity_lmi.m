@@ -19,7 +19,7 @@ clear; clc;
 
 %% Path + constants 
 script_dir = fileparts(mfilename('fullpath'));
-addpath(genpath(fullfile(script_dir, '..', 'src')));
+addpath(genpath(fullfile(script_dir, '..', '..', 'src')));
 constants;                        % provides n, T, ...
 
 P      = 92;                      % steps per orbital period (S2 setting)
