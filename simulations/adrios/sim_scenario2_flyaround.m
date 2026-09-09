@@ -240,7 +240,8 @@ R_track = eye(3);          % control effort (same scale as R_eco in Runs 2/5)
 % makes Su'*Q*Su severely ill-conditioned with Q=I, which stalls quadprog
 % (exitflag 0 every step). N_track=20 keeps the tracking QP well-conditioned
 % and matches the horizon used in Scenarios 1 & 4. (Runs 2/5 tolerate N=P only
-% because their fuel-dominant Hessian stays H≈2I.)
+% because their fuel-dominant Hessian stays H≈2I.) N_track=P was tried but
+% not kept here — mentioned in the text instead of shown in the plot.
 N_track = 20;
 
 con_track.u_max = u_max;
@@ -565,25 +566,31 @@ exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.pdf'), 'ContentType', 'vect
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.png'), 'Resolution', 300);
 
 % Fig 8 — Standard Tracking MPC vs Run 2 vs Run 5: Hill-frame overlay + table
-c_track = [0.55 0.10 0.75];   % purple — standard tracking baseline
+c_track = [0.55 0.10 0.75];   % purple, standard tracking baseline
+
+% Presentation-facing run labels (thesis/slide terminology, not the code's
+% internal run names), matching the Operation 1 (closing) convention.
+lbl_MPC_S2 = 'Std. MPC';
+lbl_R2_S2  = 'EMPC+ periodic term. eq.';
+lbl_R5_S2  = 'EMPC+ phase-sync. pen.';
 
 fig8 = figure('Name', 'Op 2 — Tracking vs Run 2 vs Run 5');
 ax8  = axes(fig8); hold(ax8, 'on'); grid(ax8, 'on'); axis(ax8, 'equal');
 plot(ax8, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
     'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
 plot(ax8, x_track(1,:), x_track(2,:), '-', 'Color', c_track, 'LineWidth', 1.0, ...
-    'DisplayName', sprintf('Tracking MPC (%.3f m/s)', dv_track));
+    'DisplayName', lbl_MPC_S2);
 plot(ax8, r2.x_log(1,:), r2.x_log(2,:), '-', 'Color', c_r2, 'LineWidth', 1.0, ...
-    'DisplayName', sprintf('Run 2 (terminal eq., %.3f m/s)', dv_r2));
+    'DisplayName', lbl_R2_S2);
 plot(ax8, r5.x_log(1,:), r5.x_log(2,:), '-', 'Color', c_r5, 'LineWidth', 1.0, ...
-    'DisplayName', sprintf('Run 5 ($\\ell_{\\mathrm{aug}}$, %.3f m/s)', dv_r5));
+    'DisplayName', lbl_R5_S2);
 plot(ax8, x0(1), x0(2), 's', 'Color', [0.4 0.4 0.4], 'MarkerFaceColor', [0.4 0.4 0.4], ...
     'MarkerSize', 8, 'DisplayName', 'IC (shared)');
 plot(ax8, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
 xlabel(ax8, '$r_x$ (radial) [m]', 'Interpreter', 'latex');
 ylabel(ax8, '$r_y$ (along-track) [m]', 'Interpreter', 'latex');
-title(ax8, 'S2: Standard Tracking MPC vs Run 2 vs Run 5', 'Interpreter', 'latex');
-legend(ax8, 'Location', 'northeast', 'FontSize', 8, 'Interpreter', 'latex');
+title(ax8, 'Hill-Frame Trajectory, NMC Fly-Around', 'Interpreter', 'latex');
+legend(ax8, 'Location', 'northwest', 'FontSize', 8, 'Interpreter', 'latex');
 exportgraphics(fig8, fullfile(fig_dir, 'tracking_vs_run2_run5.pdf'), 'ContentType', 'vector');
 exportgraphics(fig8, fullfile(fig_dir, 'tracking_vs_run2_run5.png'), 'Resolution', 300);
 if exist('matlab2tikz', 'file')

@@ -169,9 +169,9 @@ x	y\\
 \end{axis}
 
 \begin{axis}[%
-width=3.137in,
-height=3.226in,
-at={(5.347in,0.435in)},
+width=3.121in,
+height=2.96in,
+at={(5.347in,0.412in)},
 scale only axis,
 xmin=-0.18,
 xmax=61.18,

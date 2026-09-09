@@ -9,16 +9,16 @@
 \begin{tikzpicture}
 
 \begin{axis}[%
-width=2.649in,
-height=2.547in,
-at={(1.029in,0.344in)},
+width=3.416in,
+height=3.566in,
+at={(1.327in,0.481in)},
 scale only axis,
 xmin=-372.487128333598,
 xmax=10042.7270712322,
 xlabel style={font=\color{mycolor5}},
 xlabel={Along-track $y$ [m]},
-ymin=-4014.48240948442,
-ymax=5997.74834370375,
+ymin=-4443.57801319249,
+ymax=6426.84394741181,
 ylabel style={font=\color{mycolor5}},
 ylabel={Radial $x$ [m]},
 axis background/.style={fill=white},
@@ -28,9 +28,9 @@ axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
 ymajorgrids,
-legend style={legend cell align=left, align=left}
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
 ]
-\addplot [color=mycolor1, line width=1.2pt]
+\addplot [color=mycolor1, line width=1.4pt]
   table[row sep=crcr]{%
 10000	0\\
 10013.3603994413	30.6532304526028\\
@@ -94,9 +94,9 @@ legend style={legend cell align=left, align=left}
 344.806853825646	22.4660841302984\\
 335.26823882082	25.2241205397417\\
 };
-\addlegendentry{A1 — energy, ball ON}
+\addlegendentry{EMPC + terminal box}
 
-\addplot [color=mycolor2, line width=1.2pt]
+\addplot [color=mycolor2, line width=1.4pt]
   table[row sep=crcr]{%
 10000	0\\
 9921.92254533789	65.3681806907478\\
@@ -135,9 +135,9 @@ legend style={legend cell align=left, align=left}
 345.537827887015	21.8737087910704\\
 331.366514999963	20.2172701474658\\
 };
-\addlegendentry{B-noball ($\rho_c$=1e-11, N=20)}
+\addlegendentry{EMPC + state reg.}
 
-\addplot [color=mycolor3, line width=1.2pt]
+\addplot [color=mycolor3, line width=1.4pt]
   table[row sep=crcr]{%
 10000	0\\
 9997.35349912302	72.237441740372\\
@@ -177,9 +177,9 @@ legend style={legend cell align=left, align=left}
 273.845404875276	-50.2246861438307\\
 304.061445545156	-44.1074613279866\\
 };
-\addlegendentry{C — energy + CLF $V_f$}
+\addlegendentry{EMPC + terminal cost}
 
-\addplot [color=mycolor4, line width=1.2pt]
+\addplot [color=mycolor4, line width=1.4pt]
   table[row sep=crcr]{%
 10000	0\\
 9921.92254517997	65.3681806769125\\
@@ -203,7 +203,7 @@ legend style={legend cell align=left, align=left}
 301.416592514452	-100.281860850684\\
 294.236226687751	21.4047310872676\\
 };
-\addlegendentry{MPC — standard regulation}
+\addlegendentry{Std. MPC}
 
 \addplot [color=white!40!black, only marks, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
   table[row sep=crcr]{%
@@ -227,9 +227,9 @@ legend style={legend cell align=left, align=left}
 \end{axis}
 
 \begin{axis}[%
-width=2.547in,
-height=2.547in,
-at={(4.566in,0.344in)},
+width=3.343in,
+height=3.343in,
+at={(5.858in,0.451in)},
 scale only axis,
 xmin=150,
 xmax=450,
@@ -245,10 +245,9 @@ title={Zoom: switch-point arrival},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
-ymajorgrids,
-legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align=left}
+ymajorgrids
 ]
-\addplot [color=mycolor1, line width=1.2pt]
+\addplot [color=mycolor1, line width=1.4pt, forget plot]
   table[row sep=crcr]{%
 10000	0\\
 10013.3603994413	30.6532304526028\\
@@ -312,9 +311,7 @@ legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align
 344.806853825646	22.4660841302984\\
 335.26823882082	25.2241205397417\\
 };
-\addlegendentry{A1 — energy, ball ON}
-
-\addplot [color=mycolor2, line width=1.2pt]
+\addplot [color=mycolor2, line width=1.4pt, forget plot]
   table[row sep=crcr]{%
 10000	0\\
 9921.92254533789	65.3681806907478\\
@@ -353,9 +350,7 @@ legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align
 345.537827887015	21.8737087910704\\
 331.366514999963	20.2172701474658\\
 };
-\addlegendentry{B-noball ($\rho_c$=1e-11, N=20)}
-
-\addplot [color=mycolor3, line width=1.2pt]
+\addplot [color=mycolor3, line width=1.4pt, forget plot]
   table[row sep=crcr]{%
 10000	0\\
 9997.35349912302	72.237441740372\\
@@ -395,9 +390,7 @@ legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align
 273.845404875276	-50.2246861438307\\
 304.061445545156	-44.1074613279866\\
 };
-\addlegendentry{C — energy + CLF $V_f$}
-
-\addplot [color=mycolor4, line width=1.2pt]
+\addplot [color=mycolor4, line width=1.4pt, forget plot]
   table[row sep=crcr]{%
 10000	0\\
 9921.92254517997	65.3681806769125\\
@@ -421,9 +414,7 @@ legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align
 301.416592514452	-100.281860850684\\
 294.236226687751	21.4047310872676\\
 };
-\addlegendentry{MPC — standard regulation}
-
-\addplot [color=black, dotted, line width=0.9pt]
+\addplot [color=black, dotted, line width=0.9pt, forget plot]
   table[row sep=crcr]{%
 350	0\\
 349.975079456309	1.57842748824053\\
@@ -626,13 +617,11 @@ legend style={at={(0.97,0.03)}, anchor=south east, legend cell align=left, align
 349.975079456309	-1.57842748824051\\
 350	-1.22464679914735e-14\\
 };
-\addlegendentry{conv. tol 50 m}
-
-\addplot [color=green!60!violet, only marks, mark size=2.8pt, mark=square*, mark options={solid, fill=green!60!violet, green!60!violet}]
+\node[centered, align=center, inner sep=0, font=\color{white!30!black}]
+at (axis cs:300,-70) {conv. tol 50 m};
+\addplot [color=green!60!violet, only marks, mark size=2.8pt, mark=square*, mark options={solid, fill=green!60!violet, green!60!violet}, forget plot]
   table[row sep=crcr]{%
 300	0\\
 };
-\addlegendentry{Switch point}
-
 \end{axis}
 \end{tikzpicture}%

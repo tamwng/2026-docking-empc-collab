@@ -176,8 +176,6 @@ fig1.Position(3:4) = [1050, 460];
 ax1a = subplot(1, 2, 1);
 draw_docking_scene(ax1a, R, x0, r_KOS, cols, cone, true);
 title(ax1a, 'Full approach (150 m $\to$ 0 m)', 'Interpreter', 'latex');
-text(ax1a, r_KOS + 1, 0, sprintf('KOS (%d m)', r_KOS), ...
-    'FontSize', 8, 'Color', [0.4 0.4 0.4]);
 
 % Panel (b): terminal zoom (~3× keep-out sphere around the port)
 ax1b   = subplot(1, 2, 2);
@@ -188,7 +186,7 @@ ylim(ax1b, [-zoom_r, zoom_r]);
 title(ax1b, sprintf('Terminal zoom ($\\leq %d$ m)', zoom_r), 'Interpreter', 'latex');
 
 sgtitle(fig1, ...
-    'Hill-Frame Trajectory — Docking Approach (LoS cone shaded)', ...
+    'Hill-Frame Trajectory, Docking Approach (LoS cone shaded)', ...
     'Interpreter', 'latex');
 
 % Figure 2: Cumulative Δv comparison 
@@ -406,35 +404,34 @@ fprintf('JSON exported to exports/scenarios/sim_scenario1_docking.json\n');
 
 function draw_docking_scene(ax, R, x0, r_KOS, cols, cone, show_legend)
 % Draws the Hill-frame (y–x) docking scene into axes AX: shaded LoS cone,
-% the three trajectories, KOS circle, initial condition and docking port.
+% the three trajectories, initial condition and docking port.
     hold(ax, 'on'); grid(ax, 'on'); axis(ax, 'equal');
 
     % LoS approach cone (z = 0 cross-section) as a shaded wedge
     fill(ax, [cone.y, fliplr(cone.y)], [cone.edge, fliplr(-cone.edge)], ...
-        [0.95 0.90 0.55], 'FaceAlpha', 0.20, 'EdgeColor', [0.75 0.70 0.35], ...
+        [0.98 0.96 0.75], 'FaceAlpha', 0.20, 'EdgeColor', [0.87 0.83 0.58], ...
         'LineWidth', 0.5, ...
         'DisplayName', sprintf('LoS cone ($\\pm%d^\\circ$)', cone.alpha_deg));
 
+    % Presentation-facing run labels (thesis/slide terminology, not the
+    % code's internal run names), matching the Operation 1/2 convention.
     styles = {'-', '-', '--'};
-    names  = {'Run 1 — Std MPC', 'Run 2 — EMPC, CLF $V_f$', 'Run 3 — EMPC $+$ term.eq'};
+    names  = {'Std. MPC', 'EMPC+ terminal cost', 'EMPC+ terminal equality'};
     for i = 1:3
         plot(ax, R{i}.X(2,:), R{i}.X(1,:), styles{i}, 'Color', cols{i}, ...
             'LineWidth', 1.4, 'DisplayName', names{i});
     end
 
-    th = linspace(0, 2*pi, 200);
-    plot(ax, r_KOS*sin(th), r_KOS*cos(th), ':k', 'LineWidth', 0.8, ...
-        'HandleVisibility', 'off');
     plot(ax, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
         'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
-        'DisplayName', 'IC — V-bar hold (150 m)');
+        'DisplayName', 'IC (V-bar hold, 150 m)');
     plot(ax, 0, 0, 'pk', 'MarkerSize', 10, 'MarkerFaceColor', 'k', ...
         'DisplayName', 'Docking port (origin)');
 
     xlabel(ax, 'Along-track $y$ [m]', 'Interpreter', 'latex');
     ylabel(ax, 'Radial $x$ [m]',      'Interpreter', 'latex');
     if show_legend
-        legend(ax, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
+        legend(ax, 'Location', 'northwest', 'Interpreter', 'latex', 'FontSize', 8);
     end
 end
 

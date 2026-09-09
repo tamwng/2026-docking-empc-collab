@@ -9,8 +9,8 @@
 
 \begin{axis}[%
 width=2.001in,
-height=2.665in,
-at={(1.219in,0.391in)},
+height=2.67in,
+at={(1.219in,0.385in)},
 scale only axis,
 xmin=0.234782608695652,
 xmax=23.7652173913043,
@@ -63,8 +63,8 @@ legend style={legend cell align=left, align=left}
 
 \begin{axis}[%
 width=2.001in,
-height=2.665in,
-at={(3.851in,0.391in)},
+height=2.67in,
+at={(3.851in,0.385in)},
 scale only axis,
 xmin=0.18,
 xmax=42.82,
@@ -134,8 +134,8 @@ legend style={legend cell align=left, align=left}
 
 \begin{axis}[%
 width=2.001in,
-height=2.665in,
-at={(6.484in,0.391in)},
+height=2.67in,
+at={(6.484in,0.385in)},
 scale only axis,
 xmin=0.16,
 xmax=43.84,

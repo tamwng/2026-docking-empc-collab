@@ -22,12 +22,12 @@ ylabel style={font=\color{mycolor4}},
 ylabel={$r_y$ (along-track) [m]},
 axis background/.style={fill=white},
 title style={font=\bfseries\color{mycolor4}},
-title={S2: Standard Tracking MPC vs Run 2 vs Run 5},
+title={Hill-Frame Trajectory, NMC Fly-Around},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
 ymajorgrids,
-legend style={legend cell align=left, align=left}
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
 ]
 \addplot [color=mycolor1, dashed, line width=2.0pt]
   table[row sep=crcr]{%
@@ -683,7 +683,7 @@ legend style={legend cell align=left, align=left}
 74.8251576897905	10.2363620019937\\
 75.0000000011402	-4.69007319629249e-10\\
 };
-\addlegendentry{Tracking MPC (12.217 m/s)}
+\addlegendentry{Std. MPC}
 
 \addplot [color=mycolor3, line width=1.0pt]
   table[row sep=crcr]{%
@@ -1241,7 +1241,7 @@ legend style={legend cell align=left, align=left}
 74.8229002400356	10.208938958396\\
 74.997523483868	-0.0270996857362353\\
 };
-\addlegendentry{Run 2 (terminal eq., 0.071 m/s)}
+\addlegendentry{EMPC+ periodic term. eq.}
 
 \addplot [color=red!80!green, line width=1.0pt]
   table[row sep=crcr]{%
@@ -1799,7 +1799,7 @@ legend style={legend cell align=left, align=left}
 74.8251585347618	10.2363624600856\\
 74.9999994308162	9.93655319113304e-07\\
 };
-\addlegendentry{Run 5 ($\ell_{\mathrm{aug}}$, 7.519 m/s)}
+\addlegendentry{EMPC+ phase-sync. pen.}
 
 \addplot [color=white!40!black, only marks, mark size=2.8pt, mark=square*, mark options={solid, fill=white!40!black, white!40!black}]
   table[row sep=crcr]{%

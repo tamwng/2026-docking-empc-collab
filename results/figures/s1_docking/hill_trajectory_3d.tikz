@@ -1136,17 +1136,33 @@ x	y	z	c\\
 };
  \addlegendentry{Run 3 — EMPC $+$ term.eq}
 
-\addplot3 [color=white!40!black, line width=1.5pt, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
+\addplot3 [color=white!40!black, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
  table[row sep=crcr] {%
 150	0	0\\
 };
  \addlegendentry{IC — V-bar hold (150 m)}
 
-\addplot3 [color=black, line width=1.5pt, only marks, mark size=5.5pt, mark=star*, mark options={solid, fill=black, black}]
+\addplot3 [color=black, only marks, mark size=5.5pt, mark=star*, mark options={solid, fill=black, black}]
  table[row sep=crcr] {%
 0	0	0\\
 };
  \addlegendentry{Docking port (origin)}
 
+\end{axis}
+
+\begin{axis}[%
+width=9.906in,
+height=5.969in,
+at={(0in,0in)},
+scale only axis,
+xmin=0,
+xmax=1,
+ymin=0,
+ymax=1,
+axis line style={draw=none},
+ticks=none,
+axis x line*=bottom,
+axis y line*=left
+]
 \end{axis}
 \end{tikzpicture}%
