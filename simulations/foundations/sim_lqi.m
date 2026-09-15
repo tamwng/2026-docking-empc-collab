@@ -35,7 +35,6 @@ Bc = [zeros(3,3); eye(3)];
 % We integrate position errors only (x, y, z)
 C_int = [eye(3), zeros(3,3)];     
 
-% Build discrete-time state-space model for lqi()
 sys_d = ss(Ad, Bd, C_int, zeros(3,3), dt);
 
 
@@ -106,7 +105,6 @@ for k = 1:n_steps-1
 
     X_hist(:,  k+1) = Ad * x + Bd * u;
     
-    % Only integrate when close to target
     if norm(x(1:3)) < integration_threshold
         Xi_hist(:, k+1) = xi - dt * (C_int * x);
     else
@@ -123,13 +121,13 @@ U_hist(:, end) = u_end;
 
 t_min = t / 60;   % convert to minutes
 
-c_x   = [0.00 0.60 0.90];   % blue   — x / ux
-c_y   = [0.90 0.40 0.00];   % orange — y / uy
-c_z   = [0.20 0.80 0.20];   % green  — z / uz
+c_x   = [0.00 0.60 0.90];   % blue: x / ux
+c_y   = [0.90 0.40 0.00];   % orange: y / uy
+c_z   = [0.20 0.80 0.20];   % green: z / uz
 
 fig = figure('Name', 'LQI Rendezvous');
 
-% ── Plot 1: Position states ───────────────────────────────────────────────
+% --- Plot 1: Position states ---
 ax1 = subplot(2, 3, 1);
 hold(ax1, 'on'); grid(ax1, 'on');
 plot(ax1, t_min, X_hist(1,:), 'Color', c_x, 'LineWidth', 1.2, 'DisplayName', 'x (radial)');
@@ -140,7 +138,7 @@ ylabel(ax1, 'Position [m]');
 title(ax1, 'Position States');
 legend(ax1, 'Location', 'northeast');
 
-% ── Plot 2: Velocity states ───────────────────────────────────────────────
+% --- Plot 2: Velocity states ---
 ax2 = subplot(2, 3, 2);
 hold(ax2, 'on'); grid(ax2, 'on');
 plot(ax2, t_min, X_hist(4,:), 'Color', c_x, 'LineWidth', 1.2, 'DisplayName', '$\dot{x}$');
@@ -151,7 +149,7 @@ ylabel(ax2, 'Velocity [m/s]');
 title(ax2, 'Velocity States');
 legend(ax2, 'Location', 'northeast', 'Interpreter', 'latex');
 
-% ── Plot 3: Relative distance ─────────────────────────────────────────────
+% --- Plot 3: Relative distance ---
 ax3 = subplot(2, 3, 3);
 hold(ax3, 'on'); grid(ax3, 'on');
 rel_dist = vecnorm(X_hist(1:3, :), 2, 1);
@@ -160,7 +158,7 @@ xlabel(ax3, 'Time [min]');
 ylabel(ax3, 'Distance [m]');
 title(ax3, 'Relative Distance');
 
-% ── Plot 4: Control inputs ────────────────────────────────────────────────
+% --- Plot 4: Control inputs ---
 ax4 = subplot(2, 3, 4);
 hold(ax4, 'on'); grid(ax4, 'on');
 plot(ax4, t_min, U_hist(1,:)*1000, 'Color', c_x, 'LineWidth', 1.2, 'DisplayName', '$u_x$');
@@ -171,7 +169,7 @@ ylabel(ax4, 'Acceleration [mm/s$^2$]', 'Interpreter', 'latex');
 title(ax4, 'Control Inputs');
 legend(ax4, 'Location', 'northeast', 'Interpreter', 'latex');
 
-% ── Plot 5: Hill frame trajectory ─────────────────────────────────────────
+% --- Plot 5: Hill frame trajectory ---
 ax5 = subplot(2, 3, 5);
 hold(ax5, 'on'); grid(ax5, 'on'); axis(ax5, 'equal');
 plot(ax5, X_hist(2,:), X_hist(1,:), 'Color', c_x, 'LineWidth', 1.2);
@@ -182,7 +180,7 @@ xlabel(ax5, 'Along-track $y$ [m]', 'Interpreter', 'latex');
 ylabel(ax5, 'Radial $x$ [m]',      'Interpreter', 'latex');
 title(ax5, 'Hill Frame Trajectory');
 
-% ── Plot 6: Cumulative delta-v ────────────────────────────────────────────
+% --- Plot 6: Cumulative delta-v ---
 ax6 = subplot(2, 3, 6);
 hold(ax6, 'on'); grid(ax6, 'on');
 dv = cumsum(vecnorm(U_hist, 2, 1) * dt);
@@ -258,7 +256,7 @@ end
 
 fprintf('Peak thrust:    %.6f m/s^2 (step %d, t=%.1f min)\n', ...
         peak_thrust, peak_thrust_step, t(peak_thrust_step)/60);
-fprintf('u_max (MPC):    1e-2 m/s^2  →  LQI exceeds by factor %.1f\n', ...
+fprintf('u_max (MPC):    1e-2 m/s^2, LQI exceeds by factor %.1f\n', ...
         peak_thrust / 1e-2);
 fprintf('Max CL eigenvalue (augmented): %.6f\n', eig_max);
 fprintf('Delta-v per axis: dvx=%.2f, dvy=%.2f, dvz=%.2f m/s\n', ...

@@ -44,7 +44,7 @@ x0     =  - 1000e3;   % [m]   radial offset
 y0     =  1000e3;   % [m]   along-track offset
 z0     =   500e3;   % [m]   cross-track offset
 x_dot0 =    0;   % [m/s]
-y_dot0 = -2 * n * x0;  % [m/s]  drift-free condition, bound relative orbit constrained
+y_dot0 = -2 * n * x0;  % [m/s]  drift-free condition -> bounded relative orbit
 z_dot0 =  n * z0;   % [m/s]
 
 Rho0 = [x0; y0; z0; x_dot0; y_dot0; z_dot0];
@@ -56,7 +56,6 @@ X_t = rk4_integrator(f_target, X_t0, dt, n_steps);
 
 %% Integration of Relative Motion
 
-% Switch Cases between the dynamic models
 switch dynamics_model
     case 'nonlinear'
         f_rel = @(Rho, X_t_k) relative_motion_nonlinear(Rho, X_t_k, mu);

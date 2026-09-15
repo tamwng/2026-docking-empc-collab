@@ -57,7 +57,6 @@ if standalone
     R = diag([1e4,  1e4,  1e4]);
 else
     % Comparison mode: match EMPC's R so fuel figures are comparable.
-    % Q penalises position error; tune as needed.
     Q = 1e-6 * eye(6);
     R = eye(3);
 end
@@ -126,7 +125,7 @@ conv_idx = find(rel_dist < conv_tol, 1, 'first');
 if ~isempty(conv_idx)
     fprintf('Converged at t = %.1f min (step %d)\n', t_x(conv_idx), conv_idx);
 else
-    fprintf('Did not converge within simulation time — increase t_final or tune Q/R\n');
+    fprintf('Did not converge within simulation time, increase t_final or tune Q/R\n');
 end
 
 

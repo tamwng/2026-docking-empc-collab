@@ -1,6 +1,6 @@
 % sim_rpo_nmc_ic.m
 % Relative motion (CWH) demo of the NMC drift-free condition, for
-% orbital_viz.m. NO CONTROLLER — pure open-loop orbital dynamics, exactly
+% orbital_viz.m. NO CONTROLLER: pure open-loop orbital dynamics, exactly
 % like sim_rpo.m, but exported twice from the same chaser starting point:
 %
 %   IC MET      ydot0 = -2*n*x0  -> bounded 2:1 NMC ellipse (Pi*, b=75 m)
@@ -40,7 +40,7 @@ X_t = rk4_integrator(f_target, X_t0, dt, n_steps);
 
 % Chaser: bottom of a 2:1 NMC ellipse, radial semi-axis b_nmc (S2 scale)
 % Cross-track (z) motion is a pure SHM at the orbital rate n, fully
-% decoupled from the in-plane radial/along-track dynamics (Schaub 14.13) —
+% decoupled from the in-plane radial/along-track dynamics (Schaub 14.13);
 % adding it tilts the chaser's relative orbit out of the target's plane
 % for visual differentiation in the ECI panel, without altering the
 % drift-free condition or the met/violated comparison at all.

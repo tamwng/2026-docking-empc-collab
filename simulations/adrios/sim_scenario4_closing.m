@@ -1,14 +1,14 @@
 % sim_scenario4_closing.m
-% Scenario 4 — Three EMPC stabilisation mechanisms on the closing phase.
+% Scenario 4: Three EMPC stabilisation mechanisms on the closing phase.
 %
-% Run A1     — pure fuel (Q=0, P=0), terminal ball ON: converges.
-% Run A2     — same, ball OFF: u≡0, chaser stuck
-% Run B-noball — fuel + small state penalty ℓ=‖u‖²+ρc‖e‖², no ball: converges
+% Run A1     - pure fuel (Q=0, P=0), terminal ball ON: converges.
+% Run A2     - same, ball OFF: u≡0, chaser stuck
+% Run B-noball - fuel + small state penalty ℓ=‖u‖²+ρc‖e‖², no ball: converges
 %               via strict dissipativity
-% Run B-ball — same cost, ball ON: confirms ball is inactive.
-% Run C      — pure fuel, CLF terminal cost Vf=e'P_clf e, no ball: asymptotically
+% Run B-ball - same cost, ball ON: confirms ball is inactive.
+% Run C      - pure fuel, CLF terminal cost Vf=e'P_clf e, no ball: asymptotically
 %               stable without strict dissipativity (Amrit et al. 2011).
-% Run MPC    — standard regulation MPC (Q,R≠0, LQR terminal cost): fuel-hungry baseline.
+% Run MPC    - standard regulation MPC (Q,R≠0, LQR terminal cost): fuel-hungry baseline.
 
 clear; clc;
 
@@ -59,7 +59,7 @@ rho_Acl = max(abs(eig(Acl_clf)));
 if lam_M1 > 1e-10 && rho_Acl < 1
     fprintf('  => P_clf satisfies Assumption 6. Terminal cost is a valid CLF.  ✓\n\n');
 else
-    warning('CLF condition not satisfied — check DARE weights.');
+    warning('CLF condition not satisfied: check DARE weights.');
 end
 
 cost_C = struct('Q', zeros(6), 'R', eye(3), 'P', P_clf);
@@ -86,7 +86,7 @@ con_A1.use_passive_safety     = false;
 
 params_A1 = params_base;
 
-fprintf(' Run A1 — pure energy ℓ=‖u‖², ball ON\n');
+fprintf(' Run A1 - pure energy ℓ=‖u‖², ball ON\n');
 resA1 = run_closing(cost_A, con_A1, params_A1);
 
 %% Run A2: pure energy, terminal ball OFF
@@ -102,13 +102,13 @@ con_A2.use_passive_safety = false;
 params_A2                  = params_base;
 params_A2.n_steps_override = 60;
 
-fprintf(' Run A2 — pure energy ℓ=‖u‖², ball OFF\n');
+fprintf(' Run A2 - pure energy ℓ=‖u‖², ball OFF\n');
 resA2 = run_closing(cost_A, con_A2, params_A2);
 
 max_disp_A2 = max(vecnorm(resA2.X(1:3,:) - x0(1:3), 2, 1));
 max_u_A2    = max([resA2.u_norm_seq, 0]);
-fprintf('A2 check — max position displacement: %.4f m   (expect ≈ 0)\n', max_disp_A2);
-fprintf('         — max ||u||:                 %.2e m/s² (expect ≈ 0)\n\n', max_u_A2);
+fprintf('A2 check: max position displacement: %.4f m   (expect ≈ 0)\n', max_disp_A2);
+fprintf('          max ||u||:                 %.2e m/s² (expect ≈ 0)\n\n', max_u_A2);
 
 %% Run B-noball: strict dissipativity, no terminal ball
 % Adding ρc‖e‖² restores strict dissipativity (storage fn λ≡0, α_ℓ(r)=ρc·r²).
@@ -126,16 +126,16 @@ con_B_noball.use_passive_safety = false;
 params_B_noball   = params_base;
 params_B_noball.N = N_B_noball;
 
-fprintf(' Run B-noball — ρc=%.0e, N=%d, ball OFF\n', rho_c, N_B_noball);
+fprintf(' Run B-noball - ρc=%.0e, N=%d, ball OFF\n', rho_c, N_B_noball);
 resB_noball = run_closing(cost_B, con_B_noball, params_B_noball);
 
 if isnan(resB_noball.conv_step)
     N_B_noball        = 40;
     params_B_noball.N = N_B_noball;
     fprintf('\n[Retry] N=20 did not converge; retrying with N=%d...\n\n', N_B_noball);
-    fprintf('══════════════════════════════════════════════\n');
-    fprintf(' Run B-noball (retry) — N=%d, ball OFF\n', N_B_noball);
-    fprintf('══════════════════════════════════════════════\n');
+    fprintf('%s\n', repmat('=', 1, 48));
+    fprintf(' Run B-noball (retry) - N=%d, ball OFF\n', N_B_noball);
+    fprintf('%s\n', repmat('=', 1, 48));
     resB_noball = run_closing(cost_B, con_B_noball, params_B_noball);
 end
 fprintf('B-noball: used N=%d, converged=%s\n', N_B_noball, ...
@@ -152,7 +152,7 @@ con_B_ball.terminal_ball.r_switch = r_switch_ball_B;
 
 params_B_ball = params_base;   % N=20
 
-fprintf(' Run B-ball — ρc=%.0e, N=20, ball ON r=%d m\n', rho_c, r_switch_ball_B);
+fprintf(' Run B-ball - ρc=%.0e, N=20, ball ON r=%d m\n', rho_c, r_switch_ball_B);
 resB_ball = run_closing(cost_B, con_B_ball, params_B_ball);
 
 %% Run C: pure energy + CLF terminal cost, no ball
@@ -170,7 +170,7 @@ con_C.use_passive_safety = false;
 params_C = params_base;
 
 
-fprintf(' Run C — energy ℓ=‖u‖², CLF terminal cost V_f=e''P_clf e\n');
+fprintf(' Run C - energy ℓ=‖u‖², CLF terminal cost V_f=e''P_clf e\n');
 resC = run_closing(cost_C, con_C, params_C);
 
 %% Run MPC: Standard regulation MPC (comparison baseline)
@@ -187,7 +187,7 @@ con_MPC.use_passive_safety = false;
 
 params_MPC = params_base;
 
-fprintf(' Run MPC — standard regulation ℓ=e''Qe+u''Ru  (Q,R = DARE weights, P = LQR cost-to-go)\n');
+fprintf(' Run MPC - standard regulation ℓ=e''Qe+u''Ru  (Q,R = DARE weights, P = LQR cost-to-go)\n');
 resMPC = run_closing(cost_std, con_MPC, params_MPC);
 
 
@@ -199,29 +199,31 @@ n_B_cmp  = min(resB_noball.n_ctrl, resB_ball.n_ctrl);
 dX_B_max = max(abs(resB_noball.X(1:3, 1:n_B_cmp+1) - resB_ball.X(1:3, 1:n_B_cmp+1)), [], 'all');
 
 fprintf('\nBall-role evidence:\n');
-fprintf('  A2 total Δv (no ball, Q=P=0):     %.2e m/s  → ball is load-bearing in A1\n', resA2.dv);
-fprintf('  ||pos(B-noball) - pos(B-ball)||:  %.2e m   → ball is slack in B-ball\n\n', dX_B_max);
+fprintf('  A2 total Δv (no ball, Q=P=0):     %.2e m/s  -> ball is load-bearing in A1\n', resA2.dv);
+fprintf('  ||pos(B-noball) - pos(B-ball)||:  %.2e m   -> ball is slack in B-ball\n\n', dX_B_max);
 
-% MPC comparison — reuse the first-class Run MPC (resMPC) computed above
+% MPC comparison: reuse the first-class Run MPC (resMPC) computed above
 X_mpc  = resMPC.X;
 U_mpc  = resMPC.U;
 t_mpc  = resMPC.t_vec;
 dv_mpc = resMPC.dv;
 
-fprintf('\n── Δv summary ───────────────────────────────────────────────\n');
+fprintf('\n%s\n', repmat('-', 1, 63));
+fprintf('Δv summary\n');
+fprintf('%s\n', repmat('-', 1, 63));
 fprintf('  %-32s  %10s\n', 'Run', 'Δv [m/s]');
-fprintf('  %-32s  %10.4f\n', 'A1 — energy, ball ON',               resA1.dv);
+fprintf('  %-32s  %10.4f\n', 'A1 - energy, ball ON',               resA1.dv);
 fprintf('  %-32s  %10.4f\n', sprintf('B-noball (N=%d)',N_B_noball),    resB_noball.dv);
-fprintf('  %-32s  %10.4f\n', 'B-ball  — strict dissip.',              resB_ball.dv);
-fprintf('  %-32s  %10.4f\n', 'C  — energy + CLF terminal cost',       resC.dv);
-fprintf('  %-32s  %10.4f\n', 'MPC — standard regulation',             dv_mpc);
+fprintf('  %-32s  %10.4f\n', 'B-ball  - strict dissip.',              resB_ball.dv);
+fprintf('  %-32s  %10.4f\n', 'C  - energy + CLF terminal cost',       resC.dv);
+fprintf('  %-32s  %10.4f\n', 'MPC - standard regulation',             dv_mpc);
 fprintf('  A1 vs MPC savings: %.4f m/s  (%.1f%%)\n', ...
     dv_mpc - resA1.dv, 100*(dv_mpc - resA1.dv)/dv_mpc);
 fprintf('  C  vs MPC savings: %.4f m/s  (%.1f%%)\n', ...
     dv_mpc - resC.dv,  100*(dv_mpc - resC.dv) /dv_mpc);
-fprintf('─────────────────────────────────────────────────────────────\n\n');
+fprintf('%s\n\n', repmat('-', 1, 63));
 
-%% Figure — Hill-frame: A1, B-noball, C, MPC  (full view + switch-point zoom)
+%% Figure: Hill-frame - A1, B-noball, C, MPC (full view + switch-point zoom)
 c_A1  = [0.85 0.33 0.10];
 c_Bnb = [0.20 0.63 0.17];
 c_C   = [0.00 0.68 0.68];
@@ -239,10 +241,10 @@ lbl_Bnb = 'EMPC + state reg.';
 lbl_C   = 'EMPC + terminal cost';
 lbl_MPC = 'Std. MPC';
 
-fig4 = figure('Name', 'S4 — Hill Frame: A1, B-noball, C, MPC (full + zoom)');
+fig4 = figure('Name', 'S4 - Hill Frame: A1, B-noball, C, MPC (full + zoom)');
 fig4.Position(3:4) = [980, 420];
 
-% Panel A: full trajectory (IC → switch) — carries the one shared legend
+% Panel A: full trajectory (IC -> switch), carries the one shared legend
 ax4a = subplot(1, 2, 1);
 hold(ax4a,'on'); grid(ax4a,'on'); axis(ax4a,'equal');
 plot(ax4a, resA1.X(2,:),       resA1.X(1,:),       '-', 'Color', c_A1, 'LineWidth', 1.4, ...
@@ -266,7 +268,7 @@ ylabel(ax4a, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
 title(ax4a, 'Full closing trajectory', 'Interpreter', 'latex', 'FontSize', 12);
 legend(ax4a, 'Location', 'northwest', 'Interpreter', 'latex', 'FontSize', 8);
 
-% Panel B: zoom on the switch point — no repeated legend (colors already
+% Panel B: zoom on the switch point, no repeated legend (colors already
 % established in Panel A); the only new element (conv. tolerance circle)
 % gets a direct text label instead of a duplicate legend entry.
 ax4b = subplot(1, 2, 2);

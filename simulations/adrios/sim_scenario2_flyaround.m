@@ -1,14 +1,14 @@
 % sim_scenario2_flyaround.m
-% Scenario 2 — NMC Fly-Around (IC: V-bar hold [0;300;0;0;0;0])
+% Scenario 2: NMC Fly-Around (IC: V-bar hold [0;300;0;0;0;0])
 %
-% Run 1  — No terminal constraint: u*=0, chaser stays at V-bar hold (CWH equilibrium).
-% Run 2  — Periodic terminal equality x(N)=Π*(k+N-1 mod P): converges to NMC orbit.
-% Run 3a — Band ‖r‖≥75 m + small Q: converges to V-bar equilibrium, not an orbit.
-% Run 3b — Band + pure fuel: u*=0, free CWH drift (no orbit selection).
-% Run 3c — Small Q, no band: regulation toward origin (like std MPC, not orbit).
-% Run 4  — IC on Π* manifold, pure fuel, no terminal constraint: u*=0, free orbit maintenance.
-% Run 5  — Augmented stage cost ℓ=‖u‖²+ε‖x−x*_k‖²: strict P-periodic dissipativity,
-%          no terminal constraint (Köhler–Müller–Allgöwer 2018).
+% Run 1  - No terminal constraint: u*=0, chaser stays at V-bar hold (CWH equilibrium).
+% Run 2  - Periodic terminal equality x(N)=Π*(k+N-1 mod P): converges to NMC orbit.
+% Run 3a - Band ‖r‖≥75 m + small Q: converges to V-bar equilibrium, not an orbit.
+% Run 3b - Band + pure fuel: u*=0, free CWH drift (no orbit selection).
+% Run 3c - Small Q, no band: regulation toward origin (like std MPC, not orbit).
+% Run 4  - IC on Π* manifold, pure fuel, no terminal constraint: u*=0, free orbit maintenance.
+% Run 5  - Augmented stage cost ℓ=‖u‖²+ε‖x−x*_k‖²: strict P-periodic dissipativity,
+%          no terminal constraint (Köhler-Müller-Allgöwer 2018).
 
 clear; clc;
 script_dir = fileparts(mfilename('fullpath'));
@@ -34,11 +34,11 @@ Bc = [zeros(3,3); eye(3)];
 x_test   = [100; 0; 0; 0; -2*n*100; 0];
 residual = norm(A_d^P * x_test - x_test);
 fprintf('NMT closure residual: %.2e  (must be < 1e-4)\n', residual);
-assert(residual < 1e-4, 'Discrete NMT does not close — check dt and P');
+assert(residual < 1e-4, 'Discrete NMT does not close: check dt and P');
 
 %% Prescribed NMC orbit Π* 
 % 2:1 ellipse in Hill frame: x in [-b, b] radial, y in [-2b, 2b] along-track.
-% IC on NMC manifold: vx=0, vy+2n*x=0 → start at [b;0;0;0;-2nb;0].
+% IC on NMC manifold: vx=0, vy+2n*x=0 -> start at [b;0;0;0;-2nb;0].
 % Propagated by A_d to get the full P-step periodic orbit exactly.
 b_nmc       = 75;                                  % [m]  radial semi-axis
 x_star      = zeros(6, P);
@@ -98,7 +98,7 @@ matrices.f_vec      = f_vec;
 matrices.A_u        = A_u;
 matrices.b_u        = b_u;
 
-x0 = [0; 300; 0; 0; 0; 0];   % V-bar hold — CWH equilibrium (shared IC)
+x0 = [0; 300; 0; 0; 0; 0];   % V-bar hold, CWH equilibrium (shared IC)
 
 params_base.rho_min = 50;    
 params_base.rho_max = 200;
@@ -109,9 +109,9 @@ params_base.n       = n;
 params_base.dt      = dt;
 params_base.n_sim   = n_sim;
 
-%% RUN 1 — No terminal constraint 
+%% RUN 1 - No terminal constraint
 
-fprintf(' S2 Run 1 — No terminal constraint (V-bar hold, chaser stays put)\n');
+fprintf(' S2 Run 1 - No terminal constraint (V-bar hold, chaser stays put)\n');
 
 params_r1     = params_base;
 params_r1.x0  = x0;
@@ -124,8 +124,8 @@ run_cfg_r1.use_band              = false;
 
 r1 = run_flyaround(run_cfg_r1, matrices, params_r1);
 
-%% RUN 2 — Periodic terminal to Π* 
-fprintf(' S2 Run 2 — Periodic terminal constraint → stabilise Pi*\n');
+%% RUN 2 - Periodic terminal to Π*
+fprintf(' S2 Run 2 - Periodic terminal constraint -> stabilise Pi*\n');
 fprintf('IC: [0; 300; 0; 0; 0; 0]   Pi*: b = %d m radial / %d m along-track\n', ...
     b_nmc, 2*b_nmc);
 
@@ -154,10 +154,10 @@ phase_err_mean_last = mean(phase_err_last);
 fprintf('\nPhase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
     phase_err_max_last, phase_err_mean_last);
 
-%%  RUN 4 — NMC manifold IC, pure fuel, no terminal constraint
+%%  RUN 4 - NMC manifold IC, pure fuel, no terminal constraint
 % IC is placed exactly on Π* (satisfies vy = -2n·x, vx = 0).
 
-fprintf(' S2 Run 4 — IC on NMC manifold, pure fuel, no terminal constraint\n');
+fprintf(' S2 Run 4 - IC on NMC manifold, pure fuel, no terminal constraint\n');
 
 x0_r4 = [b_nmc; 0; 0; 0; -2*n*b_nmc; 0];   % starting point of Π*: x=b, vy=-2nb
 fprintf('IC: [%.1f; 0; 0; 0; %.5f; 0]  (on Pi* manifold)\n', b_nmc, -2*n*b_nmc);
@@ -183,12 +183,12 @@ end
 fprintf('Run 4 phase error:  max = %.2e m   mean = %.2e m  (expect machine-eps)\n', ...
     max(phase_err_r4), mean(phase_err_r4));
 
-%% RUN 5 — Regularised dissipativity route (periodic stage cost) 
+%% RUN 5 - Regularised dissipativity route (periodic stage cost)
 % Stage cost: ℓ_aug(x,u,k) = ‖u‖² + ε‖x − x*_k‖²
-% Phase-synchronisation prevents the "waiting" trap (Müller–Grüne 2016, Example 4):
+% Phase-synchronisation prevents the "waiting" trap (Müller-Grüne 2016, Example 4):
 
-fprintf(' S2 Run 5 — Periodic stage cost ell_aug=||u||^2+eps||x-x*_k||^2\n');
-fprintf(' (Koehler-Mueller-Allgower 2018, Ass. 1/Cor. 4 — no terminal cstr.)\n');
+fprintf(' S2 Run 5 - Periodic stage cost ell_aug=||u||^2+eps||x-x*_k||^2\n');
+fprintf(' (Koehler-Mueller-Allgower 2018, Ass. 1/Cor. 4, no terminal cstr.)\n');
 
 
 eps_r5       = 1e-4;
@@ -229,19 +229,17 @@ phase_err_r5_mean    = mean(phase_err_r5_last);
 fprintf('\nRun 5 phase error (last orbit):  max = %.4f m   mean = %.4f m\n', ...
     phase_err_r5_max, phase_err_r5_mean);
 
-%% RUN T — Standard Tracking MPC baseline (quadratic cost, tracks Pi*)
-fprintf(' S2 Run T — Standard Tracking MPC (tracks Pi*, quadratic cost)\n');
+%% RUN T - Standard Tracking MPC baseline (quadratic cost, tracks Pi*)
+fprintf(' S2 Run T - Standard Tracking MPC (tracks Pi*, quadratic cost)\n');
 
 Q_track = eye(6);          % penalise full state error to the reference
 R_track = eye(3);          % control effort (same scale as R_eco in Runs 2/5)
 [~, P_track] = lqr_controller(A_d, B_d, Q_track, R_track);
 
-% Short horizon on purpose: the condensed CWH Su over a full period (N=P=92)
-% makes Su'*Q*Su severely ill-conditioned with Q=I, which stalls quadprog
-% (exitflag 0 every step). N_track=20 keeps the tracking QP well-conditioned
-% and matches the horizon used in Scenarios 1 & 4. (Runs 2/5 tolerate N=P only
-% because their fuel-dominant Hessian stays H≈2I.) N_track=P was tried but
-% not kept here — mentioned in the text instead of shown in the plot.
+% Short horizon on purpose: over a full period (N=P=92) Su'*Q*Su is severely
+% ill-conditioned with Q=I, stalling quadprog. N_track=20 keeps the QP
+% well-conditioned and matches Scenarios 1 & 4 (Runs 2/5 tolerate N=P only
+% because their fuel-dominant Hessian stays H≈2I).
 N_track = 20;
 
 con_track.u_max = u_max;
@@ -274,24 +272,26 @@ cap_r5 = capture_step(phase_err_r5, capture_tol);
 dv_r2  = r2.dv_total;
 dv_r5  = r5.dv_total;
 
-fprintf('\n── Tracking vs Run 2 vs Run 5  (shared IC, capture tol = %d m) ─────\n', capture_tol);
+fprintf('\n%s\n', repmat('-', 1, 70));
+fprintf('Tracking vs Run 2 vs Run 5  (shared IC, capture tol = %d m)\n', capture_tol);
+fprintf('%s\n', repmat('-', 1, 70));
 fprintf('  %-26s  %9s  %9s  %13s\n', 'Controller', 'dv[m/s]', 'vs track', 'capture');
-fprintf('  %-26s  %9.4f  %9s  %13s\n', 'Standard Tracking MPC', dv_track, '—', cap_str(cap_T, P));
+fprintf('  %-26s  %9.4f  %9s  %13s\n', 'Standard Tracking MPC', dv_track, '--', cap_str(cap_T, P));
 fprintf('  %-26s  %9.4f  %8.1f%%  %13s\n', 'Run 2 (terminal eq.)', dv_r2, ...
     100*(dv_track - dv_r2)/dv_track, cap_str(cap_r2, P));
 fprintf('  %-26s  %9.4f  %8.1f%%  %13s\n', 'Run 5 (periodic aug.)', dv_r5, ...
     100*(dv_track - dv_r5)/dv_track, cap_str(cap_r5, P));
-fprintf('────────────────────────────────────────────────────────────────────\n\n');
+fprintf('%s\n\n', repmat('-', 1, 70));
 
 %% RUNS 3a / 3b / 3c
 % Three configurations that do NOT acquire an NMC orbit, demonstrating that
 % neither a state band nor a state cost alone can substitute for the periodic
 % terminal constraint of Run 2.
 %
-%   3a: band (‖r(k)‖ ≥ 75 m) + small Q  → cheapest feasible equilibrium is
+%   3a: band (‖r(k)‖ ≥ 75 m) + small Q  -> cheapest feasible equilibrium is
 %       the V-bar point [0; 75; 0; 0; 0; 0]; NOT an orbit.
-%   3b: band + pure fuel               → u*=0, chaser drifts freely under CWH.
-%   3c: small Q, no band               → regulation toward origin (like std MPC).
+%   3b: band + pure fuel               -> u*=0, chaser drifts freely under CWH.
+%   3c: small Q, no band               -> regulation toward origin (like std MPC).
 
 %% State cost matrices shared by 3a and 3c
 q_state = 1e-6;
@@ -301,11 +301,11 @@ H_Q     = 2 * (Su' * Qbar * Su + eye(3*N));       % fuel + state
 H_Q     = (H_Q + H_Q') / 2;
 F_mat_Q = 2 * Su' * Qbar * Sx;                    % f_vec(k) = F_mat * x(k)
 
-n_sim_3  = 3*P;   % 3 orbits — enough to see asymptotic behaviour
+n_sim_3  = 3*P;   % 3 orbits, enough to see asymptotic behaviour
 
-%% RUN 3a — band + small Q
+%% RUN 3a - band + small Q
 
-fprintf(' S2 Run 3a — band (r_min=75 m) + small Q\n');
+fprintf(' S2 Run 3a - band (r_min=75 m) + small Q\n');
 matrices_3a       = matrices;
 matrices_3a.H     = H_Q;
 matrices_3a.F_mat = F_mat_Q;
@@ -323,9 +323,9 @@ run_cfg_3a.use_band              = true;
 
 r3a = run_flyaround(run_cfg_3a, matrices_3a, params_3a);
 
-%% RUN 3b — band + pure fuel
+%% RUN 3b - band + pure fuel
 
-fprintf(' S2 Run 3b — band (r_min=75 m) + pure fuel\n');
+fprintf(' S2 Run 3b - band (r_min=75 m) + pure fuel\n');
 
 
 params_3b         = params_base;
@@ -341,9 +341,9 @@ run_cfg_3b.use_band              = true;
 
 r3b = run_flyaround(run_cfg_3b, matrices, params_3b);
 
-%% RUN 3c — small Q, no band
+%% RUN 3c - small Q, no band
 
-fprintf(' S2 Run 3c — small Q, no band\n');
+fprintf(' S2 Run 3c - small Q, no band\n');
 
 matrices_3c       = matrices;
 matrices_3c.H     = H_Q;
@@ -373,8 +373,8 @@ c_r1   = [0.85 0.33 0.10];
 n_sim_r1  = r1.n_sim;
 time_s_r2 = (0 : n_sim_r2) * dt;
 
-% Fig 1 — Hill-frame: Run 1 stuck vs Run 2 converging to Π*
-fig1 = figure('Name', 'S2 — Hill-frame');
+% Fig 1: Hill-frame - Run 1 stuck vs Run 2 converging to Π*
+fig1 = figure('Name', 'S2 - Hill-frame');
 ax1  = axes(fig1);
 hold(ax1, 'on'); grid(ax1, 'on'); axis(ax1, 'equal');
 x_star_cl = [x_star, x_star(:,1)];   % close the curve for plotting
@@ -389,15 +389,15 @@ plot(ax1, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 10, ...
 plot(ax1, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
 xlabel(ax1, 'r_x (radial) [m]');
 ylabel(ax1, 'r_y (along-track) [m]');
-title(ax1, 'S2 — Run 1: free drift vs Run 2: stabilises \Pi^*');
+title(ax1, 'S2 - Run 1: free drift vs Run 2: stabilises \Pi^*');
 legend(ax1, 'Location', 'northeast');
 exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.pdf'), 'ContentType', 'vector');
 exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.png'), 'Resolution', 300);
 
-% Fig 5 — Non-equilibrium IC drift (Run 1 detail)
+% Fig 5: Non-equilibrium IC drift (Run 1 detail)
 time_s_r1 = (0 : n_sim_r1) * dt;
 
-fig5 = figure('Name', 'S2 — Non-equilibrium drift (Run 1)');
+fig5 = figure('Name', 'S2 - Non-equilibrium drift (Run 1)');
 tl5  = tiledlayout(fig5, 2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 
 % Top: Hill-frame trajectory
@@ -414,7 +414,7 @@ plot(ax5a, r1.x_log(1,end), r1.x_log(2,end), '^', 'Color', [0.4 0.4 0.4], ...
 plot(ax5a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
 xlabel(ax5a, 'r_x (radial) [m]');
 ylabel(ax5a, 'r_y (along-track) [m]');
-title(ax5a, 'Hill-frame — drifting ellipse (U^* = 0, no terminal cstr.)');
+title(ax5a, 'Hill-frame - drifting ellipse (U^* = 0, no terminal cstr.)');
 legend(ax5a, 'Location', 'northeast');
 
 % Bottom: along-track time series showing secular drift vs analytical trend
@@ -436,20 +436,20 @@ legend(ax5b, 'Location', 'northeast');
 exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.pdf'), 'ContentType', 'vector');
 exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.png'), 'Resolution', 300);
 
-% Fig 2 — Phase error 
-fig2 = figure('Name', 'S2 — Phase error');
+% Fig 2: Phase error
+fig2 = figure('Name', 'S2 - Phase error');
 ax2  = axes(fig2);
 hold(ax2, 'on'); grid(ax2, 'on');
 semilogy(ax2, time_s_r2, phase_err, 'Color', c_r2, 'LineWidth', 1.2);
 xlabel(ax2, 'Time [s]');
 ylabel(ax2, '||x(k) - x^*_{k \rm mod P}|| [m]');
-title(ax2, 'Convergence to \Pi^* — Keerthi-Gilbert / Theorem 2.24');
+title(ax2, 'Convergence to \Pi^* - Keerthi-Gilbert / Theorem 2.24');
 ylim(ax2, [1e-2, 1e3]);
 exportgraphics(fig2, fullfile(fig_dir, 'phase_error.pdf'), 'ContentType', 'vector');
 exportgraphics(fig2, fullfile(fig_dir, 'phase_error.png'), 'Resolution', 300);
 
-% Fig 3 — Control effort Run 2 (log scale)
-fig3 = figure('Name', 'S2 — Control effort');
+% Fig 3: Control effort Run 2 (log scale)
+fig3 = figure('Name', 'S2 - Control effort');
 ax3  = axes(fig3);
 hold(ax3, 'on'); grid(ax3, 'on');
 semilogy(ax3, time_s_r2(1:n_sim_r2), r2.u_norm, 'Color', c_r2, 'LineWidth', 1.2);
@@ -459,29 +459,29 @@ if r2.inject_end < n_sim_r2
 end
 xlabel(ax3, 'Time [s]');
 ylabel(ax3, '||u|| [m/s^2]');
-title(ax3, 'S2 — Control effort (log scale)');
+title(ax3, 'S2 - Control effort (log scale)');
 ylim(ax3, [1e-11, 1e-4]);
 exportgraphics(fig3, fullfile(fig_dir, 'control_effort.pdf'), 'ContentType', 'vector');
 exportgraphics(fig3, fullfile(fig_dir, 'control_effort.png'), 'Resolution', 300);
 
-% Fig 4 — Cumulative ΔV Run 2
-fig4 = figure('Name', 'S2 — Cumulative DeltaV');
+% Fig 4: Cumulative ΔV Run 2
+fig4 = figure('Name', 'S2 - Cumulative DeltaV');
 ax4  = axes(fig4);
 hold(ax4, 'on'); grid(ax4, 'on');
 plot(ax4, time_s_r2(1:n_sim_r2), cumsum(r2.dv_log), 'Color', c_r2, 'LineWidth', 1.2);
 xlabel(ax4, 'Time [s]');
 ylabel(ax4, 'Cumulative \DeltaV [m/s]');
-title(ax4, 'S2 — Cumulative \DeltaV');
+title(ax4, 'S2 - Cumulative \DeltaV');
 exportgraphics(fig4, fullfile(fig_dir, 'cumulative_dv.pdf'), 'ContentType', 'vector');
 exportgraphics(fig4, fullfile(fig_dir, 'cumulative_dv.png'), 'Resolution', 300);
 
 fprintf('Figures saved to %s\n', fig_dir);
 
-% Fig 5 — Run 4: manifold IC → free orbit maintenance
+% Fig 5: Run 4: manifold IC -> free orbit maintenance
 c_r4        = [0.50 0.00 0.50];   % purple
 time_s_r4   = (0 : n_sim_r4) * dt;
 
-fig5 = figure('Name', 'S2 — Run 4: manifold IC');
+fig5 = figure('Name', 'S2 - Run 4: manifold IC');
 tl5b = tiledlayout(fig5, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
 
 % Hill frame: trajectory should lie on top of Π*
@@ -496,7 +496,7 @@ plot(ax5b1, x0_r4(1), x0_r4(2), 'o', 'Color', c_r4, 'MarkerSize', 8, ...
 plot(ax5b1, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
 xlabel(ax5b1, 'r_x (radial) [m]');
 ylabel(ax5b1, 'r_y (along-track) [m]');
-title(ax5b1, 'Run 4: IC on \Pi^* — trajectory coincides with \Pi^*');
+title(ax5b1, 'Run 4: IC on \Pi^* - trajectory coincides with \Pi^*');
 legend(ax5b1, 'Location', 'northeast');
 
 % Phase error: should be numerical noise
@@ -508,15 +508,15 @@ ylabel(ax5b2, '||x(k) - x^*_{k \rm mod P}|| [m]');
 title(ax5b2, 'Phase error (expect \approx 0)');
 ylim(ax5b2, [1e-16, 1e-3]);
 
-sgtitle(fig5, 'S2 Run 4 — NMC manifold IC: orbit maintained with u^* = 0');
+sgtitle(fig5, 'S2 Run 4 - NMC manifold IC: orbit maintained with u^* = 0');
 exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.pdf'), 'ContentType', 'vector');
 exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.png'), 'Resolution', 300);
 
-% Fig 7 — Run 5 vs Run 2: periodic stage cost vs terminal equality
+% Fig 7: Run 5 vs Run 2: periodic stage cost vs terminal equality
 c_r5        = [0.80 0.20 0.00];   % dark orange-red
 time_s_r5   = (0 : n_sim_r5) * dt;
 
-fig7 = figure('Name', 'S2 — Run 5 vs Run 2');
+fig7 = figure('Name', 'S2 - Run 5 vs Run 2');
 tl7  = tiledlayout(fig7, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 
 % Hill frame: Run 5 should converge to Π* without terminal constraint
@@ -565,7 +565,7 @@ sgtitle(fig7, sprintf('S2: Run 2 (Keerthi-Gilbert) vs Run 5 (periodic ℓ_{aug},
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.pdf'), 'ContentType', 'vector');
 exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.png'), 'Resolution', 300);
 
-% Fig 8 — Standard Tracking MPC vs Run 2 vs Run 5: Hill-frame overlay + table
+% Fig 8: Standard Tracking MPC vs Run 2 vs Run 5: Hill-frame overlay + table
 c_track = [0.55 0.10 0.75];   % purple, standard tracking baseline
 
 % Presentation-facing run labels (thesis/slide terminology, not the code's
@@ -574,7 +574,7 @@ lbl_MPC_S2 = 'Std. MPC';
 lbl_R2_S2  = 'EMPC+ periodic term. eq.';
 lbl_R5_S2  = 'EMPC+ phase-sync. pen.';
 
-fig8 = figure('Name', 'Op 2 — Tracking vs Run 2 vs Run 5');
+fig8 = figure('Name', 'Op 2 - Tracking vs Run 2 vs Run 5');
 ax8  = axes(fig8); hold(ax8, 'on'); grid(ax8, 'on'); axis(ax8, 'equal');
 plot(ax8, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
     'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
@@ -612,7 +612,7 @@ fprintf(fid_ct, 'Run 5 (periodic $\\ell_{\\mathrm{aug}}$) & %.4f & %.1f & %s \\\
 fprintf(fid_ct, '\\bottomrule\n\\end{tabular}\n');
 fclose(fid_ct);
 
-% Fig 6 — Failure-mode suite: runs 3a / 3b / 3c
+% Fig 6: Failure-mode suite: runs 3a / 3b / 3c
 c_3a = [0.13 0.63 0.37];  
 c_3b = [0.49 0.18 0.56];  
 c_3c = [0.93 0.53 0.18];   
@@ -621,10 +621,10 @@ n_sim_3a = r3a.n_sim;
 n_sim_3b = r3b.n_sim;
 n_sim_3c = r3c.n_sim;
 
-fig6 = figure('Name', 'S2 — Failure modes (Runs 3a/3b/3c)');
+fig6 = figure('Name', 'S2 - Failure modes (Runs 3a/3b/3c)');
 tl6  = tiledlayout(fig6, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 
-% 3a — band + Q → V-bar equilibrium at boundary
+% 3a: band + Q -> V-bar equilibrium at boundary
 ax6a = nexttile(tl6);
 hold(ax6a, 'on'); grid(ax6a, 'on'); axis(ax6a, 'equal');
 plot(ax6a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
@@ -640,7 +640,7 @@ xlabel(ax6a, 'r_x [m]'); ylabel(ax6a, 'r_y [m]');
 title(ax6a, '3a: band + Q  \rightarrow V-bar eq. at boundary');
 legend(ax6a, 'Location', 'northeast', 'FontSize', 7);
 
-% 3b — band + fuel → free drift
+% 3b: band + fuel -> free drift
 ax6b = nexttile(tl6);
 hold(ax6b, 'on'); grid(ax6b, 'on'); axis(ax6b, 'equal');
 plot(ax6b, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
@@ -654,7 +654,7 @@ xlabel(ax6b, 'r_x [m]'); ylabel(ax6b, 'r_y [m]');
 title(ax6b, '3b: band + fuel  \rightarrow free drift (u^*=0)');
 legend(ax6b, 'Location', 'northeast', 'FontSize', 7);
 
-% 3c — no band, small Q → regulation to origin
+% 3c: no band, small Q -> regulation to origin
 ax6c = nexttile(tl6);
 hold(ax6c, 'on'); grid(ax6c, 'on'); axis(ax6c, 'equal');
 plot(ax6c, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
@@ -670,14 +670,12 @@ xlabel(ax6c, 'r_x [m]'); ylabel(ax6c, 'r_y [m]');
 title(ax6c, '3c: Q only  \rightarrow regulation to origin');
 legend(ax6c, 'Location', 'northeast', 'FontSize', 7);
 
-sgtitle(fig6, 'S2 — Why the periodic terminal constraint is necessary');
+sgtitle(fig6, 'S2 - Why the periodic terminal constraint is necessary');
 exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.pdf'), 'ContentType', 'vector');
 exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.png'), 'Resolution', 300);
 
-% Fig 6b — Failure modes overlaid in a single Hill-frame (3a/3b/3c)
-% Single axes: legend placed 'eastoutside' so it never covers the trajectories
-% (3b drifts far, so the data can span a wide range — keep the legend clear).
-fig6b  = figure('Name', 'Op 2 — Failure modes overlay (3a/3b/3c)');
+% Fig 6b: Failure modes overlaid in a single Hill-frame (3a/3b/3c)
+fig6b  = figure('Name', 'Op 2 - Failure modes overlay (3a/3b/3c)');
 ax6bb  = axes(fig6b); hold(ax6bb, 'on'); grid(ax6bb, 'on'); axis(ax6bb, 'equal');
 plot(ax6bb, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.8, ...
     'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
@@ -726,7 +724,7 @@ res1 = struct( ...
     'delta_v_total_m_s',      r1.dv_total, ...
     'infeasible_qp_steps',    sum(r1.exitflag_log <= 0), ...
     'u_mean_last_orbit_mps2', mean(r1.u_norm(u_lo_r1:end)), ...
-    'note',                   'CWH equilibrium; U*=0 globally optimal — chaser stays at IC');
+    'note',                   'CWH equilibrium; U*=0 globally optimal, chaser stays at IC');
 
 res2 = struct( ...
     'terminal',               'periodic Pi* (6-row Su_term equality)', ...
@@ -750,7 +748,7 @@ res3a = struct( ...
     'delta_v_total_m_s',      r3a.dv_total, ...
     'final_range_m',          r3a.range_log(end), ...
     'infeasible_qp_steps',    sum(r3a.exitflag_log <= 0), ...
-    'note',                   'Converges to V-bar equilibrium at band boundary — NOT an NMC orbit');
+    'note',                   'Converges to V-bar equilibrium at band boundary, NOT an NMC orbit');
 
 res3b = struct( ...
     'terminal',               'none', ...
@@ -770,7 +768,7 @@ res3c = struct( ...
     'delta_v_total_m_s',      r3c.dv_total, ...
     'final_range_m',          r3c.range_log(end), ...
     'infeasible_qp_steps',    sum(r3c.exitflag_log <= 0), ...
-    'note',                   'Regulation to origin — no constraint forces orbital motion');
+    'note',                   'Regulation to origin, no constraint forces orbital motion');
 
 res4 = struct( ...
     'terminal',               'none', ...

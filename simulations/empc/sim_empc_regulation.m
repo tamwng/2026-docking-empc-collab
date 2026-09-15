@@ -1,5 +1,5 @@
 % sim_empc_regulation.m
-% Economic MPC regulation to origin — comparison against standard regulation MPC.
+% Economic MPC regulation to origin, comparison against standard regulation MPC.
 %
 %   Structure:
 %   min  Σᵢ₌₀ᴺ⁻¹ uᵢ'R_eco uᵢ  +  xₙ'P xₙ
@@ -8,7 +8,7 @@
 % economic cost-to-go V∞(x) = min Σᵢ₌₀^∞ uᵢ'R_eco uᵢ, but computing
 % this requires solving an LQR/DARE with Q = 0 in the stage cost.
 %
-% Fix: compute P from DARE with Q_dare > 0, R_dare > 0 — the same matrices
+% Fix: compute P from DARE with Q_dare > 0, R_dare > 0, the same matrices
 % used in the standard regulation MPC.
 %
 % See Amrit, Rawlings & Angeli
@@ -80,8 +80,8 @@ U_std(:,end) = mpc_regulation(X_std(:,end), Ad, Bd, Q_dare, R_dare, P, N, con);
 
 
 %%  ECONOMIC MPC
-%   Stage cost: ℓ(x,u) = u'R_eco u  (fuel only — Q_stage = 0)
-%   Terminal cost: x'P x  (same P as above — valid CLF, see header)
+%   Stage cost: ℓ(x,u) = u'R_eco u  (fuel only, Q_stage = 0)
+%   Terminal cost: x'P x  (same P as above, valid CLF, see header)
 
 
 Q_stage = zeros(6);                     % no state penalty at intermediate steps
@@ -103,7 +103,7 @@ U_eco(:,end) = mpc_regulation(X_eco(:,end), Ad, Bd, Q_stage, R_eco, P, N, con);
 fprintf('Simulation complete.\n');
 
 
-%%  ECONOMIC MPC — TERMINAL EQUALITY CONSTRAINT  x(N_eq) = 0
+%%  ECONOMIC MPC, TERMINAL EQUALITY CONSTRAINT  x(N_eq) = 0
 %
 %  No terminal cost (P = 0), no state penalty (Q_stage = 0).
 %  Feasibility is guaranteed ONLY if the horizon N_eq is long enough to
@@ -114,7 +114,7 @@ N_eq = 20;
 con_eq              = con;
 con_eq.terminal_eq  = true;   % activates Aeq/beq in mpc_regulation
 
-P_eq    = zeros(6);           % irrelevant — terminal equality replaces it
+P_eq    = zeros(6);           % irrelevant, terminal equality replaces it
 Q_eq    = zeros(6);           % fuel-only stage cost (same as EMPC above)
 R_eq    = eye(3);
 
@@ -146,7 +146,7 @@ V_std = arrayfun(@(k) X_std(:,k)'*P*X_std(:,k), 1:n_steps);
 V_eco = arrayfun(@(k) X_eco(:,k)'*P*X_eco(:,k), 1:n_steps);
 V_teq = arrayfun(@(k) X_teq(:,k)'*P*X_teq(:,k), 1:n_steps);
 
-tol = 1.0;   % [m] — realistic RPO threshold (GPS nav accuracy ~1–5 m)
+tol = 1.0;   % [m] realistic RPO threshold (GPS nav accuracy ~1-5 m)
 conv_std = find(rel_std < tol, 1, 'first');
 conv_eco = find(rel_eco < tol, 1, 'first');
 conv_teq = find(rel_teq < tol, 1, 'first');
@@ -181,14 +181,14 @@ fprintf('Delta-v saving (EMPC+eq vs Std):   %.2f%%\n', 100*(dv_std(end)-dv_teq(e
 
 %%  PLOTS
 
-c_std = [0.00 0.45 0.70];   % blue   — standard MPC
-c_eco = [0.85 0.33 0.10];   % orange — economic MPC
-c_teq = [0.47 0.18 0.56];   % purple — EMPC + terminal equality
+c_std = [0.00 0.45 0.70];   % blue: standard MPC
+c_eco = [0.85 0.33 0.10];   % orange: economic MPC
+c_teq = [0.47 0.18 0.56];   % purple: EMPC + terminal equality
 c_x   = [0.00 0.60 0.90];
 c_y   = [0.90 0.40 0.00];
 c_z   = [0.20 0.80 0.20];
 
-fig1 = figure('Name', 'EMPC Regulation — Comparison');
+fig1 = figure('Name', 'EMPC Regulation - Comparison');
 
 %% Relative distance
 ax1 = subplot(2,3,1);
@@ -245,7 +245,7 @@ ylabel(ax4,'Radial $x$ [m]','Interpreter','latex');
 title(ax4,'Hill Frame Trajectory');
 legend(ax4,'Location','northeast');
 
-%% Control inputs — standard MPC
+%% Control inputs - standard MPC
 ax5 = subplot(2,3,5);
 hold(ax5,'on'); grid(ax5,'on');
 plot(ax5, t_min, U_std(1,:)*1000, 'Color', c_x, 'LineWidth', 1.2, 'DisplayName', '$u_x$');
@@ -255,10 +255,10 @@ yline(ax5,  con.u_max*1000, '--k', 'LineWidth', 0.8);
 yline(ax5, -con.u_max*1000, '--k', 'LineWidth', 0.8);
 xlabel(ax5,'Time [min]');
 ylabel(ax5,'Accel. [mm/s$^2$]','Interpreter','latex');
-title(ax5,'Control Inputs — Std MPC');
+title(ax5,'Control Inputs - Std MPC');
 legend(ax5,'Location','northeast','Interpreter','latex','FontSize',6);
 
-%% Control inputs — EMPC
+%% Control inputs - EMPC
 ax6 = subplot(2,3,6);
 hold(ax6,'on'); grid(ax6,'on');
 plot(ax6, t_min, U_eco(1,:)*1000, 'Color', c_x, 'LineWidth', 1.2, 'DisplayName', '$u_x$');
@@ -268,7 +268,7 @@ yline(ax6,  con.u_max*1000, '--k', 'LineWidth', 0.8);
 yline(ax6, -con.u_max*1000, '--k', 'LineWidth', 0.8);
 xlabel(ax6,'Time [min]');
 ylabel(ax6,'Accel. [mm/s$^2$]','Interpreter','latex');
-title(ax6,'Control Inputs — EMPC');
+title(ax6,'Control Inputs - EMPC');
 legend(ax6,'Location','northeast','Interpreter','latex','FontSize',6);
 
 

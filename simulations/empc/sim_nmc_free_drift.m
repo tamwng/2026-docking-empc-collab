@@ -42,9 +42,9 @@ cwh = @(t, xd0, yd0) deal( ...
 [x_nmc_th, y_nmc_th] = cwh(t_free, 0, -2*n*x0);
 
 %% Plot
-c_nmc  = [0.00 0.45 0.70];   % blue  — bounded orbit
-c_free = [0.85 0.33 0.10];   % red   — secular drift
-c_ic   = [0.18 0.49 0.20];   % green — start marker
+c_nmc  = [0.00 0.45 0.70];   % blue: bounded orbit
+c_free = [0.85 0.33 0.10];   % red: secular drift
+c_ic   = [0.18 0.49 0.20];   % green: start marker
 
 figure('Name', 'NMC vs free drift', ...
        'Units', 'centimeters', 'Position', [2 4 26 11]);
@@ -91,7 +91,7 @@ if exist('matlab2tikz', 'file')
         'height', '0.45\linewidth');
     fprintf('TikZ exported to %s\n', out_dir);
 else
-    fprintf('TikZ export skipped — run setup.m first.\n');
+    fprintf('TikZ export skipped, run setup.m first.\n');
 end
 exportgraphics(fig, fullfile(out_dir, 'nmc_free_drift.png'), 'Resolution', 300);
 fprintf('PNG exported to %s\n', out_dir);
@@ -99,7 +99,7 @@ fprintf('PNG exported to %s\n', out_dir);
 %% Time-history figure (separate from the Hill-frame plots)
 t_min = t_free / 60;   % [min]
 
-fig2 = figure('Name', 'NMC vs free drift — time histories', ...
+fig2 = figure('Name', 'NMC vs free drift - time histories', ...
               'Units', 'centimeters', 'Position', [2 4 20 14]);
 
 ax3 = subplot(2, 1, 1);
@@ -128,7 +128,7 @@ if exist('matlab2tikz', 'file')
         'height', '0.7\linewidth');
     fprintf('TikZ exported to %s\n', out_dir);
 else
-    fprintf('TikZ export skipped — run setup.m first.\n');
+    fprintf('TikZ export skipped, run setup.m first.\n');
 end
 exportgraphics(fig2, fullfile(out_dir, 'nmc_free_drift_timehist.png'), 'Resolution', 300);
 fprintf('PNG exported to %s\n', out_dir);

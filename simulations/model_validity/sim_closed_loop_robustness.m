@@ -128,7 +128,7 @@ legend('open-loop CW error (1 horizon, no control)', ...
        'closed-loop terminal miss (with MPC)', 'Location','northwest');
 title('What feedback buys');
 
-sgtitle('Layer 2 — CW-MPC robustness to eccentricity');
+sgtitle('Layer 2 - CW-MPC robustness to eccentricity');
 saveas(gcf, fullfile(out_fig, 'closed_loop_robustness.png'));
 
 fprintf('Exported JSON and figure.\n');

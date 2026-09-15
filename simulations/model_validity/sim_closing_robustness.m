@@ -103,7 +103,7 @@ end
 grid on; xlabel('eccentricity [-]'); ylabel('\Deltav inflation vs e=0 [%]');
 title('Closing: fuel penalty vs eccentricity');
 
-sgtitle('Layer 2 (closing) — CW-EMPC robustness, 10 km \rightarrow 300 m');
+sgtitle('Layer 2 (closing) - CW-EMPC robustness, 10 km \rightarrow 300 m');
 saveas(gcf, fullfile(out_fig, 'closing_robustness.png'));
 
 fprintf('Exported JSON and figure.\n');

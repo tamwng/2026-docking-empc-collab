@@ -1,10 +1,10 @@
 % sim_empc_nmc.m
-% Economic MPC — NMC orbit acquisition and maintenance.
+% Economic MPC, NMC orbit acquisition and maintenance.
 %
 % SCENARIO:
 % The chaser sits at the V-bar hold point (0, 100, 0) m with zero velocity
 % after the tracking MPC phase.  The NMC orbit (rho=50m, 2:1 ellipse) passes
-% exactly through (0, 100, 0) at phase phi_0 = -pi/2 — so the chaser is at
+% exactly through (0, 100, 0) at phase phi_0 = -pi/2, so the chaser is at
 % the right position but with zero velocity. The EMPC finds the minimum-fuel injection
 % impulse and then maintains the orbit with near-zero thrust (free drift).
 %
@@ -36,14 +36,14 @@ N = 20;
 rho   = 50;          % [m]    radial semi-axis  (semi-minor of Hill ellipse)
 y_c   = 0;           % [m]    along-track drift centre
 phi_0 = -pi/2;       % [rad]  initial phase chosen so r_nmc(0) = (0, 100, 0, rho*n, 0, 0)
-                     %        — position matches hold point, only velocity differs
+                     %        (position matches hold point, only velocity differs)
 
 % Full NMC reference
 X_nmc = nmc_trajectory(rho, phi_0, n, dt, n_steps + N, y_c);
 
 % Verification: NMC at step 0 should be at (0, 100, 0)
 assert(abs(X_nmc(1,1)) < 1e-9 && abs(X_nmc(2,1) - 100) < 1e-9, ...
-       'Phase phi_0 does not align NMC with hold point — check phi_0.');
+       'Phase phi_0 does not align NMC with hold point, check phi_0.');
 
 
 %%  CWH STATE SPACE
@@ -59,7 +59,7 @@ Bc = [zeros(3,3); eye(3)];
 [Ad, Bd] = discretize(Ac, Bc, dt);
 
 
-%%  INITIAL CONDITION  — hold point, zero velocity
+%%  INITIAL CONDITION: hold point, zero velocity
 
 X0 = [0; 100; 0; 0; 0; 0];
 
@@ -84,7 +84,7 @@ con.y_min_active = false;         % no overshoot constraint for NMC
 con.los_cone.active = false;
 con.los_cone.half_angle = deg2rad(20);
 con.los_cone.n_faces    = 10;
-con.u_ss         = zeros(3, 1);   % NMC is zero-input — bypass feedforward
+con.u_ss         = zeros(3, 1);   % NMC is zero-input, bypass feedforward
 
 
 %%  CLOSED-LOOP EMPC SIMULATION
@@ -142,8 +142,8 @@ fprintf('Maintenance delta-v:    %.4f m/s  (remaining)\n', ...
 
 %%  PLOTS
 
-c_traj = [0.00 0.45 0.70];   % blue  — actual trajectory
-c_nmc  = [0.85 0.33 0.10];   % orange — NMC reference
+c_traj = [0.00 0.45 0.70];   % blue: actual trajectory
+c_nmc  = [0.85 0.33 0.10];   % orange: NMC reference
 c_x    = [0.00 0.60 0.90];
 c_y    = [0.90 0.40 0.00];
 c_z    = [0.20 0.80 0.20];
@@ -151,7 +151,7 @@ c_z    = [0.20 0.80 0.20];
 % Orbital period marker positions
 T_marks = t_min(round((1:3) * T/dt));
 
-fig1 = figure('Name', 'EMPC NMC — Orbit Acquisition');
+fig1 = figure('Name', 'EMPC NMC - Orbit Acquisition');
 
 %% Hill frame trajectory
 ax1 = subplot(2,3,1);

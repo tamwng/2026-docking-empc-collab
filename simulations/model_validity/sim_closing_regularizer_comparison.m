@@ -85,7 +85,7 @@ end
 % Fuel inflation vs each config's own e=0 baseline
 dv_infl = (dv - dv(:,1)) ./ dv(:,1) * 100;
 
-%% Nominal (e=0) readout — the regulariser's economic distortion
+%% Nominal (e=0) readout: the regulariser's economic distortion
 fprintf('\nNominal (e=0) fuel comparison:\n');
 dv0_ref = dv(1,1);   % terminal-cost config is the economic reference
 for ic = 1:nC

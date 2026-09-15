@@ -10,7 +10,7 @@
 %                = 3 × 2 × 2 = 12.
 %
 % Efficiency: closing depends only on its own choice (3 runs); flyaround on
-% (closing, S2) → 6 runs; docking on (closing, S2, S1) → 12 runs. The
+% (closing, S2) -> 6 runs; docking on (closing, S2, S1) -> 12 runs. The
 % expensive flyaround QPs (N = 92) are therefore solved 6×, not 12×.
 
 clear; clc;
@@ -48,7 +48,7 @@ R_dare = diag([1e4,  1e4,  1e4]);
 [Ad_S1, Bd_S1] = discretize(Ac_cwh, Bc_cwh, dt_S1);
 [~, P_clf_S1]  = lqr_controller(Ad_S1, Bd_S1, Q_dare, R_dare);
 
-%% S2 prediction matrices (choice-independent) — build once
+%% S2 prediction matrices (choice-independent), build once
 [A_d_S2, B_d_S2] = discretize(Ac_cwh, Bc_cwh, dt_S2);
 
 x_star_S2 = zeros(6, P_S2);
@@ -86,7 +86,7 @@ row = 0;
 fprintf('\nEnumerating %d combinations...\n\n', n_comb);
 
 for i4 = 1:3
-    % ─── Closing ─────────────────────────────────────────────────────────
+    % --- Closing ---
     con_S4 = struct();
     con_S4.u_max = u_max; con_S4.y_min_active = false; con_S4.los_cone.active = false;
     con_S4.use_avg_power = false; con_S4.avg_power.P_avail = P_avail;
@@ -114,7 +114,7 @@ for i4 = 1:3
     dv_S4 = res_S4.dv; dur_S4 = steps_S4 * dt_S4;
 
     for i2 = 1:2
-        % ─── Flyaround ───────────────────────────────────────────────────
+        % --- Flyaround ---
         mats = mats0; rcfg = struct();
         switch i2
             case 1
@@ -144,7 +144,7 @@ for i4 = 1:3
         dur_S2 = (k_vbar-1) * dt_S2;
 
         for i1 = 1:2
-            % ─── Docking ─────────────────────────────────────────────────
+            % --- Docking ---
             con_S1 = struct();
             con_S1.u_max = u_max; con_S1.y_min_active = true; con_S1.los_cone.active = true;
             con_S1.los_cone.half_angle = deg2rad(los_deg);
@@ -186,14 +186,16 @@ T_all = table( ...
     round([Res.dv_tot]',4), round([Res.dur_tot]'/3600,3), ...
     'VariableNames', {'Closing','Flyaround','Docking', ...
     'dvS4','dvS2','dvDep','dvS1','dv_total_ms','dur_total_h'});
-fprintf('\n══════════════════ ADRIOS combination sweep ══════════════════\n');
+fprintf('\n%s\n', repmat('=', 1, 66));
+fprintf('ADRIOS combination sweep\n');
+fprintf('%s\n', repmat('=', 1, 66));
 disp(T_all);
 
 [~, i_best_dv]  = min([Res.dv_tot]);
 [~, i_best_dur] = min([Res.dur_tot]);
-fprintf('Min Δv : #%d  (%.4f m/s)  — %s | %s | %s\n', i_best_dv, Res(i_best_dv).dv_tot, ...
+fprintf('Min Δv : #%d  (%.4f m/s)  - %s | %s | %s\n', i_best_dv, Res(i_best_dv).dv_tot, ...
     Res(i_best_dv).c4, Res(i_best_dv).c2, Res(i_best_dv).c1);
-fprintf('Min dur: #%d  (%.2f h)     — %s | %s | %s\n', i_best_dur, Res(i_best_dur).dur_tot/3600, ...
+fprintf('Min dur: #%d  (%.2f h)     - %s | %s | %s\n', i_best_dur, Res(i_best_dur).dur_tot/3600, ...
     Res(i_best_dur).c4, Res(i_best_dur).c2, Res(i_best_dur).c1);
 
 %% Exports

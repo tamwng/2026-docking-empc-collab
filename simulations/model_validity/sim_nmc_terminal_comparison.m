@@ -92,7 +92,7 @@ for im = 1:nM
     end
 end
 
-%% Nominal (e=0) readout — the "why fixed is wrong even without eccentricity"
+%% Nominal (e=0) readout: why fixed is wrong even without eccentricity
 fprintf('\nNominal (e=0) comparison:\n');
 for im = 1:nM
     fprintf('  %-10s : dv/orbit=%.4f, range_last=%.0f m, infeas=%d\n', ...
@@ -136,7 +136,7 @@ yline(150, '--', '2:1 envelope (\approx150 m)', 'HandleVisibility','off');
 grid on; xlabel('eccentricity [-]'); ylabel('max range, final orbit [m]');
 legend('Location','northwest'); title(sprintf('Orbit integrity (b = %.0f m)', b_nmc));
 
-sgtitle('NMC terminal ingredients — phase-sync vs fixed point');
+sgtitle('NMC terminal ingredients - phase-sync vs fixed point');
 saveas(gcf, fullfile(out_fig, 'nmc_terminal_comparison.png'));
 
 fprintf('\nExported JSON and figure.\n');

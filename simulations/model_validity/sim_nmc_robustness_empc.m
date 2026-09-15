@@ -132,7 +132,7 @@ yline(150, '--', '2:1 envelope (\approx150 m)', 'HandleVisibility','off');
 grid on; xlabel('eccentricity [-]'); ylabel('max range, final orbit [m]');
 title(sprintf('NMC orbit integrity (b = %.0f m)', b_nmc));
 
-sgtitle('Layer 2 (NMC, faithful EMPC) — CW periodic orbit held against truth');
+sgtitle('Layer 2 (NMC, faithful EMPC) - CW periodic orbit held against truth');
 saveas(gcf, fullfile(out_fig, 'nmc_robustness_empc.png'));
 
 fprintf('Exported JSON and figure.\n');

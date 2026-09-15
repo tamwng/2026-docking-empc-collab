@@ -1,12 +1,12 @@
 % sim_adrios_full_mission.m
 % Operator-in-the-loop sequential simulation of the full ADRIOS mission.
 %
-% Sequence: Closing (S4) → NMC Flyaround (S2) → Docking from FKP (S1)
+% Sequence: Closing (S4) -> NMC Flyaround (S2) -> Docking from FKP (S1)
 %
 % Before each phase the operator selects a controller configuration:
-%   S4 — [A1] energy+ball  [B] dissipative  [C] energy+CLF (default)
-%   S2 — [2]  periodic terminal equality (default)  [5] periodic stage cost
-%   S1 — [1]  standard MPC  [2] EMPC+CLF (default)
+%   S4 - [A1] energy+ball  [B] dissipative  [C] energy+CLF (default)
+%   S2 - [2]  periodic terminal equality (default)  [5] periodic stage cost
+%   S1 - [1]  standard MPC  [2] EMPC+CLF (default)
 %
 % Each phase gate then pauses for a GO/HOLD decision before proceeding.
 % Phase configs mirror the standalone sim_scenario{4,2,1}_*.m scripts.
@@ -25,12 +25,12 @@ constants;   % loads n, T, mu, etc.
 dt_S4    = 120;        % [s] closing sample time
 dt_S2    = T / 92;    % [s] flyaround sample time
 dt_S1    = 10;         % [s] docking sample time
-N_S4     = 20;         % default MPC horizon — closing (B-noball uses 40)
+N_S4     = 20;         % default MPC horizon, closing (B-noball uses 40)
 P_S2     = 92;         % orbital period in steps
-N_S2     = 92;         % MPC horizon — flyaround (= P)
-N_S1     = 24;         % MPC horizon — docking (min. feasible for Run 3 term.eq @~150 m FKP)
+N_S2     = 92;         % MPC horizon, flyaround (= P)
+N_S1     = 24;         % MPC horizon, docking (min. feasible for Run 3 term.eq @~150 m FKP)
 u_max    = 1e-2;       % [m/s²] thrust bound, all phases
-r_KOS    = 50;         % [m] keep-out sphere — closing phase
+r_KOS    = 50;         % [m] keep-out sphere, closing phase
 b_target = 75;         % [m] NMC orbit radial semi-axis target
 los_deg  = 30;         % [deg] docking LoS approach-cone half-angle
 rho_c    = 1e-11;      % state regularisation weight (B-noball option)
@@ -58,17 +58,17 @@ R_dare = diag([1e4,  1e4,  1e4]);
 [Ad_S1, Bd_S1] = discretize(Ac_cwh, Bc_cwh, dt_S1);
 [~, P_clf_S1]  = lqr_controller(Ad_S1, Bd_S1, Q_dare, R_dare);
 
-%% ═══════════════════════════════════════════════════════════════════════
-%%  PHASE 1 — Closing  (10 km → 300 m)
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
+%%  PHASE 1 - Closing  (10 km -> 300 m)
+%% =========================================================================
 
-fprintf('\n═══════════════════════════════════════════════════════════\n');
-fprintf('  PHASE 1 — Closing  (10 km → 300 m)\n');
-fprintf('═══════════════════════════════════════════════════════════\n');
+fprintf('\n%s\n', repmat('=', 1, 61));
+fprintf('  PHASE 1 - Closing  (10 km -> 300 m)\n');
+fprintf('%s\n', repmat('=', 1, 61));
 fprintf('\n  Select controller:\n');
-fprintf('    [1] Run A1  — pure energy  l=||u||2,  terminal ball ON  (r=200 m)\n');
-fprintf('    [2] Run B   — dissipative  l=||u||2+rho_c||e||2,  no ball  (N=40)\n');
-fprintf('    [3] Run C   — pure energy  l=||u||2,  CLF terminal cost  [default]\n\n');
+fprintf('    [1] Run A1  - pure energy  l=||u||2,  terminal ball ON  (r=200 m)\n');
+fprintf('    [2] Run B   - dissipative  l=||u||2+rho_c||e||2,  no ball  (N=40)\n');
+fprintf('    [3] Run C   - pure energy  l=||u||2,  CLF terminal cost  [default]\n\n');
 s4_choice = select_option(3, 3);
 
 % Base constraint fields shared by all S4 options
@@ -127,20 +127,20 @@ dv_mission = dv_S4;
 
 % Gate 1
 fprintf('\n');
-fprintf('╔══════════════════════════════════════════════════════╗\n');
-fprintf('║  PHASE 1 COMPLETE — CLOSING (10 km → 300 m)         ║\n');
-fprintf('╠══════════════════════════════════════════════════════╣\n');
-fprintf('║  Controller:    %-38s║\n', label_S4);
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('PHASE 1 COMPLETE - CLOSING (10 km -> 300 m)\n');
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('Controller:    %s\n', label_S4);
 if isnan(res_S4.conv_step)
-fprintf('║  *** DID NOT CONVERGE ***                            ║\n');
+fprintf('*** DID NOT CONVERGE ***\n');
 end
-fprintf('║  Deltav consumed:       %7.4f m/s                  ║\n', dv_S4);
-fprintf('║  Steps / time:      %4d steps  (%5.1f min)          ║\n', steps_S4, time_S4);
-fprintf('║  Passive safety:    %5.1f%%                           ║\n', 100*res_S4.ps_frac);
-fprintf('║  Terminal state:   [x,y,z] = [%6.2f,%7.2f,%5.2f] m║\n', ...
+fprintf('Deltav consumed:       %7.4f m/s\n', dv_S4);
+fprintf('Steps / time:      %4d steps  (%5.1f min)\n', steps_S4, time_S4);
+fprintf('Passive safety:    %5.1f%%\n', 100*res_S4.ps_frac);
+fprintf('Terminal state:   [x,y,z] = [%6.2f,%7.2f,%5.2f] m\n', ...
     x_end_S4(1), x_end_S4(2), x_end_S4(3));
-fprintf('║  Mission Deltav so far:  %7.4f m/s                 ║\n', dv_mission);
-fprintf('╚══════════════════════════════════════════════════════╝\n\n');
+fprintf('Mission Deltav so far:  %7.4f m/s\n', dv_mission);
+fprintf('%s\n\n', repmat('=', 1, 60));
 
 while true
     choice = input('  -> Type GO to proceed to Flyaround, or HOLD to pause: ', 's');
@@ -148,16 +148,16 @@ while true
     fprintf('  Holding at 300 m. Type GO to continue.\n');
 end
 
-%% ═══════════════════════════════════════════════════════════════════════
-%%  PHASE 2 — NMC Flyaround acquisition
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
+%%  PHASE 2 - NMC Flyaround acquisition
+%% =========================================================================
 
-fprintf('\n═══════════════════════════════════════════════════════════\n');
-fprintf('  PHASE 2 — NMC Flyaround Acquisition\n');
-fprintf('═══════════════════════════════════════════════════════════\n');
+fprintf('\n%s\n', repmat('=', 1, 61));
+fprintf('  PHASE 2 - NMC Flyaround Acquisition\n');
+fprintf('%s\n', repmat('=', 1, 61));
 fprintf('\n  Select controller:\n');
-fprintf('    [1] Run 2   — periodic terminal equality  x(N)=Pi*(k+N-1 mod P)  [default]\n');
-fprintf('    [2] Run 5   — periodic augmented stage cost  l_aug=||u||2+eps||x-x*_k||2\n\n');
+fprintf('    [1] Run 2   - periodic terminal equality  x(N)=Pi*(k+N-1 mod P)  [default]\n');
+fprintf('    [2] Run 5   - periodic augmented stage cost  l_aug=||u||2+eps||x-x*_k||2\n\n');
 s2_choice = select_option(2, 1);
 
 % Discretize at dt_S2 and verify NMC closure
@@ -165,7 +165,7 @@ s2_choice = select_option(2, 1);
 x_test_S2 = [100; 0; 0; 0; -2*n*100; 0];
 closure_S2 = norm(A_d_S2^P_S2 * x_test_S2 - x_test_S2);
 fprintf('\nNMC closure residual: %.2e  (expect < 1e-4)\n', closure_S2);
-assert(closure_S2 < 1e-4, 'NMC orbit does not close — check dt_S2 and P_S2');
+assert(closure_S2 < 1e-4, 'NMC orbit does not close: check dt_S2 and P_S2');
 
 % Prescribed NMC orbit Pi* at b_target
 n_x_S2 = 6;
@@ -281,18 +281,18 @@ dv_mission = dv_S4 + dv_S2 + dv_departure;
 
 % Gate 2
 fprintf('\n');
-fprintf('╔══════════════════════════════════════════════════════╗\n');
-fprintf('║  PHASE 2 COMPLETE — NMC FLYAROUND                   ║\n');
-fprintf('╠══════════════════════════════════════════════════════╣\n');
-fprintf('║  Controller:    %-38s║\n', label_S2);
-fprintf('║  Deltav consumed (EMPC):    %7.4f m/s              ║\n', dv_S2);
-fprintf('║  Orbit radius achieved:  %5.1f m  (target: 75.0 m) ║\n', b_established);
-fprintf('║  Phase error (max, last orbit):  %6.2f m            ║\n', phase_err_max);
-fprintf('║  -- Departure burn --------------------------------- ║\n');
-fprintf('║  DV departure:           %7.4f m/s  -> FKP         ║\n', dv_departure);
-fprintf('║  FKP state:              [0, %5.1f, 0] m (V-bar)   ║\n', x_FKP(2));
-fprintf('║  Mission Deltav so far:       %7.4f m/s            ║\n', dv_mission);
-fprintf('╚══════════════════════════════════════════════════════╝\n\n');
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('PHASE 2 COMPLETE - NMC FLYAROUND\n');
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('Controller:    %s\n', label_S2);
+fprintf('Deltav consumed (EMPC):    %7.4f m/s\n', dv_S2);
+fprintf('Orbit radius achieved:  %5.1f m  (target: 75.0 m)\n', b_established);
+fprintf('Phase error (max, last orbit):  %6.2f m\n', phase_err_max);
+fprintf('-- Departure burn --\n');
+fprintf('DV departure:           %7.4f m/s  -> FKP\n', dv_departure);
+fprintf('FKP state:              [0, %5.1f, 0] m (V-bar)\n', x_FKP(2));
+fprintf('Mission Deltav so far:       %7.4f m/s\n', dv_mission);
+fprintf('%s\n\n', repmat('=', 1, 60));
 
 while true
     choice = input('  -> Type GO to proceed to Docking, or HOLD to pause: ', 's');
@@ -300,21 +300,21 @@ while true
     fprintf('  Holding at FKP. Type GO to continue.\n');
 end
 
-%% ═══════════════════════════════════════════════════════════════════════
-%%  PHASE 3 — Docking from FKP
+%% =========================================================================
+%%  PHASE 3 - Docking from FKP
 %%  LoS approach cone (30°, +V-bar) + y >= 0 active (matches standalone S1).
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
 
-fprintf('\n═══════════════════════════════════════════════════════════\n');
-fprintf('  PHASE 3 — Docking from FKP  (%.1f m -> 0 m)\n', x_FKP(2));
-fprintf('═══════════════════════════════════════════════════════════\n');
+fprintf('\n%s\n', repmat('=', 1, 61));
+fprintf('  PHASE 3 - Docking from FKP  (%.1f m -> 0 m)\n', x_FKP(2));
+fprintf('%s\n', repmat('=', 1, 61));
 fprintf('\n  Select controller:\n');
-fprintf('    [1] Run 2   — EMPC, CLF terminal cost   Q=0, R=I, P=P_clf         [default]\n');
-fprintf('    [2] Run 3   — EMPC, hard terminal eq.   Q=0, R=I, P=0, x(N)=dock\n');
+fprintf('    [1] Run 2   - EMPC, CLF terminal cost   Q=0, R=I, P=P_clf         [default]\n');
+fprintf('    [2] Run 3   - EMPC, hard terminal eq.   Q=0, R=I, P=0, x(N)=dock\n');
 fprintf('    (Both produce near-identical V-bar trajectories; mechanism differs.)\n\n');
 s1_choice = select_option(2, 1);
 
-% Base constraint struct — mirrors standalone sim_scenario1_docking.m:
+% Base constraint struct, mirrors standalone sim_scenario1_docking.m:
 % LoS approach cone (30°, +V-bar) + y ≥ 0 half-space; no approach corridor.
 con_S1.u_max               = u_max;
 con_S1.y_min_active        = true;
@@ -335,7 +335,7 @@ switch s1_choice
     case 1   % Run 2: EMPC, CLF terminal cost (default)
         label_S1 = 'Run 2 (EMPC, CLF Vf)';
         cost_S1  = struct('Q', zeros(6), 'R', eye(3), 'P', P_clf_S1);
-        % terminal_eq not set → defaults to false in run_docking
+        % terminal_eq not set, defaults to false in run_docking
 
     case 2   % Run 3: EMPC, hard terminal equality x(N) = x_dock
         label_S1          = 'Run 3 (EMPC, hard term. eq.)';
@@ -360,49 +360,49 @@ dv_total_mission = dv_S4 + dv_S2 + dv_departure + dv_S1;
 
 % Gate 3 / Mission summary
 fprintf('\n');
-fprintf('╔══════════════════════════════════════════════════════╗\n');
-fprintf('║  PHASE 3 COMPLETE — DOCKING APPROACH                ║\n');
-fprintf('╠══════════════════════════════════════════════════════╣\n');
-fprintf('║  Controller:    %-38s║\n', label_S1);
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('PHASE 3 COMPLETE - DOCKING APPROACH\n');
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('Controller:    %s\n', label_S1);
 if isnan(res_S1.conv_step)
-fprintf('║  *** DID NOT CONVERGE ***                            ║\n');
+fprintf('*** DID NOT CONVERGE ***\n');
 end
-fprintf('║  Deltav consumed:       %7.4f m/s                  ║\n', dv_S1);
-fprintf('║  Steps / time:      %4d steps  (%5.1f min)          ║\n', steps_S1, time_S1);
-fprintf('║  Terminal distance:  %6.2f m from docking port      ║\n', res_S1.term_dist);
-fprintf('╠══════════════════════════════════════════════════════╣\n');
-fprintf('║  == MISSION COMPLETE — ADRIOS FULL SEQUENCE ==       ║\n');
-fprintf('║  S4 [%-18s]:  %7.4f m/s                ║\n', label_S4, dv_S4);
-fprintf('║  S2 [%-18s]:  %7.4f m/s                ║\n', label_S2, dv_S2);
-fprintf('║  Departure burn:            %7.4f m/s                ║\n', dv_departure);
-fprintf('║  S1 [%-18s]:  %7.4f m/s                ║\n', label_S1, dv_S1);
-fprintf('║  --------------------------------------------------- ║\n');
-fprintf('║  TOTAL Deltav:              %7.4f m/s                ║\n', dv_total_mission);
-fprintf('╚══════════════════════════════════════════════════════╝\n\n');
+fprintf('Deltav consumed:       %7.4f m/s\n', dv_S1);
+fprintf('Steps / time:      %4d steps  (%5.1f min)\n', steps_S1, time_S1);
+fprintf('Terminal distance:  %6.2f m from docking port\n', res_S1.term_dist);
+fprintf('%s\n', repmat('=', 1, 60));
+fprintf('MISSION COMPLETE - ADRIOS FULL SEQUENCE\n');
+fprintf('S4 [%-18s]:  %7.4f m/s\n', label_S4, dv_S4);
+fprintf('S2 [%-18s]:  %7.4f m/s\n', label_S2, dv_S2);
+fprintf('Departure burn:            %7.4f m/s\n', dv_departure);
+fprintf('S1 [%-18s]:  %7.4f m/s\n', label_S1, dv_S1);
+fprintf('%s\n', repmat('-', 1, 40));
+fprintf('TOTAL Deltav:              %7.4f m/s\n', dv_total_mission);
+fprintf('%s\n\n', repmat('=', 1, 60));
 
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
 %%  JSON EXPORT for orbital_viz.m
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
 %
 % Format required by orbital_viz.m:
-%   t     — time vector [N×1, s]
-%   X_t   — target ECI state [N×6, m and m/s]
-%   Rho   — chaser LVLH (Hill-frame) state [N×6, m and m/s]
+%   t     - time vector [N×1, s]
+%   X_t   - target ECI state [N×6, m and m/s]
+%   Rho   - chaser LVLH (Hill-frame) state [N×6, m and m/s]
 %   metadata.period_min  (used for PERIOD telemetry in the viz)
 %
 % Phases are concatenated in sequence. The time vector is non-uniform
 % (120 s per step in S4, ~60 s in S2, 10 s in S1).  The viz animation
-% pace is set by t(2)-t(1) = dt_S4; use the speed slider at ~100–200x
+% pace is set by t(2)-t(1) = dt_S4; use the speed slider at ~100-200x
 % to play through the full mission in reasonable wall-clock time.
 
 n_run_S4 = size(res_S4.X, 2);
 n_run_S1 = size(res_S1.X, 2);
 
-% ── Phase 1: full S4 trajectory ─────────────────────────────────────────
+% -- Phase 1: full S4 trajectory --
 Rho_S4 = res_S4.X;                          % 6 × n_run_S4
 t_S4   = (0 : n_run_S4-1) * dt_S4;         % 1 × n_run_S4
 
-% ── Phase 2: S2 up to V-bar departure crossing (k_vbar_S2) ─────────────
+% -- Phase 2: S2 up to V-bar departure crossing (k_vbar_S2) --
 % Skip col 1 (= S4 terminal state, already the last frame of Rho_S4).
 % Truncating at k_vbar_S2 removes the return leg to R-bar and eliminates
 % the spatial jump in the visualization.
@@ -410,11 +410,11 @@ n_steps_S2 = k_vbar_S2 - 1;
 Rho_S2 = res_S2.x_log(:, 2:k_vbar_S2);    % 6 × n_steps_S2
 t_S2   = t_S4(end) + (1:n_steps_S2) * dt_S2;
 
-% ── Departure burn: single frame at x_FKP ───────────────────────────────
+% -- Departure burn: single frame at x_FKP --
 t_burn  = t_S2(end) + dt_S2;               % one S2 step after flyaround ends
 Rho_dep = x_FKP;                            % 6 × 1
 
-% ── Phase 3: S1 (skip col 1 = x_FKP, already inserted as Rho_dep) ──────
+% -- Phase 3: S1 (skip col 1 = x_FKP, already inserted as Rho_dep) --
 if n_run_S1 > 1
     Rho_S1 = res_S1.X(:, 2:end);           % 6 × (n_run_S1-1)
     t_S1   = t_burn + (1 : n_run_S1-1) * dt_S1;
@@ -423,7 +423,7 @@ else
     t_S1   = zeros(1, 0);
 end
 
-% ── Unified arrays ───────────────────────────────────────────────────────
+% -- Unified arrays --
 Rho_all = [Rho_S4, Rho_S2, Rho_dep, Rho_S1];  % 6 × N_total
 t_all   = [t_S4,   t_S2,   t_burn,  t_S1];     % 1 × N_total
 N_all   = length(t_all);
@@ -434,7 +434,7 @@ phase_idx = [ones(1, n_run_S4), ...
              3, ...
              4*ones(1, max(0, n_run_S1-1))];
 
-% ── Target ECI trajectory ────────────────────────────────────────────────
+% -- Target ECI trajectory --
 % Circular Keplerian orbit (consistent with CWH assumption):
 %   RAAN=0, AoP=0, i=51.6 deg (ISS), starting at ascending node.
 X_t_all = zeros(N_all, 6);
@@ -445,7 +445,7 @@ for k_viz = 1:N_all
     X_t_all(k_viz, :) = [pos_eci; vel_eci]';
 end
 
-% ── Build and write JSON ─────────────────────────────────────────────────
+% -- Build and write JSON --
 viz_data.metadata = struct( ...
     'mission',         'ADRIOS Full Sequence', ...
     'date',            char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm')), ...
@@ -480,9 +480,9 @@ fclose(fid);
 fprintf('Viz JSON exported to exports/scenarios/sim_adrios_full_mission.json\n');
 fprintf('Open orbital_viz.m, click LOAD JSON, and set speed ~100-200x.\n\n');
 
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
 %%  Local functions
-%% ═══════════════════════════════════════════════════════════════════════
+%% =========================================================================
 
 function choice = select_option(n_options, default_val)
 % Reads a menu selection; returns default_val on empty (Enter) input.
@@ -498,6 +498,6 @@ while true
         choice = val;
         return;
     end
-    fprintf('  Invalid — enter a number between 1 and %d.\n', n_options);
+    fprintf('  Invalid: enter a number between 1 and %d.\n', n_options);
 end
 end

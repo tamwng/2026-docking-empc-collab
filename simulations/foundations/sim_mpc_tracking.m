@@ -1,8 +1,7 @@
 %sim_mpc_tracking.m
-% Simulates tracking MPC rednezvous in the Hill frame by extending the
-% regulation_mpc with a reference trajectory to track. A hold point is used
-% for gnerality. For the start, we do not want to dock but rather track a
-% holdpoint behind the target
+% Tracking MPC rendezvous in the Hill frame, extending regulation MPC with
+% a reference trajectory to track. Tracks a hold point behind the target
+% rather than docking directly.
 
 clear; clc;
 
@@ -58,11 +57,11 @@ X0 = [x0_ic; y0_ic; z0_ic; 0; 0; 0];
 
 
 %%  HOLD POINT
-x_hold = 0;     % [m] radial   — on V-bar axis
-y_hold = 100;   % [m] along-track — 100m behind target
+x_hold = 0;     % [m] radial, on V-bar axis
+y_hold = 100;   % [m] along-track, 100m behind target
 z_hold = 0;     % [m] cross-track
 
-% LoS cone approach corridor — apex at hold point, docking axis along +y.
+% LoS cone approach corridor: apex at hold point, docking axis along +y.
 % Set active = true to enforce.  Hard constraint: infeasible if initial
 % state violates the cone.  Check: sqrt(x0^2+z0^2) <= (y0-y_hold)*tan(half_angle).
 con.los_cone.active     = false;
@@ -75,14 +74,13 @@ con.los_cone.apex       = [x_hold; y_hold; z_hold];  % [m]    docking port posit
 
 traj_mode = 'rbar_vbar';         % 'vbar' | 'rbar' | 'rbar_vbar'
 
-% Reference ends at 70% of simulation time
 n_ref            = round(0.7 * n_steps);
 
 [R_ref_short, phase_switch_idx] = reference_trajectory(x0_ic, y0_ic, z0_ic, ...
                                                         n_ref, dt, traj_mode, ...
                                                         x_hold, y_hold, z_hold);
 
-% Pad remaining steps with hold point — MPC regulates to hold point
+% MPC regulates to hold point after reference ends
 R_ref_pad = repmat([x_hold; y_hold; z_hold; 0; 0; 0], 1, n_steps - n_ref);
 R_ref     = [R_ref_short, R_ref_pad];
 
@@ -120,10 +118,8 @@ for k = 1:n_steps-1
     R_preview  = [R_ref(:, k+1:k_end), ...
                   repmat(R_ref(:, end), 1, k + N - k_end)];
 
-    % solve tracking MPC
     [u_opt, ~, ~] = mpc_tracking(X_hist(:,k), R_preview, Ad, Bd, Q, R, P, N, con);
 
-    % apply control and propagate
     U_hist(:, k)   = u_opt;
     X_hist(:, k+1) = Ad * X_hist(:,k) + Bd * u_opt;
     E_hist(:, k+1) = X_hist(:, k+1) - R_ref(:, k+1);
@@ -178,8 +174,8 @@ c_y = [0.90 0.40 0.00];
 c_z = [0.20 0.80 0.20];
 c_r = [0.80 0.00 0.80];
 
-%% Figure 1 — States and Control
-fig1 = figure('Name', 'Tracking MPC — States and Control');
+%% Figure 1 - States and Control
+fig1 = figure('Name', 'Tracking MPC - States and Control');
 
 ax1 = subplot(2, 2, 1);
 hold(ax1, 'on'); grid(ax1, 'on');
@@ -238,8 +234,8 @@ xlabel(ax4, 'Time [min]');
 ylabel(ax4, '$\Delta v$ [m/s]', 'Interpreter', 'latex');
 title(ax4, 'Cumulative $\Delta v$', 'Interpreter', 'latex');
 
-%% Figure 2 — Trajectory and Analysis
-fig2 = figure('Name', 'Tracking MPC — Trajectory and Analysis');
+%% Figure 2 - Trajectory and Analysis
+fig2 = figure('Name', 'Tracking MPC - Trajectory and Analysis');
 
 ax5 = subplot(2, 2, 1);
 hold(ax5, 'on'); grid(ax5, 'on'); axis(ax5, 'equal');
