@@ -38,6 +38,9 @@ cwh = @(t, xd0, yd0) deal( ...
 % Free drift: ydot_0 = 0
 [x_free, y_free] = cwh(t_free, 0, 0);
 
+% Drift-free case over the same 2-orbit window, for the time-history plot
+[x_nmc_th, y_nmc_th] = cwh(t_free, 0, -2*n*x0);
+
 %% Plot
 c_nmc  = [0.00 0.45 0.70];   % blue  — bounded orbit
 c_free = [0.85 0.33 0.10];   % red   — secular drift
@@ -59,7 +62,6 @@ plot(ax1, 0, 0, '+k', 'MarkerSize', 9, 'LineWidth', 1.8, ...
 
 xlabel(ax1, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
 ylabel(ax1, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
-title(ax1, 'Bounded NMC Orbit', 'Interpreter', 'latex', 'FontSize', 12);
 legend(ax1, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 9);
 
 %% Right: free drift (auto scale)
@@ -75,8 +77,6 @@ plot(ax2, 0, 0, '+k', 'MarkerSize', 9, 'LineWidth', 1.8, ...
 
 xlabel(ax2, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
 ylabel(ax2, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
-title(ax2, 'Secular Along-Track Drift ($\dot{y}_0 = 0$)', ...
-      'Interpreter', 'latex', 'FontSize', 12);
 legend(ax2, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 9);
 
 %% TikZ export
@@ -93,3 +93,42 @@ if exist('matlab2tikz', 'file')
 else
     fprintf('TikZ export skipped — run setup.m first.\n');
 end
+exportgraphics(fig, fullfile(out_dir, 'nmc_free_drift.png'), 'Resolution', 300);
+fprintf('PNG exported to %s\n', out_dir);
+
+%% Time-history figure (separate from the Hill-frame plots)
+t_min = t_free / 60;   % [min]
+
+fig2 = figure('Name', 'NMC vs free drift — time histories', ...
+              'Units', 'centimeters', 'Position', [2 4 20 14]);
+
+ax3 = subplot(2, 1, 1);
+hold(ax3, 'on'); grid(ax3, 'on');
+plot(ax3, t_min, x_nmc_th, 'Color', c_nmc,  'LineWidth', 1.8, ...
+     'DisplayName', ['NMC orbit, $\dot{y}_0 = -2nx_0$']);
+plot(ax3, t_min, x_free,   'Color', c_free, 'LineWidth', 1.8, ...
+     'DisplayName', 'Free drift, $\dot{y}_0 = 0$');
+ylabel(ax3, 'Radial $x$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
+legend(ax3, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 9);
+
+ax4 = subplot(2, 1, 2);
+hold(ax4, 'on'); grid(ax4, 'on');
+plot(ax4, t_min, y_nmc_th, 'Color', c_nmc,  'LineWidth', 1.8, ...
+     'DisplayName', ['NMC orbit, $\dot{y}_0 = -2nx_0$']);
+plot(ax4, t_min, y_free,   'Color', c_free, 'LineWidth', 1.8, ...
+     'DisplayName', 'Free drift, $\dot{y}_0 = 0$');
+xlabel(ax4, 'Time [min]', 'Interpreter', 'latex', 'FontSize', 11);
+ylabel(ax4, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
+legend(ax4, 'Location', 'northwest', 'Interpreter', 'latex', 'FontSize', 9);
+
+if exist('matlab2tikz', 'file')
+    matlab2tikz(fullfile(out_dir, 'nmc_free_drift_timehist.tikz'), ...
+        'figurehandle', fig2, 'showInfo', false, ...
+        'width',  '\linewidth', ...
+        'height', '0.7\linewidth');
+    fprintf('TikZ exported to %s\n', out_dir);
+else
+    fprintf('TikZ export skipped — run setup.m first.\n');
+end
+exportgraphics(fig2, fullfile(out_dir, 'nmc_free_drift_timehist.png'), 'Resolution', 300);
+fprintf('PNG exported to %s\n', out_dir);
