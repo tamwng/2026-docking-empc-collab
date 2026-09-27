@@ -22,7 +22,7 @@ ylabel style={font=\color{mycolor4}},
 ylabel={Cumulative $\Delta v$ [m/s]},
 axis background/.style={fill=white},
 title style={font=\bfseries\color{mycolor4}},
-title={Cumulative $\Delta v$ — Docking Approach},
+title={Cumulative $\Delta v$ - Docking Approach},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
@@ -55,7 +55,7 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 3.5	2.34992607894577\\
 3.66666666666667	2.4505609935916\\
 };
-\addlegendentry{Run 1 — Std MPC  (2.4506 m/s)}
+\addlegendentry{Run 1 - Std MPC  (2.4506 m/s)}
 
 \addplot [color=mycolor2, line width=1.4pt]
   table[row sep=crcr]{%
@@ -102,7 +102,7 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 6.66666666666667	1.30468465967695\\
 6.83333333333333	1.31399700914435\\
 };
-\addlegendentry{Run 2 — EMPC, CLF $V_f$  (1.3140 m/s)}
+\addlegendentry{Run 2 - EMPC, CLF $V_f$  (1.3140 m/s)}
 
 \addplot [color=mycolor3, dashed, line width=1.4pt]
   table[row sep=crcr]{%
@@ -150,7 +150,7 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 6.83333333333333	1.31393600213362\\
 7	1.32224754583308\\
 };
-\addlegendentry{Run 3 — EMPC $+$ term.eq  (1.3222 m/s)}
+\addlegendentry{Run 3 - EMPC $+$ term.eq  (1.3222 m/s)}
 
 \end{axis}
 \end{tikzpicture}%

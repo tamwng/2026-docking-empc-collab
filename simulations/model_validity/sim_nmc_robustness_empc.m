@@ -8,6 +8,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils'); addpath('src/control');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 out_json = 'exports/scenarios/validity_sweep';
@@ -112,27 +113,34 @@ fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figure
-figure('Position', [100 100 1000 420]);
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
 
-% Panel 1: maintenance Delta-v per orbit (log) + QP infeasibility onset
-subplot(1,2,1);
-yyaxis left;
+figure('Position', [100 100 1000 380]);
+
+% Panel (a): maintenance Delta-v per orbit (log). No e_limit threshold line
+% -- the feasibility cliff is shown directly in panel (b) instead.
+ax1 = subplot(1,2,1);
 semilogy(e_grid, max(dv_last_orbit, 1e-4), '-o', 'LineWidth', 1.5);
-ylabel('maintenance \Deltav / orbit [m/s]');
-yyaxis right;
-plot(e_grid, n_infeas, '-s', 'LineWidth', 1.5); ylabel('# infeasible QP steps');
-xlabel('eccentricity [-]'); grid on;
-xline(e_limit, '--k', sprintf('limit e=%.2f', e_limit), 'HandleVisibility','off');
-title('EMPC NMC (Run 2): maintenance cost & feasibility');
+xlabel('eccentricity $e$ [-]'); ylabel('maint.\ $\Delta v$ / orbit [m/s]'); grid on;
+set(gca, 'YMinorGrid', 'off');   % dense minor gridlines over 4+ decades clutter a short panel
 
-% Panel 2: orbit integrity -- bounded (~150 m) vs lost
-subplot(1,2,2);
-semilogy(e_grid, range_last, '-^', 'LineWidth', 1.5); hold on;
-yline(150, '--', '2:1 envelope (\approx150 m)', 'HandleVisibility','off');
-grid on; xlabel('eccentricity [-]'); ylabel('max range, final orbit [m]');
-title(sprintf('NMC orbit integrity (b = %.0f m)', b_nmc));
+% Panel (b): QP infeasibility onset
+ax2 = subplot(1,2,2);
+plot(e_grid, n_infeas, '-s', 'LineWidth', 1.5);
+xlabel('eccentricity $e$ [-]'); ylabel('\# infeasible QP steps'); grid on;
 
-sgtitle('Layer 2 (NMC, faithful EMPC) - CW periodic orbit held against truth');
+% Equal-width panels, explicit generous gap -- same numbers as the other
+% two-panel figures in this section.
+pos1 = get(ax1, 'Position'); pos2 = get(ax2, 'Position');
+left0 = 0.02; pw = 0.346; gap = 0.253;
+pos1(1) = left0;            pos1(3) = pw;
+pos2(1) = left0 + pw + gap; pos2(3) = pw; pos2(2) = pos1(2); pos2(4) = pos1(4);
+set(ax1, 'Position', pos1); set(ax2, 'Position', pos2);
+
 saveas(gcf, fullfile(out_fig, 'nmc_robustness_empc.png'));
+matlab2tikz(fullfile(out_fig, 'nmc_robustness_empc.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
 
 fprintf('Exported JSON and figure.\n');

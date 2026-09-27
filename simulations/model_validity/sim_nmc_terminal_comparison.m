@@ -10,6 +10,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils'); addpath('src/control');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 out_json = 'exports/scenarios/validity_sweep';
@@ -65,8 +66,8 @@ plant = struct('a', a, 'i', deg2rad(51.6), 'p_t', p_off, 'p_c', p_off);
 
 %% Two terminal ingredients (both pure-fuel, no band)
 modes = { ...
-    struct('key','phase',    'label','phase-synchronised x(N)=\Pi^*(k)'), ...
-    struct('key','fixed',    'label','fixed point x(N)=\Pi^*(1)') };
+    struct('key','phase',    'label','phase-synchronised $x(N)=\Pi^*(k)$'), ...
+    struct('key','fixed',    'label','fixed point $x(N)=\Pi^*(1)$') };
 nM = numel(modes);
 
 e_grid = 0 : 0.02 : 0.30;
@@ -116,6 +117,10 @@ fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figure
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
+
 figure('Position', [100 100 1000 420]);
 mk = {'-o','-s','-^'};
 
@@ -124,19 +129,20 @@ for im = 1:nM
     semilogy(e_grid, max(dv_last_orbit(im,:), 1e-4), mk{im}, 'LineWidth', 1.5, ...
         'DisplayName', modes{im}.label); hold on;
 end
-grid on; xlabel('eccentricity [-]'); ylabel('maintenance \Deltav / orbit [m/s]');
-legend('Location','northwest'); title('Maintenance cost by terminal ingredient');
+grid on; xlabel('eccentricity $e$ [-]'); ylabel('maintenance $\Delta v$ / orbit [m/s]');
+legend('Location', 'northwest');
 
 subplot(1,2,2);
 for im = 1:nM
     semilogy(e_grid, max(range_last(im,:), 1), mk{im}, 'LineWidth', 1.5, ...
         'DisplayName', modes{im}.label); hold on;
 end
-yline(150, '--', '2:1 envelope (\approx150 m)', 'HandleVisibility','off');
-grid on; xlabel('eccentricity [-]'); ylabel('max range, final orbit [m]');
-legend('Location','northwest'); title(sprintf('Orbit integrity (b = %.0f m)', b_nmc));
+yline(150, '--', sprintf('2:1 envelope ($\\approx$150 m)'), 'HandleVisibility', 'off');
+grid on; xlabel('eccentricity $e$ [-]'); ylabel(sprintf('max range, final orbit [m] ($b=%.0f$ m)', b_nmc));
+legend('Location', 'northwest');
 
-sgtitle('NMC terminal ingredients - phase-sync vs fixed point');
 saveas(gcf, fullfile(out_fig, 'nmc_terminal_comparison.png'));
+matlab2tikz(fullfile(out_fig, 'nmc_terminal_comparison.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
 
 fprintf('\nExported JSON and figure.\n');

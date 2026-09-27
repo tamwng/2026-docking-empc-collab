@@ -1,0 +1,218 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.86600,0.32900,0.00000}%
+\definecolor{mycolor3}{rgb}{0.92900,0.69400,0.12500}%
+\definecolor{mycolor4}{rgb}{0.52100,0.08600,0.81900}%
+\definecolor{mycolor5}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.411\figurewidth,
+height=\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor5}},
+xlabel={eccentricity $e$ [-]},
+ymin=5,
+ymax=50,
+ylabel style={font=\color{mycolor5}},
+ylabel={total $\Delta v$ [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids,
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+0	5.97316824889322\\
+0.02	5.85460488264431\\
+0.04	5.92664619050758\\
+0.06	6.637710050018\\
+0.08	7.09031372527193\\
+0.1	7.6459243811927\\
+0.12	8.29048291737255\\
+0.14	9.00694916967556\\
+0.16	9.79703238252006\\
+0.18	10.65303757861\\
+0.2	11.5489185512908\\
+0.22	12.4797181310451\\
+0.24	13.3214339972129\\
+0.26	14.4055280712903\\
+0.28	16.8626069109097\\
+0.3	18.5517230404046\\
+};
+\addlegendentry{terminal cost ($Q=0$, $P_{clf}$)}
+
+\addplot [color=mycolor2, line width=1.5pt, mark=square, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+0	25.3446490693258\\
+0.02	26.1661008533289\\
+0.04	27.3462489280835\\
+0.06	28.1302038779127\\
+0.08	28.9061834587659\\
+0.1	29.0618289953951\\
+0.12	29.6698172515422\\
+0.14	30.289532499687\\
+0.16	30.8819331797674\\
+0.18	32.5999388347305\\
+0.2	33.4703193159526\\
+0.22	34.4612868052799\\
+0.24	35.7699163851896\\
+0.26	37.5444780782684\\
+0.28	40.0827815263487\\
+0.3	44.179040709083\\
+};
+\addlegendentry{regulariser $\epsilon=10^{-10}$ (no term.)}
+
+\addplot [color=mycolor3, line width=1.5pt, mark=triangle, mark options={solid, mycolor3}]
+  table[row sep=crcr]{%
+0	30.3970703084406\\
+0.02	32.1351437719358\\
+0.04	34.2819707843532\\
+0.06	34.9891752709502\\
+0.08	32.6520764538288\\
+0.1	31.1494118542586\\
+0.12	30.8566734082486\\
+0.14	31.3841877140045\\
+0.16	31.809108776511\\
+0.18	32.8722943176698\\
+0.2	34.1783884562763\\
+0.22	35.9476075536142\\
+0.24	38.6468092104018\\
+0.26	41.3616513608696\\
+0.28	44.8358354869491\\
+0.3	48.3159364403849\\
+};
+\addlegendentry{regulariser $\epsilon=10^{-8}$ (no term.)}
+
+\addplot [color=mycolor4, line width=1.5pt, mark=diamond, mark options={solid, mycolor4}]
+  table[row sep=crcr]{%
+0	30.3971381060377\\
+0.02	32.1351410289773\\
+0.04	34.2818838581362\\
+0.06	34.9892321186055\\
+0.08	32.6519796308397\\
+0.1	31.1490327973708\\
+0.12	30.8565212653284\\
+0.14	31.3825927243633\\
+0.16	31.8077463703832\\
+0.18	32.8704574962365\\
+0.2	34.1755053663623\\
+0.22	35.9443897597709\\
+0.24	38.6383465106616\\
+0.26	41.364195665855\\
+0.28	44.909806516924\\
+0.3	45.9361636643003\\
+};
+\addlegendentry{$\epsilon=10^{-8}$ + terminal cost}
+
+\end{axis}
+
+\begin{axis}[%
+width=0.411\figurewidth,
+height=\figureheight,
+at={(0.54\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor5}},
+xlabel={eccentricity $e$ [-]},
+ymin=-50,
+ymax=250,
+ylabel style={font=\color{mycolor5}},
+ylabel={$\Delta v$ inflation vs own $e{=}0$ [\%]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids,
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+0	0\\
+0.02	-1.98493264057783\\
+0.04	-0.778850627458291\\
+0.06	11.1254492328743\\
+0.08	18.7027291016908\\
+0.1	28.004503851192\\
+0.12	38.7954025723068\\
+0.14	50.7901467758667\\
+0.16	64.0173518356087\\
+0.18	78.3481920266334\\
+0.2	93.3466138917267\\
+0.22	108.929626808311\\
+0.24	123.021241694995\\
+0.26	141.170639617585\\
+0.28	182.305908828772\\
+0.3	210.584304131097\\
+};
+\addlegendentry{terminal cost ($Q=0$, $P_{clf}$)}
+
+\addplot [color=mycolor2, line width=1.5pt, mark=square, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+0	0\\
+0.02	3.24112510595895\\
+0.04	7.89752445686933\\
+0.06	10.9907018280961\\
+0.08	14.0524115354612\\
+0.1	14.6665275021234\\
+0.12	17.0654096270407\\
+0.14	19.5105618422072\\
+0.16	21.8479415331236\\
+0.18	28.6265149916227\\
+0.2	32.0606934599904\\
+0.22	35.9706607537439\\
+0.24	41.1339975051435\\
+0.26	48.1357188082272\\
+0.28	58.1508641792965\\
+0.3	74.313089079431\\
+};
+\addlegendentry{regulariser $\epsilon=10^{-10}$ (no term.)}
+
+\addplot [color=mycolor3, line width=1.5pt, mark=triangle, mark options={solid, mycolor3}]
+  table[row sep=crcr]{%
+0	0\\
+0.02	5.71789796141159\\
+0.04	12.7805095573104\\
+0.06	15.1070643187427\\
+0.08	7.41849830429902\\
+0.1	2.4750462402592\\
+0.12	1.51199801541519\\
+0.14	3.24740968635314\\
+0.16	4.64531105709322\\
+0.18	8.14296899047516\\
+0.2	12.4397453750197\\
+0.22	18.2601059538041\\
+0.24	27.1399145320607\\
+0.26	36.0711770613777\\
+0.28	47.5005157799671\\
+0.3	58.949319622321\\
+};
+\addlegendentry{regulariser $\epsilon=10^{-8}$ (no term.)}
+
+\addplot [color=mycolor4, line width=1.5pt, mark=diamond, mark options={solid, mycolor4}]
+  table[row sep=crcr]{%
+0	0\\
+0.02	5.71765314509807\\
+0.04	12.7799720439041\\
+0.06	15.1069946010994\\
+0.08	7.41794019205437\\
+0.1	2.47357066546916\\
+0.12	1.51127108640369\\
+0.14	3.24193223351466\\
+0.16	4.64059563576268\\
+0.18	8.1366850443975\\
+0.2	12.4300098487698\\
+0.22	18.2492563424298\\
+0.24	27.1117905109199\\
+0.26	36.0792437813051\\
+0.28	47.7435354613324\\
+0.3	51.120028155467\\
+};
+\addlegendentry{$\epsilon=10^{-8}$ + terminal cost}
+
+\end{axis}
+\end{tikzpicture}%

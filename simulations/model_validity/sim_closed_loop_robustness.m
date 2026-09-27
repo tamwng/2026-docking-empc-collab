@@ -6,6 +6,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils'); addpath('src/control');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 out_json = 'exports/scenarios/validity_sweep';
@@ -105,30 +106,65 @@ fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figure
-figure('Position', [100 100 1000 420]);
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
 
-% Panel 1: closed-loop terminal miss + Delta-v vs eccentricity
-subplot(1,2,1);
-yyaxis left;
-plot(e_grid, term_dist, '-o', 'LineWidth', 1.5); hold on;
-yline(params.conv_tol, '--', 'conv tol', 'HandleVisibility','off');
-ylabel('terminal miss [m]'); ylim([0, max(params.conv_tol*1.5, max(term_dist)*1.2)]);
-yyaxis right;
+figure('Position', [100 100 1000 380]);
+
+% Panel (a): closed-loop Delta-v vs eccentricity. e=0 is kept (not just in
+% the JSON but in the plot too): it reproduces the Chapter 6 case-study
+% Standard MPC result exactly (dv=2.4506, term_dist=0.948 here vs.
+% comparison_table.tex's 2.4506 / 9.479e-01), which is a useful visible
+% check that this truth-plant pipeline reduces correctly at e=0. Note it
+% does sit on a different discrete n_ctrl step count than every e>0 run,
+% which is why the trend has a step-quantization jump right after it --
+% read the *trend* from e=0.02 onward even though the point stays plotted.
+ax1 = subplot(1,2,1);
 plot(e_grid, dv, '-s', 'LineWidth', 1.5);
-ylabel('total \Deltav [m/s]');
-xlabel('eccentricity [-]'); grid on;
-title('Closed-loop docking (truth plant)');
+xlabel('eccentricity $e$ [-]'); ylabel('total $\Delta v$ [m/s]'); grid on;
 
-% Panel 2: the contrast -- open-loop horizon error vs closed-loop miss
-subplot(1,2,2);
+% Panel (b): what feedback buys -- open-loop horizon error vs closed-loop
+% miss, both against the conv.-tolerance threshold (subsumes the old
+% standalone terminal-miss panel, which duplicated the miss curve below).
+ax2 = subplot(1,2,2);
 semilogy(e_grid, ol_horizon_err, '-^', 'LineWidth', 1.5); hold on;
 semilogy(e_grid, max(term_dist, 1e-3), '-o', 'LineWidth', 1.5);
-grid on; xlabel('eccentricity [-]'); ylabel('position error [m]');
-legend('open-loop CW error (1 horizon, no control)', ...
-       'closed-loop terminal miss (with MPC)', 'Location','northwest');
-title('What feedback buys');
+grid on; xlabel('eccentricity $e$ [-]'); ylabel('position error [m]');
+set(gca, 'YMinorGrid', 'off');   % 5+ decades of minor gridlines in a short
+                                  % panel just band together into clutter
+legend('open-loop CW error (1 horizon)', ...
+       'closed-loop terminal miss', 'Location', 'southeast', 'FontSize', 7);
+% Southeast is empty for e >~ 0.14: both curves stay above y~0.5 there
+% (term_dist min 0.549, open-loop err min 1.20 in that range), while the
+% axis floor sits down near 1e-4 -- verified against the JSON, not guessed.
 
-sgtitle('Layer 2 - CW-MPC robustness to eccentricity');
+% Equal-width panels, explicit generous gap -- matches the other two-panel
+% figure in this section (closing_robustness.m uses the same numbers).
+pos1 = get(ax1, 'Position'); pos2 = get(ax2, 'Position');
+left0 = 0.02; pw = 0.346; gap = 0.253;
+pos1(1) = left0;         pos1(3) = pw;  pos1(2) = pos2(2); pos1(4) = pos2(4);
+pos2(1) = left0 + pw + gap; pos2(3) = pw;
+set(ax1, 'Position', pos1); set(ax2, 'Position', pos2);
+
 saveas(gcf, fullfile(out_fig, 'closed_loop_robustness.png'));
+tikz_path = fullfile(out_fig, 'closed_loop_robustness.tikz');
+matlab2tikz(tikz_path, ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
+
+% Panel (b)'s legend text is too wide for its narrow (1-of-2) panel and
+% overflows the page at normal font size. legend(...,'FontSize',...) is
+% silently dropped by this matlab2tikz version (verified -- no font key
+% appears in the exported legend style), so patch the .tikz text directly:
+% shrink the font further and wrap each entry onto two lines (\shortstack)
+% to shrink the box's width too -- there's plenty of vertical room to
+% spend in the southeast corner instead.
+txt = fileread(tikz_path);
+txt = regexprep(txt, 'legend style=\{', 'legend style={font=\\tiny, ', 'once');
+txt = strrep(txt, '\addlegendentry{open-loop CW error (1 horizon)}', ...
+                   '\addlegendentry{\shortstack[l]{open-loop CW error\\(1 horizon)}}');
+txt = strrep(txt, '\addlegendentry{closed-loop terminal miss}', ...
+                   '\addlegendentry{\shortstack[l]{closed-loop\\terminal miss}}');
+fid = fopen(tikz_path, 'w'); fprintf(fid, '%s', txt); fclose(fid);
 
 fprintf('Exported JSON and figure.\n');

@@ -177,7 +177,6 @@ fig1.Position(3:4) = [1050, 460];
 % Panel (a): full approach
 ax1a = subplot(1, 2, 1);
 draw_docking_scene(ax1a, R, x0, r_KOS, cols, cone, true);
-title(ax1a, 'Full approach (150 m $\to$ 0 m)', 'Interpreter', 'latex');
 
 % Panel (b): terminal zoom (~3× keep-out sphere around the port)
 ax1b   = subplot(1, 2, 2);
@@ -185,11 +184,8 @@ draw_docking_scene(ax1b, R, x0, r_KOS, cols, cone, false);
 zoom_r = 2 * r_KOS;
 xlim(ax1b, [-2, zoom_r]);
 ylim(ax1b, [-zoom_r, zoom_r]);
-title(ax1b, sprintf('Terminal zoom ($\\leq %d$ m)', zoom_r), 'Interpreter', 'latex');
-
-sgtitle(fig1, ...
-    'Hill-Frame Trajectory, Docking Approach (LoS cone shaded)', ...
-    'Interpreter', 'latex');
+% No in-plot titles/sgtitle -- panel descriptions belong in the LaTeX
+% figure caption instead.
 
 % Figure 2: Cumulative Δv comparison
 fig2 = figure('Name', 'S1 Docking - Cumulative Deltav');
@@ -413,22 +409,20 @@ function draw_docking_scene(ax, R, x0, r_KOS, cols, cone, show_legend)
     fill(ax, [cone.y, fliplr(cone.y)], [cone.edge, fliplr(-cone.edge)], ...
         [0.98 0.96 0.75], 'FaceAlpha', 0.20, 'EdgeColor', [0.87 0.83 0.58], ...
         'LineWidth', 0.5, ...
-        'DisplayName', sprintf('LoS cone ($\\pm%d^\\circ$)', cone.alpha_deg));
+        'DisplayName', sprintf('LoS-cone ($\\pm%d^\\circ$)', cone.alpha_deg));
 
     % Presentation-facing run labels (thesis/slide terminology, not the
     % code's internal run names), matching the Operation 1/2 convention.
     styles = {'-', '-', '--'};
-    names  = {'Std. MPC', 'EMPC+ terminal cost', 'EMPC+ terminal equality'};
+    names  = {'Std. MPC', 'EMPC + term. cost', 'EMPC + term. eq.'};
     for i = 1:3
         plot(ax, R{i}.X(2,:), R{i}.X(1,:), styles{i}, 'Color', cols{i}, ...
             'LineWidth', 1.4, 'DisplayName', names{i});
     end
 
-    plot(ax, x0(2), x0(1), 'o', 'Color', [0.4 0.4 0.4], ...
-        'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
-        'DisplayName', 'IC (V-bar hold, 150 m)');
-    plot(ax, 0, 0, 'pk', 'MarkerSize', 10, 'MarkerFaceColor', 'k', ...
-        'DisplayName', 'Docking port (origin)');
+    plot(ax, x0(2), x0(1), '.k', 'MarkerSize', 18, 'DisplayName', 'IC');
+    plot(ax, 0, 0, '+', 'Color', [0.2 0.6 0.2], 'MarkerSize', 10, ...
+        'LineWidth', 1.5, 'DisplayName', 'target');
 
     xlabel(ax, 'Along-track $y$ [m]', 'Interpreter', 'latex');
     ylabel(ax, 'Radial $x$ [m]',      'Interpreter', 'latex');

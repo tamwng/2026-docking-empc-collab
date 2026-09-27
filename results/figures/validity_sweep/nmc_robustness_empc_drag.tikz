@@ -1,0 +1,75 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.86600,0.32900,0.00000}%
+\definecolor{mycolor3}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.432\figurewidth,
+height=\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=1,
+xmax=5,
+xlabel style={font=\color{mycolor3}},
+xlabel={$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]},
+ymin=0,
+ymax=0.25,
+ylabel style={font=\color{mycolor3}},
+ylabel={$\Delta v$ [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids,
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+1	0.00117178259109763\\
+1.5	0.00680493613224514\\
+2	0.0135849280427578\\
+3	0.0271581698279748\\
+5	0.0543106735015155\\
+};
+\addlegendentry{maintenance $\Delta v$ (last orbit)}
+
+\addplot [color=mycolor2, dashed, line width=1.5pt, mark=square, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+1	0.0722849414802456\\
+1.5	0.0857473371886581\\
+2	0.103971923382921\\
+3	0.145486677256102\\
+5	0.235483632232705\\
+};
+\addlegendentry{total $\Delta v$}
+
+\end{axis}
+
+\begin{axis}[%
+width=0.432\figurewidth,
+height=\figureheight,
+at={(0.568\figurewidth,0\figureheight)},
+scale only axis,
+xmin=1,
+xmax=5,
+xlabel style={font=\color{mycolor3}},
+xlabel={$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]},
+ymin=150,
+ymax=210,
+ylabel style={font=\color{mycolor3}},
+ylabel={max range, final orbit [m]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=triangle, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+1	150.653442251285\\
+1.5	157.256884588609\\
+2	163.897623810535\\
+3	177.47691261545\\
+5	205.242392897013\\
+};
+\end{axis}
+\end{tikzpicture}%

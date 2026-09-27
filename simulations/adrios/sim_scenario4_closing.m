@@ -236,10 +236,10 @@ zoom_hw     = 150;        % [m] half-width of the switch-point zoom window
 % internal run names): A1 uses an L-inf terminal BOX (not a true ball), so
 % "terminal box" is the accurate term; MPC is the standard (non-economic)
 % baseline; B-noball/C are the two eMPC stabilisation mechanisms.
-lbl_A1  = 'EMPC + terminal box';
-lbl_Bnb = 'EMPC + state reg.';
-lbl_C   = 'EMPC + terminal cost';
-lbl_MPC = 'Std. MPC';
+lbl_A1  = 'Term.\ ball';
+lbl_Bnb = '$\rho_c$ stage-cost reg.';
+lbl_C   = 'Term.\ cost';
+lbl_MPC = 'Std.\ MPC';
 
 fig4 = figure('Name', 'S4 - Hill Frame: A1, B-noball, C, MPC (full + zoom)');
 fig4.Position(3:4) = [980, 420];
@@ -265,33 +265,24 @@ rectangle(ax4a, 'Position', [x_switch(2)-zoom_hw, x_switch(1)-zoom_hw, 2*zoom_hw
     'EdgeColor', [0.4 0.4 0.4], 'LineStyle', '--', 'LineWidth', 0.8);
 xlabel(ax4a, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
 ylabel(ax4a, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
-title(ax4a, 'Full closing trajectory', 'Interpreter', 'latex', 'FontSize', 12);
-legend(ax4a, 'Location', 'northwest', 'Interpreter', 'latex', 'FontSize', 8);
+legend(ax4a, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
 
 % Panel B: zoom on the switch point, no repeated legend (colors already
-% established in Panel A); the only new element (conv. tolerance circle)
-% gets a direct text label instead of a duplicate legend entry.
+% established in Panel A).
 ax4b = subplot(1, 2, 2);
 hold(ax4b,'on'); grid(ax4b,'on'); axis(ax4b,'equal');
 plot(ax4b, resA1.X(2,:),       resA1.X(1,:),       '-', 'Color', c_A1, 'LineWidth', 1.4);
 plot(ax4b, resB_noball.X(2,:), resB_noball.X(1,:), '-', 'Color', c_Bnb, 'LineWidth', 1.4);
 plot(ax4b, resC.X(2,:),        resC.X(1,:),        '-', 'Color', c_C,  'LineWidth', 1.4);
 plot(ax4b, resMPC.X(2,:),      resMPC.X(1,:),      '-', 'Color', c_mpc, 'LineWidth', 1.4);
-theta_c = linspace(0, 2*pi, 200);
-plot(ax4b, x_switch(2)+conv_tol_s4*cos(theta_c), x_switch(1)+conv_tol_s4*sin(theta_c), ...
-    ':k', 'LineWidth', 0.9);
-text(ax4b, x_switch(2), x_switch(1)-conv_tol_s4-20, sprintf('conv. tol %d m', conv_tol_s4), ...
-    'Interpreter', 'latex', 'FontSize', 9, 'Color', [0.3 0.3 0.3], ...
-    'HorizontalAlignment', 'center');
 plot(ax4b, x_switch(2), x_switch(1), 's', 'Color', [0.2 0.6 0.2], ...
     'MarkerFaceColor', [0.2 0.6 0.2], 'MarkerSize', 8);
 xlim(ax4b, x_switch(2) + [-zoom_hw, zoom_hw]);
 ylim(ax4b, x_switch(1) + [-zoom_hw, zoom_hw]);
 xlabel(ax4b, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
 ylabel(ax4b, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
-title(ax4b, 'Zoom: switch-point arrival', 'Interpreter', 'latex', 'FontSize', 12);
-
-sgtitle(fig4, 'Hill-Frame Trajectory, Far-Range Closing', 'Interpreter', 'latex', 'FontSize', 13);
+% No in-plot titles/sgtitle -- panel descriptions belong in the LaTeX
+% figure caption instead.
 
 out_dir_hill = 'results/figures/scenario4';
 [~, ~] = mkdir(out_dir_hill);

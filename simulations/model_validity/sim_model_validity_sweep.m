@@ -19,6 +19,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 out_json = 'exports/scenarios/validity_sweep';
@@ -27,8 +28,8 @@ if ~exist(out_json, 'dir'), mkdir(out_json); end
 if ~exist(out_fig,  'dir'), mkdir(out_fig);  end
 
 %% Sweep grid
-e_grid   = 0 : 0.02 : 0.30;                       % eccentricity
-sep_grid = logspace(1, 6, 16);                    % separation 10 m -> 1000 km
+e_grid   = 0 : 0.01 : 0.30;                       % eccentricity
+sep_grid = logspace(1, 6, 31);                    % separation 10 m -> 1000 km
 n_orbits = 3;                                     % prediction window [orbits]
 
 % Fixed target geometry (only e is swept here; altitude fixed at baseline a)
@@ -115,28 +116,60 @@ fid = fopen(fullfile(out_json, 'model_error_e_sep.json'), 'w');
 fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
-%% Contour figures 
-[SEP, E] = meshgrid(sep_grid, e_grid);
+%% Heatmap figures
+% Rendered via imagesc, exported by matlab2tikz as vector \fill rectangles
+% (one per grid cell, 'imagesAsPng' false -- no PNG) rather than contourf,
+% which would create per-level filled polygons instead of one rectangle per
+% cell. Both panels share one color scale and one colorbar (right panel).
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
+
+% pgfplots' image support (used to rasterize the heatmap) cannot handle a
+% log-scaled axis -- verified by test-compiling the exported .tikz, which
+% fails ("cannot apply log" on a negative xmin, then drops the image
+% entirely). So the log-in-separation axis is built by hand: plot against
+% log10(separation) on a LINEAR axis and relabel the ticks as decades.
+logsep_grid = log10(sep_grid);
+xtick_pos = ceil(min(logsep_grid)) : floor(max(logsep_grid));
+xtick_lab = arrayfun(@(p) sprintf('$10^{%d}$', p), xtick_pos, 'UniformOutput', false);
+
+% Shared color scale across both panels so CW and general are directly
+% comparable by eye, with a single colorbar (right panel only).
+log_err_cw  = log10(err_cw);
+log_err_gen = log10(err_gen);
+clim_shared = [min([log_err_cw(:); log_err_gen(:)]), max([log_err_cw(:); log_err_gen(:)])];
 
 figure('Position', [100 100 1000 420]);
 
-subplot(1,2,1);
-contourf(SEP, E, log10(err_cw), 20, 'LineColor', 'none'); hold on;
-[C,h] = contour(SEP, E, err_cw, [0.01 0.01], 'w-', 'LineWidth', 2);
-clabel(C, h, 'Color', 'w');
-set(gca, 'XScale', 'log'); colorbar;
-xlabel('separation [m]'); ylabel('eccentricity [-]');
-title('CW model: log_{10}(max rel. pos. error)');
+ax1 = subplot(1,2,1);
+imagesc(logsep_grid, e_grid, log_err_cw); set(gca, 'YDir', 'normal');
+clim(clim_shared);
+xticks(xtick_pos); xticklabels(xtick_lab);
+xlabel('separation [m]'); ylabel('eccentricity $e$ [-]');
 
-subplot(1,2,2);
-contourf(SEP, E, log10(err_gen), 20, 'LineColor', 'none'); hold on;
-[C,h] = contour(SEP, E, err_gen, [0.01 0.01], 'w-', 'LineWidth', 2);
-clabel(C, h, 'Color', 'w');
-set(gca, 'XScale', 'log'); colorbar;
-xlabel('separation [m]'); ylabel('eccentricity [-]');
-title('General model: log_{10}(max rel. pos. error)');
+ax2 = subplot(1,2,2);
+imagesc(logsep_grid, e_grid, log_err_gen); set(gca, 'YDir', 'normal');
+clim(clim_shared);
+cb = colorbar; cb.Label.Interpreter = 'latex'; cb.Label.String = '$\log_{10}$(max rel.\ pos.\ error) [-]';
+xticks(xtick_pos); xticklabels(xtick_lab);
+xlabel('separation [m]'); ylabel('eccentricity $e$ [-]');
 
-sgtitle(sprintf('Open-loop model error vs nonlinear (%.0f orbits)', n_orbits));
+% The colorbar eats into ax2's width but not ax1's, leaving ax1 visibly
+% wider by default. Also tighten the gap between the two panels (MATLAB's
+% default subplot spacing leaves them far apart) by setting positions
+% explicitly rather than relying on subplot(1,2,i)'s automatic layout.
+pos1 = get(ax1, 'Position'); pos2 = get(ax2, 'Position');
+panel_gap = 0.08;
+pos1(3) = pos2(3);                          % equal width
+pos1(2) = pos2(2); pos1(4) = pos2(4);       % equal vertical alignment
+pos2(1) = pos1(1) + pos1(3) + panel_gap;    % tighter horizontal gap
+set(ax1, 'Position', pos1);
+set(ax2, 'Position', pos2);
+
 saveas(gcf, fullfile(out_fig, 'model_error_e_sep.png'));
+matlab2tikz(fullfile(out_fig, 'model_error_e_sep.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false, ...
+    'imagesAsPng', false);
 
 fprintf('Exported JSON and figure.\n');

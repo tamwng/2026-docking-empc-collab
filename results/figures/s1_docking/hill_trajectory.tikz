@@ -10,9 +10,9 @@
 \begin{tikzpicture}
 
 \begin{axis}[%
-width=3.463in,
-height=3.695in,
-at={(1.521in,0.499in)},
+width=3.66in,
+height=3.905in,
+at={(1.422in,0.527in)},
 scale only axis,
 xmin=-6.48077085995817,
 xmax=163.980770859958,
@@ -23,8 +23,6 @@ ymax=90.9326673973661,
 ylabel style={font=\color{mycolor6}},
 ylabel={Radial $x$ [m]},
 axis background/.style={fill=white},
-title style={font=\bfseries\color{mycolor6}},
-title={Full approach (150 m $\to$ 0 m)},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
@@ -156,7 +154,7 @@ x	y\\
 2.66949152542373	-1.54123165080281\\
 0	-0\\
 }--cycle;
-\addlegendentry{LoS cone ($\pm30^\circ$)}
+\addlegendentry{LoS-cone ($\pm30^\circ$)}
 
 \addplot [color=mycolor3, line width=1.4pt]
   table[row sep=crcr]{%
@@ -233,7 +231,7 @@ x	y\\
 1.31695570742638	0.433648266758406\\
 0.940974821275234	0.30064287966926\\
 };
-\addlegendentry{EMPC+ terminal cost}
+\addlegendentry{EMPC + term. cost}
 
 \addplot [color=mycolor5, dashed, line width=1.4pt]
   table[row sep=crcr]{%
@@ -282,26 +280,26 @@ x	y\\
 0.958670412906408	0.293425233027667\\
 0.665432506414363	0.187567735071612\\
 };
-\addlegendentry{EMPC+ terminal equality}
+\addlegendentry{EMPC + term. eq.}
 
-\addplot [color=white!40!black, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
+\addplot [color=black, only marks, mark size=3.0pt, mark=*, mark options={solid, black}]
   table[row sep=crcr]{%
 150	0\\
 };
-\addlegendentry{IC (V-bar hold, 150 m)}
+\addlegendentry{IC}
 
-\addplot [color=black, only marks, mark size=5.0pt, mark=star*, mark options={solid, fill=black, black}]
+\addplot [color=green!60!violet, line width=1.5pt, only marks, mark size=5.0pt, mark=+, mark options={solid, green!60!violet}]
   table[row sep=crcr]{%
 0	0\\
 };
-\addlegendentry{Docking port (origin)}
+\addlegendentry{target}
 
 \end{axis}
 
 \begin{axis}[%
-width=2.217in,
-height=3.695in,
-at={(6.96in,0.499in)},
+width=2.343in,
+height=3.905in,
+at={(6.897in,0.527in)},
 scale only axis,
 xmin=-2,
 xmax=10,
@@ -312,8 +310,6 @@ ymax=10,
 ylabel style={font=\color{mycolor6}},
 ylabel={Radial $x$ [m]},
 axis background/.style={fill=white},
-title style={font=\bfseries\color{mycolor6}},
-title={Terminal zoom ($\leq 10$ m)},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
@@ -564,11 +560,11 @@ x	y\\
 0.958670412906408	0.293425233027667\\
 0.665432506414363	0.187567735071612\\
 };
-\addplot [color=white!40!black, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}, forget plot]
+\addplot [color=black, only marks, mark size=3.0pt, mark=*, mark options={solid, black}, forget plot]
   table[row sep=crcr]{%
 150	0\\
 };
-\addplot [color=black, only marks, mark size=5.0pt, mark=star*, mark options={solid, fill=black, black}, forget plot]
+\addplot [color=green!60!violet, line width=1.5pt, only marks, mark size=5.0pt, mark=+, mark options={solid, green!60!violet}, forget plot]
   table[row sep=crcr]{%
 0	0\\
 };

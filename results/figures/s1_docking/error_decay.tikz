@@ -24,7 +24,7 @@ ylabel style={font=\color{mycolor4}},
 ylabel={$\|e_k\|$ [m]},
 axis background/.style={fill=white},
 title style={font=\bfseries\color{mycolor4}},
-title={Error norm decay — Docking approach},
+title={Error norm decay - Docking approach},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
@@ -59,7 +59,7 @@ legend style={legend cell align=left, align=left}
 3.66666666666667	2.73078195709401\\
 3.83333333333333	0.947921315588353\\
 };
-\addlegendentry{Run 1 — Std MPC}
+\addlegendentry{Run 1 - Std MPC}
 
 \addplot [color=mycolor2, line width=1.4pt]
   table[row sep=crcr]{%
@@ -107,7 +107,7 @@ legend style={legend cell align=left, align=left}
 6.83333333333333	1.38651475094407\\
 7	0.987835894959169\\
 };
-\addlegendentry{Run 2 — EMPC, CLF $V_f$}
+\addlegendentry{Run 2 - EMPC, CLF $V_f$}
 
 \addplot [color=mycolor3, dashed, line width=1.4pt]
   table[row sep=crcr]{%
@@ -156,7 +156,7 @@ legend style={legend cell align=left, align=left}
 7	1.00257036060293\\
 7.16666666666667	0.691362477888984\\
 };
-\addlegendentry{Run 3 — EMPC $+$ term.eq}
+\addlegendentry{Run 3 - EMPC $+$ term.eq}
 
 \addplot [color=black, dashed, line width=0.9pt, forget plot]
   table[row sep=crcr]{%

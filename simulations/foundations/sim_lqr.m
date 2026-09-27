@@ -35,7 +35,7 @@ Bc = [zeros(3,3); eye(3)];
 Q = diag([1e-2, 1e-2, 1e-2, ...        % position weights
           1e0, 1e0, 1e0]);          % velocity weights
 
-R = diag([1e4, 1e4, 1e4]);        % control weights
+R = diag([1e8, 1e8, 1e8]);        % control weights
 
 [K, P] = lqr_controller(Ad, Bd, Q, R);
 
@@ -45,9 +45,9 @@ disp(abs(eig(Ad - Bd*K)));
 
 %% Initial Conditions
 
-x0     =  500;
-y0     = 5000;
-z0     =  200;
+x0     =  0;
+y0     = 10000;
+z0     =  0;
 x_dot0 =    0;
 y_dot0 =    0;
 z_dot0 =    0;

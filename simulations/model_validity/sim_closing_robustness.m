@@ -8,6 +8,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils'); addpath('src/control');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 out_json = 'exports/scenarios/validity_sweep';
@@ -82,28 +83,40 @@ fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figure
-figure('Position', [100 100 1000 420]);
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
 
-subplot(1,2,1);
-yyaxis left;
-plot(e_grid, dv, '-o', 'LineWidth', 1.5); ylabel('total \Deltav [m/s]');
-yyaxis right;
-plot(e_grid, t_hand_h, '-s', 'LineWidth', 1.5); ylabel('time to handover [h]');
-xlabel('eccentricity [-]'); grid on;
-title('Closing: \Deltav & time to handover');
+figure('Position', [100 100 1000 380]);
 
-subplot(1,2,2);
-plot(e_grid, dv_infl, '-o', 'LineWidth', 1.5); hold on;
+% Panel (a): total Delta-v vs eccentricity (carries the "handover not
+% reached" marker that used to live on the now-dropped inflation-% panel --
+% that panel was a linear rescaling of this one, no new information).
+ax1 = subplot(1,2,1);
+plot(e_grid, dv, '-o', 'LineWidth', 1.5); hold on;
 bad = ~reached;
 if any(bad)
-    plot(e_grid(bad), dv_infl(bad), 'rx', 'MarkerSize', 10, 'LineWidth', 2, ...
-        'DisplayName', 'handover NOT reached');
-    legend('Location','northwest');
+    plot(e_grid(bad), dv(bad), 'rx', 'MarkerSize', 10, 'LineWidth', 2, ...
+        'DisplayName', 'handover not reached');
+    legend('Location', 'northwest');
 end
-grid on; xlabel('eccentricity [-]'); ylabel('\Deltav inflation vs e=0 [%]');
-title('Closing: fuel penalty vs eccentricity');
+xlabel('eccentricity $e$ [-]'); ylabel('total $\Delta v$ [m/s]'); grid on;
 
-sgtitle('Layer 2 (closing) - CW-EMPC robustness, 10 km \rightarrow 300 m');
+% Panel (b): time to handover vs eccentricity
+ax2 = subplot(1,2,2);
+plot(e_grid, t_hand_h, '-s', 'LineWidth', 1.5);
+xlabel('eccentricity $e$ [-]'); ylabel('time to handover [h]'); grid on;
+
+% Equal-width panels, explicit generous gap -- same numbers as the other
+% two-panel figure in this section (closed_loop_robustness.m).
+pos1 = get(ax1, 'Position'); pos2 = get(ax2, 'Position');
+left0 = 0.02; pw = 0.346; gap = 0.253;
+pos1(1) = left0;            pos1(3) = pw;
+pos2(1) = left0 + pw + gap; pos2(3) = pw; pos2(2) = pos1(2); pos2(4) = pos1(4);
+set(ax1, 'Position', pos1); set(ax2, 'Position', pos2);
+
 saveas(gcf, fullfile(out_fig, 'closing_robustness.png'));
+matlab2tikz(fullfile(out_fig, 'closing_robustness.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
 
 fprintf('Exported JSON and figure.\n');

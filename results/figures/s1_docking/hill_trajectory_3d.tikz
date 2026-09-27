@@ -1037,7 +1037,7 @@ x	y	z	c\\
 2.72136495247678	-0.226589701048417	-9.54443563372757e-12\\
 0.932332530223956	-0.171204186960918	-1.3171096959904e-11\\
 };
- \addlegendentry{Run 1 — Std MPC}
+ \addlegendentry{Run 1 - Std MPC}
 
 \addplot3 [color=mycolor4, line width=1.6pt]
  table[row sep=crcr] {%
@@ -1085,7 +1085,7 @@ x	y	z	c\\
 1.31695570742638	0.433648266758406	-1.63013936086676e-08\\
 0.940974821275234	0.30064287966926	-1.47519013371362e-08\\
 };
- \addlegendentry{Run 2 — EMPC, CLF $V_f$}
+ \addlegendentry{Run 2 - EMPC, CLF $V_f$}
 
 \addplot3 [color=mycolor5, dashed, line width=1.6pt]
  table[row sep=crcr] {%
@@ -1134,13 +1134,13 @@ x	y	z	c\\
 0.958670412906408	0.293425233027667	1.27636733355025e-09\\
 0.665432506414363	0.187567735071612	1.40143614661234e-09\\
 };
- \addlegendentry{Run 3 — EMPC $+$ term.eq}
+ \addlegendentry{Run 3 - EMPC $+$ term.eq}
 
 \addplot3 [color=white!40!black, only marks, mark size=3.5pt, mark=*, mark options={solid, fill=white!40!black, white!40!black}]
  table[row sep=crcr] {%
 150	0	0\\
 };
- \addlegendentry{IC — V-bar hold (150 m)}
+ \addlegendentry{IC - V-bar hold (150 m)}
 
 \addplot3 [color=black, only marks, mark size=5.5pt, mark=star*, mark options={solid, fill=black, black}]
  table[row sep=crcr] {%
@@ -1148,21 +1148,5 @@ x	y	z	c\\
 };
  \addlegendentry{Docking port (origin)}
 
-\end{axis}
-
-\begin{axis}[%
-width=9.906in,
-height=5.969in,
-at={(0in,0in)},
-scale only axis,
-xmin=0,
-xmax=1,
-ymin=0,
-ymax=1,
-axis line style={draw=none},
-ticks=none,
-axis x line*=bottom,
-axis y line*=left
-]
 \end{axis}
 \end{tikzpicture}%

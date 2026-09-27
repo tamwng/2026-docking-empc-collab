@@ -14,6 +14,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils'); addpath('src/control');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 out_json = 'exports/scenarios/validity_sweep';
@@ -51,13 +52,13 @@ plant = struct('a', a, 'i', deg2rad(51.6), 'p_t', p_off, 'p_c', p_off);
 
 %% Controller configurations
 configs = { ...
-    struct('key','terminal', 'label','terminal cost (Q=0, P_{clf})', ...
+    struct('key','terminal', 'label','terminal cost ($Q=0$, $P_{clf}$)', ...
            'Q', zeros(6),      'P', P_clf), ...
-    struct('key','reg1e-10',  'label','regulariser \epsilon=10^{-10} (no term.)', ...
+    struct('key','reg1e-10',  'label','regulariser $\epsilon=10^{-10}$ (no term.)', ...
            'Q', 1e-10*eye(6),  'P', zeros(6)), ...
-    struct('key','reg1e-8',   'label','regulariser \epsilon=10^{-8} (no term.)', ...
+    struct('key','reg1e-8',   'label','regulariser $\epsilon=10^{-8}$ (no term.)', ...
            'Q', 1e-8*eye(6),   'P', zeros(6)), ...
-    struct('key','both',      'label','\epsilon=10^{-8} + terminal cost', ...
+    struct('key','both',      'label','$\epsilon=10^{-8}$ + terminal cost', ...
            'Q', 1e-8*eye(6),   'P', P_clf) };
 nC = numel(configs);
 
@@ -109,6 +110,10 @@ fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figure
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
+
 figure('Position', [100 100 1000 420]);
 mk = {'-o','-s','-^','-d'};
 
@@ -121,20 +126,21 @@ bad = ~reached;
 if any(bad(:))
     [ir, je] = find(bad);
     plot(e_grid(je), arrayfun(@(k) dv(ir(k),je(k)), 1:numel(je)), ...
-        'rx', 'MarkerSize', 10, 'LineWidth', 2, 'HandleVisibility','off');
+        'rx', 'MarkerSize', 10, 'LineWidth', 2, 'HandleVisibility', 'off');
 end
-grid on; xlabel('eccentricity [-]'); ylabel('total \Deltav [m/s]');
-legend('Location','northwest'); title('Closing \Deltav (x = handover not reached)');
+grid on; xlabel('eccentricity $e$ [-]'); ylabel('total $\Delta v$ [m/s]');
+legend('Location', 'northwest');
 
 subplot(1,2,2);
 for ic = 1:nC
     plot(e_grid, dv_infl(ic,:), mk{ic}, 'LineWidth', 1.5, ...
         'DisplayName', configs{ic}.label); hold on;
 end
-grid on; xlabel('eccentricity [-]'); ylabel('\Deltav inflation vs own e=0 [%]');
-legend('Location','northwest'); title('Fuel penalty vs eccentricity');
+grid on; xlabel('eccentricity $e$ [-]'); ylabel('$\Delta v$ inflation vs own $e{=}0$ [\%]');
+legend('Location', 'northwest');
 
-sgtitle('Closing: terminal-cost vs regularised economic MPC');
 saveas(gcf, fullfile(out_fig, 'closing_regularizer_comparison.png'));
+matlab2tikz(fullfile(out_fig, 'closing_regularizer_comparison.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
 
 fprintf('\nExported JSON and figure.\n');

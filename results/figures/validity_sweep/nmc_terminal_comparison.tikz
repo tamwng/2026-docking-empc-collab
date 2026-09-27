@@ -1,0 +1,143 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.86600,0.32900,0.00000}%
+\definecolor{mycolor3}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.411\figurewidth,
+height=\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor3}},
+xlabel={eccentricity $e$ [-]},
+ymode=log,
+ymin=0.0001,
+ymax=100,
+yminorticks=true,
+ylabel style={font=\color{mycolor3}},
+ylabel={maintenance $\Delta v$ / orbit [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids,
+yminorgrids,
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+0	0.000446241427383305\\
+0.02	0.0102068917542147\\
+0.04	0.0193203954787808\\
+0.06	0.0282626804236525\\
+0.08	0.0522501724467823\\
+0.1	0.163004460073642\\
+0.12	0.538674067404866\\
+0.14	1.59141424617438\\
+0.16	4.23088218463694\\
+0.18	10.2945823500469\\
+0.2	19.8865192345411\\
+0.22	31.1340099946781\\
+0.24	21.7914543535152\\
+0.26	21.1734588609878\\
+0.28	18.6020449901944\\
+0.3	13.6728168677891\\
+};
+\addlegendentry{phase-synchronised $x(N)=\Pi^*(k)$}
+
+\addplot [color=mycolor2, line width=1.5pt, mark=square, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+0	0.0283658512260401\\
+0.02	0.028188428861068\\
+0.04	0.0277125062563804\\
+0.06	0.0270827363096372\\
+0.08	0.0315961403887037\\
+0.1	0.0952543521188298\\
+0.12	0.350296430054862\\
+0.14	1.10999413825258\\
+0.16	3.09945409107079\\
+0.18	7.83542530761806\\
+0.2	16.542897729057\\
+0.22	27.4543764297884\\
+0.24	22.968656263602\\
+0.26	21.3837506186704\\
+0.28	19.5978059615578\\
+0.3	14.1013288645924\\
+};
+\addlegendentry{fixed point $x(N)=\Pi^*(1)$}
+
+\end{axis}
+
+\begin{axis}[%
+width=0.411\figurewidth,
+height=\figureheight,
+at={(0.54\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor3}},
+xlabel={eccentricity $e$ [-]},
+ymode=log,
+ymin=84.9619195176305,
+ymax=1000000,
+yminorticks=true,
+ylabel style={font=\color{mycolor3}},
+ylabel={max range, final orbit [m] ($b=75$ m)},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids,
+yminorgrids,
+legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+0	149.809470958226\\
+0.02	179.37087934257\\
+0.04	195.112505819327\\
+0.06	207.164167500615\\
+0.08	262.854985003717\\
+0.1	530.603372460614\\
+0.12	1520.23485509906\\
+0.14	4147.20384572754\\
+0.16	10148.2460528969\\
+0.18	22660.2259148119\\
+0.2	47015.1422797848\\
+0.22	91818.8379995373\\
+0.24	235435.157608937\\
+0.26	217064.202939051\\
+0.28	250573.900591065\\
+0.3	358936.866202723\\
+};
+\addlegendentry{phase-synchronised $x(N)=\Pi^*(k)$}
+
+\addplot [color=mycolor2, line width=1.5pt, mark=square, mark options={solid, mycolor2}]
+  table[row sep=crcr]{%
+0	88.6466215163512\\
+0.02	97.402626356489\\
+0.04	99.0322750679981\\
+0.06	90.3651302999524\\
+0.08	84.9619195176305\\
+0.1	239.078853577375\\
+0.12	941.188931164146\\
+0.14	2850.35007502506\\
+0.16	7390.56057393452\\
+0.18	17190.9983765826\\
+0.2	36821.5967246804\\
+0.22	73874.3651678587\\
+0.24	140749.137649967\\
+0.26	228455.245575843\\
+0.28	223830.94258019\\
+0.3	346851.372900113\\
+};
+\addlegendentry{fixed point $x(N)=\Pi^*(1)$}
+
+\addplot [color=mycolor3, dashed, forget plot]
+  table[row sep=crcr]{%
+0	150\\
+0.3	150\\
+};
+\end{axis}
+\end{tikzpicture}%

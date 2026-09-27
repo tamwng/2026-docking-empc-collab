@@ -6,7 +6,7 @@
     "plant": "nonlinear Keplerian truth (perturbations off)",
     "scenario": "10 km -> 300 m closing, N=20, dt=120 s, handover ball 50 m",
     "a_km": 6771,
-    "date": "2026-08-18 15:22:01"
+    "date": "2026-09-24 07:50:23"
   },
   "e_grid": [
     0,

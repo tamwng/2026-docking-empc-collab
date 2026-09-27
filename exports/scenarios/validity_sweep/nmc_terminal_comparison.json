@@ -6,7 +6,7 @@
     "plant": "nonlinear Keplerian truth (perturbations off)",
     "scenario": "NMC b=75 m, V-bar 300 m IC, dt=T/92, N=P=92, 4 orbits",
     "a_km": 6771,
-    "date": "2026-08-18 16:05:42"
+    "date": "2026-09-24 07:53:53"
   },
   "e_grid": [
     0,

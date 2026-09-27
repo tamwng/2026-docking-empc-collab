@@ -8,6 +8,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils'); addpath('src/control');
+addpath('tools/matlab2tikz-master/src');
 constants;
 warning('off', 'aero:atmosnrlmsise00:setf107af107aph');
 
@@ -82,13 +83,22 @@ fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figure
-figure('Position', [100 100 640 420]);
-yyaxis left;
-plot(bc_ratio, dv, '-o', 'LineWidth', 1.5); ylabel('total \Deltav [m/s]');
-yyaxis right;
-plot(bc_ratio, dv_infl, '-s', 'LineWidth', 1.5); ylabel('\Deltav inflation vs matched BC [%]');
-xlabel('drag ratio (Cd A/m)_c / (Cd A/m)_t'); grid on;
-title('Closing (J2+drag, e=0): differential-drag fuel penalty');
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
+
+figure('Position', [100 100 1000 420]);
+
+subplot(1,2,1);
+plot(bc_ratio, dv, '-o', 'LineWidth', 1.5);
+xlabel('$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]'); ylabel('total $\Delta v$ [m/s]'); grid on;
+
+subplot(1,2,2);
+plot(bc_ratio, dv_infl, '-s', 'LineWidth', 1.5);
+xlabel('$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]'); ylabel('$\Delta v$ inflation vs matched $\beta$ [\%]'); grid on;
+
 saveas(gcf, fullfile(out_fig, 'closing_robustness_drag.png'));
+matlab2tikz(fullfile(out_fig, 'closing_robustness_drag.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
 
 fprintf('Exported JSON and figure.\n');

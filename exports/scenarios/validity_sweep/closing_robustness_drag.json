@@ -5,7 +5,7 @@
     "plant": "truth J2-J4 + drag, e=0, NRLMSISE-00 default SW",
     "scenario": "10 km -> 300 m closing, N=20, dt=120 s",
     "a_km": 6771,
-    "date": "2026-08-05 15:55:35"
+    "date": "2026-09-24 07:57:25"
   },
   "bc_ratio": [
     1,

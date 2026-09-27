@@ -1,0 +1,126 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+\definecolor{mycolor3}{rgb}{0.86600,0.32900,0.00000}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.366\figurewidth,
+height=0.862\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor2}},
+xlabel={eccentricity $e$ [-]},
+ymin=2.44,
+ymax=2.58,
+ylabel style={font=\color{mycolor2}},
+ylabel={total $\Delta v$ [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=square, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+0	2.45056103190921\\
+0.02	2.54558265496494\\
+0.04	2.54118375026988\\
+0.06	2.53758897663409\\
+0.08	2.53650581671903\\
+0.1	2.53433382257852\\
+0.12	2.53466055459885\\
+0.14	2.53576157136079\\
+0.16	2.53711702320657\\
+0.18	2.53893958059352\\
+0.2	2.54210220562982\\
+0.22	2.54689024147898\\
+0.24	2.55072812768858\\
+0.26	2.55525454155293\\
+0.28	2.56082495016866\\
+0.3	2.56766122177353\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.366\figurewidth,
+height=0.862\figureheight,
+at={(0.634\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor2}},
+xlabel={eccentricity $e$ [-]},
+ymode=log,
+ymin=0.0001,
+ymax=10,
+yminorticks=true,
+ylabel style={font=\color{mycolor2}},
+ylabel={position error [m]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids,
+legend style={font=\tiny, at={(0.97,0.03)}, anchor=south east, legend cell align=left, align=left}
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=triangle, mark options={solid, mycolor1}]
+  table[row sep=crcr]{%
+0	0.000186195606370973\\
+0.02	0.117020590124957\\
+0.04	0.248800313560015\\
+0.06	0.39717670627374\\
+0.08	0.564285821051592\\
+0.1	0.752571754690925\\
+0.12	0.964836681499238\\
+0.14	1.20429995149171\\
+0.16	1.47466806444007\\
+0.18	1.78021767456662\\
+0.2	2.1258943280637\\
+0.22	2.51743011288387\\
+0.24	2.96148420116345\\
+0.26	3.46581110898169\\
+0.28	4.03946254131559\\
+0.3	4.69303003657433\\
+};
+\addlegendentry{\shortstack[l]{open-loop CW error\\(1 horizon)}}
+
+\addplot [color=mycolor3, line width=1.5pt, mark=o, mark options={solid, mycolor3}]
+  table[row sep=crcr]{%
+0	0.947922069203605\\
+0.02	0.195551726993604\\
+0.04	0.237403962453149\\
+0.06	0.29354524857087\\
+0.08	0.378779094797528\\
+0.1	0.464946305109355\\
+0.12	0.508563557300916\\
+0.14	0.548652670480208\\
+0.16	0.592321382080944\\
+0.18	0.641665198201631\\
+0.2	0.707920893945427\\
+0.22	0.764841874078081\\
+0.24	0.818383116818231\\
+0.26	0.869863099720479\\
+0.28	0.923372610676123\\
+0.3	0.981107127736725\\
+};
+\addlegendentry{\shortstack[l]{closed-loop\\terminal miss}}
+
+\end{axis}
+
+\begin{axis}[%
+width=1.058\figurewidth,
+height=1.058\figureheight,
+at={(-0.021\figurewidth,-0.116\figureheight)},
+scale only axis,
+xmin=0,
+xmax=1,
+ymin=0,
+ymax=1,
+axis line style={draw=none},
+ticks=none,
+axis x line*=bottom,
+axis y line*=left
+]
+\end{axis}
+\end{tikzpicture}%

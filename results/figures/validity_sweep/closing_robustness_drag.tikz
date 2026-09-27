@@ -1,0 +1,61 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.432\figurewidth,
+height=\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=1,
+xmax=5,
+xlabel style={font=\color{mycolor2}},
+xlabel={$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]},
+ymin=5.971,
+ymax=5.979,
+ylabel style={font=\color{mycolor2}},
+ylabel={total $\Delta v$ [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+1	5.9717160504331\\
+1.5	5.97250277187224\\
+2	5.97324006721617\\
+3	5.97486178248083\\
+5	5.97821979675486\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.432\figurewidth,
+height=\figureheight,
+at={(0.568\figurewidth,0\figureheight)},
+scale only axis,
+xmin=1,
+xmax=5,
+xlabel style={font=\color{mycolor2}},
+xlabel={$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]},
+ymin=0,
+ymax=0.12,
+ylabel style={font=\color{mycolor2}},
+ylabel={$\Delta v$ inflation vs matched $\beta$ [\%]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=square, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+1	0\\
+1.5	0.0131741267082812\\
+2	0.0255205835341275\\
+3	0.0526771872802109\\
+5	0.108909168936237\\
+};
+\end{axis}
+\end{tikzpicture}%

@@ -22,6 +22,7 @@
 clear; clc; close all;
 
 addpath('src/dynamics'); addpath('src/utils');
+addpath('tools/matlab2tikz-master/src');
 constants;
 
 warning('off', 'aero:atmosnrlmsise00:setf107af107aph');
@@ -32,8 +33,8 @@ if ~exist(out_json, 'dir'), mkdir(out_json); end
 if ~exist(out_fig,  'dir'), mkdir(out_fig);  end
 
 %% Sweep grid
-alt_grid   = [300 400 500 600 800] * 1e3;      % altitude [m]
-bc_ratio   = [1 1.5 2 3 5];                    % (Cd*A/m)_c / (Cd*A/m)_t
+alt_grid   = linspace(300, 800, 21) * 1e3;     % altitude [m]
+bc_ratio   = linspace(1, 5, 21);               % (Cd*A/m)_c / (Cd*A/m)_t
 n_orbits   = 5;                                % prediction window [orbits]
 
 sep    = 100;                                  % fixed separation [m]
@@ -133,35 +134,53 @@ data = struct( ...
     'bc_ratio',      bc_ratio, ...
     'err_nonlinear', err_nl, ...
     'err_general',   err_gen, ...
-    'err_cw',        err_cw);
+    'err_cw',        err_cw, ...
+    'corner_series', corner_series);   % worst-corner time history, for the right-panel figure
 
 fid = fopen(fullfile(out_json, 'model_error_alt_bc.json'), 'w');
 fprintf(fid, '%s', jsonencode(data, 'PrettyPrint', true));
 fclose(fid);
 
 %% Figures
-[BC, ALT] = meshgrid(bc_ratio, alt_grid/1e3);
+% Heatmap via imagesc, exported by matlab2tikz as vector \fill rectangles
+% ('imagesAsPng' false -- no PNG) instead of contourf -- see
+% sim_model_validity_sweep.m for why.
+set(groot, 'defaultTextInterpreter', 'latex');
+set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultLegendInterpreter', 'latex');
 
-figure('Position', [100 100 1000 420]);
+bc_label = '$\frac{\beta_c}{\beta_t}$, $\beta = C_dA/m$ [-]';
 
-subplot(1,2,1);
-contourf(BC, ALT, log10(err_nl), 20, 'LineColor', 'none'); hold on;
-[C,h] = contour(BC, ALT, err_nl, [0.01 0.1 1], 'w-', 'LineWidth', 1.5);
-clabel(C, h, 'Color', 'w');
-cb = colorbar; cb.Label.String = 'log_{10}(error)';
-xlabel('drag ratio (Cd A/m)_c/(Cd A/m)_t'); ylabel('altitude [km]');
-title(sprintf('Nonlinear model error (%.0f orbits)', n_orbits));
+% Two separate figures/tikz exports, not subplots of one figure: a
+% colorbar-bearing image axis sharing a tikzpicture with an unrelated plain
+% axis is a confirmed matlab2tikz bug in this vendored version -- the plain
+% axis's (log, 1e-10 to 1e5) y-range leaks into the colorbar's tick labels,
+% verified by test-compiling the combined export through pdflatex.
+figure('Position', [100 100 520 420]);
+imagesc(bc_ratio, alt_grid/1e3, log10(err_nl)); set(gca, 'YDir', 'normal');
+cb = colorbar; cb.Label.Interpreter = 'latex'; cb.Label.String = '$\log_{10}$(max rel.\ pos.\ error) [-]';
+xlabel(bc_label); ylabel('altitude [km]');
+saveas(gcf, fullfile(out_fig, 'model_error_alt_bc_heatmap.png'));
+matlab2tikz(fullfile(out_fig, 'model_error_alt_bc_heatmap.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false, ...
+    'imagesAsPng', false);
 
-subplot(1,2,2);
+figure('Position', [650 100 520 420]);
 semilogy(corner_series.t_orbits, corner_series.nl,  'LineWidth', 1.5); hold on;
 semilogy(corner_series.t_orbits, corner_series.gen, '--', 'LineWidth', 1.5);
 semilogy(corner_series.t_orbits, corner_series.cw,  ':', 'LineWidth', 1.5);
-grid on; xlabel('orbits'); ylabel('position error [m]');
-legend('nonlinear','general','CW','Location','northwest');
-title(sprintf('Worst corner: %.0f km, ratio %.0f', ...
-      alt_grid(1)/1e3, bc_ratio(end)));
-
-sgtitle('Perturbation-driven model error (truth = J2 + drag)');
-saveas(gcf, fullfile(out_fig, 'model_error_alt_bc.png'));
+grid on; xlabel('orbits'); ylabel('position error [m] ($\log_{10}$ scale)');
+% The error starts at ~1e-10 (models coincide at t=0) then climbs past 1
+% within the first ~5% of orbit 1 -- letting the log axis autoscale down
+% to 1e-10 wastes ~9 empty decades. Floor it just below where the climb
+% actually starts so the full 5-orbit growth trend fills the plot.
+% ylim must be set BEFORE legend(): setting it after silently breaks
+% matlab2tikz's exported legend position (verified -- it fell back to a
+% southwest placement regardless of the requested Location).
+ylim([1e-1, 1e5]);
+legend('nonlinear', 'general', 'CW', 'Location', 'southeast');
+saveas(gcf, fullfile(out_fig, 'model_error_alt_bc_corner.png'));
+matlab2tikz(fullfile(out_fig, 'model_error_alt_bc_corner.tikz'), ...
+    'width', '\figurewidth', 'height', '\figureheight', 'showInfo', false);
 
 fprintf('Exported JSON and figure.\n');

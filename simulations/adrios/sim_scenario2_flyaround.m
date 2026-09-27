@@ -570,32 +570,89 @@ c_track = [0.55 0.10 0.75];   % purple, standard tracking baseline
 
 % Presentation-facing run labels (thesis/slide terminology, not the code's
 % internal run names), matching the Operation 1 (closing) convention.
-lbl_MPC_S2 = 'Std. MPC';
-lbl_R2_S2  = 'EMPC+ periodic term. eq.';
-lbl_R5_S2  = 'EMPC+ phase-sync. pen.';
+lbl_MPC_S2 = 'Std.\ MPC';
+lbl_R2_S2  = 'Per.\ term.\ eq.';
+lbl_R5_S2  = 'Phase synchr.\ $\ell_{\mathrm{aug}}$';
+
+% Shared axis-box aspect ratio for fig8 and fig6b (both datasets are
+% already available here), so that scaling both .tikz files to the same
+% \linewidth in LaTeX renders them at the same physical size. Target ratio
+% is fig6b's own data proportions (its Pi* ellipse reads more naturally
+% there); only the under-sized dimension of each figure is expanded to
+% match it, so neither figure's data gets clipped.
+all_x8_raw  = [x_star_cl(1,:), x_track(1,:), r2.x_log(1,:), r5.x_log(1,:), x0(1), 0];
+all_y8_raw  = [x_star_cl(2,:), x_track(2,:), r2.x_log(2,:), r5.x_log(2,:), x0(2), 0];
+all_x6b_raw = [x_star_cl(1,:), r3a.x_log(1,:), r3b.x_log(1,:), r3c.x_log(1,:), x0(1), 0];
+all_y6b_raw = [x_star_cl(2,:), r3a.x_log(2,:), r3b.x_log(2,:), r3c.x_log(2,:), x0(2), 0];
+
+pad_frac_s2 = 0.08;
+rx8  = (max(all_x8_raw)  - min(all_x8_raw))  * (1 + 2*pad_frac_s2);
+ry8  = (max(all_y8_raw)  - min(all_y8_raw))  * (1 + 2*pad_frac_s2);
+rx6b = (max(all_x6b_raw) - min(all_x6b_raw)) * (1 + 2*pad_frac_s2);
+ry6b = (max(all_y6b_raw) - min(all_y6b_raw)) * (1 + 2*pad_frac_s2);
+target_ratio_s2 = ry6b / rx6b;   % height/width, from the failure-mode plot
+
+if ry8 >= rx8 * target_ratio_s2
+    rx8_f = ry8 / target_ratio_s2; ry8_f = ry8;
+else
+    rx8_f = rx8; ry8_f = rx8 * target_ratio_s2;
+end
+cx8 = (max(all_x8_raw) + min(all_x8_raw)) / 2;
+cy8 = (max(all_y8_raw) + min(all_y8_raw)) / 2;
+xlim8_final = [cx8 - rx8_f/2, cx8 + rx8_f/2];
+ylim8_final = [cy8 - ry8_f/2, cy8 + ry8_f/2];
+
+if ry6b >= rx6b * target_ratio_s2
+    rx6b_f = ry6b / target_ratio_s2; ry6b_f = ry6b;
+else
+    rx6b_f = rx6b; ry6b_f = rx6b * target_ratio_s2;
+end
+cx6b = (max(all_x6b_raw) + min(all_x6b_raw)) / 2;
+cy6b = (max(all_y6b_raw) + min(all_y6b_raw)) / 2;
+xlim6b_final = [cx6b - rx6b_f/2, cx6b + rx6b_f/2];
+ylim6b_final = [cy6b - ry6b_f/2, cy6b + ry6b_f/2];
 
 fig8 = figure('Name', 'Op 2 - Tracking vs Run 2 vs Run 5');
 ax8  = axes(fig8); hold(ax8, 'on'); grid(ax8, 'on'); axis(ax8, 'equal');
 plot(ax8, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
     'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
-plot(ax8, x_track(1,:), x_track(2,:), '-', 'Color', c_track, 'LineWidth', 1.0, ...
+% Distinct linestyles (not just colors) for these three: they can sit close
+% enough to each other that color alone isn't enough to tell them apart.
+plot(ax8, x_track(1,:), x_track(2,:), '-', 'Color', c_track, 'LineWidth', 1.4, ...
     'DisplayName', lbl_MPC_S2);
-plot(ax8, r2.x_log(1,:), r2.x_log(2,:), '-', 'Color', c_r2, 'LineWidth', 1.0, ...
+plot(ax8, r2.x_log(1,:), r2.x_log(2,:), '--', 'Color', c_r2, 'LineWidth', 1.4, ...
     'DisplayName', lbl_R2_S2);
-plot(ax8, r5.x_log(1,:), r5.x_log(2,:), '-', 'Color', c_r5, 'LineWidth', 1.0, ...
+plot(ax8, r5.x_log(1,:), r5.x_log(2,:), '-.', 'Color', c_r5, 'LineWidth', 1.4, ...
     'DisplayName', lbl_R5_S2);
 plot(ax8, x0(1), x0(2), 's', 'Color', [0.4 0.4 0.4], 'MarkerFaceColor', [0.4 0.4 0.4], ...
     'MarkerSize', 8, 'DisplayName', 'IC (shared)');
 plot(ax8, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax8, '$r_x$ (radial) [m]', 'Interpreter', 'latex');
-ylabel(ax8, '$r_y$ (along-track) [m]', 'Interpreter', 'latex');
-title(ax8, 'Hill-Frame Trajectory, NMC Fly-Around', 'Interpreter', 'latex');
+% NOTE: this plot's own convention is radial=horizontal, along-track=
+% vertical (x_log(1,:) plotted first) -- the OPPOSITE of S1/S4 and the
+% validity-chapter hillframe plots (along-track horizontal, radial
+% vertical). Only the label text was changed here, not the data order.
+xlabel(ax8, 'Radial $x$ [m]', 'Interpreter', 'latex');
+ylabel(ax8, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+% Inside the axis, upper-left: verified data-driven (zero trajectory points
+% fall within that corner's footprint, vs. hundreds in both lower corners).
 legend(ax8, 'Location', 'northwest', 'FontSize', 8, 'Interpreter', 'latex');
+% Widen further (left side, where the now-inset legend sits) so the legend
+% box fits inside the axis without overflowing -- doesn't need to be as
+% wide as the pre-aspect-matching version, just enough for the text.
+xlim8_final(1) = xlim8_final(1) - 90;
+xlim(ax8, xlim8_final);
+ylim(ax8, ylim8_final);
+
 exportgraphics(fig8, fullfile(fig_dir, 'tracking_vs_run2_run5.pdf'), 'ContentType', 'vector');
 exportgraphics(fig8, fullfile(fig_dir, 'tracking_vs_run2_run5.png'), 'Resolution', 300);
 if exist('matlab2tikz', 'file')
-    matlab2tikz(fullfile(fig_dir, 'tracking_vs_run2_run5.tikz'), ...
-        'figurehandle', fig8, 'showInfo', false, 'parseStrings', false);
+    tikz_path8 = fullfile(fig_dir, 'tracking_vs_run2_run5.tikz');
+    matlab2tikz(tikz_path8, 'figurehandle', fig8, 'showInfo', false, 'parseStrings', false);
+    % legend(...,'FontSize',...) is silently dropped by this matlab2tikz
+    % version -- patch directly for "a little bigger".
+    txt8 = fileread(tikz_path8);
+    txt8 = regexprep(txt8, 'legend style=\{', 'legend style={font=\\tiny, ', 'once');
+    fid8 = fopen(tikz_path8, 'w'); fprintf(fid8, '%s', txt8); fclose(fid8);
 end
 
 % LaTeX comparison table (Tracking vs Run 2 vs Run 5)
@@ -679,24 +736,34 @@ fig6b  = figure('Name', 'Op 2 - Failure modes overlay (3a/3b/3c)');
 ax6bb  = axes(fig6b); hold(ax6bb, 'on'); grid(ax6bb, 'on'); axis(ax6bb, 'equal');
 plot(ax6bb, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.8, ...
     'DisplayName', sprintf('$\\Pi^*$ ($b=%d$\\,m)', b_nmc));
-plot(ax6bb, r3a.x_log(1,:), r3a.x_log(2,:), '-', 'Color', c_3a, 'LineWidth', 1.2, ...
-    'DisplayName', '3a: band $+\,Q \rightarrow$ V-bar eq.');
-plot(ax6bb, r3b.x_log(1,:), r3b.x_log(2,:), '-', 'Color', c_3b, 'LineWidth', 1.2, ...
-    'DisplayName', '3b: band $+$ fuel $\rightarrow$ drift');
-plot(ax6bb, r3c.x_log(1,:), r3c.x_log(2,:), '-', 'Color', c_3c, 'LineWidth', 1.2, ...
-    'DisplayName', '3c: $Q$ only $\rightarrow$ origin');
+plot(ax6bb, r3a.x_log(1,:), r3a.x_log(2,:), '-', 'Color', c_3a, 'LineWidth', 1.4, ...
+    'DisplayName', 'band $+\,Q$');
+plot(ax6bb, r3b.x_log(1,:), r3b.x_log(2,:), '-', 'Color', c_3b, 'LineWidth', 1.4, ...
+    'DisplayName', 'band $+$ fuel');
+plot(ax6bb, r3c.x_log(1,:), r3c.x_log(2,:), '-', 'Color', c_3c, 'LineWidth', 1.4, ...
+    'DisplayName', '$Q$ only');
 plot(ax6bb, x0(1), x0(2), 's', 'Color', [0.4 0.4 0.4], 'MarkerFaceColor', [0.4 0.4 0.4], ...
     'MarkerSize', 8, 'DisplayName', 'IC (shared)');
 plot(ax6bb, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax6bb, '$r_x$ (radial) [m]', 'Interpreter', 'latex');
-ylabel(ax6bb, '$r_y$ (along-track) [m]', 'Interpreter', 'latex');
-title(ax6bb, 'S2: Failure modes -- none acquires $\Pi^*$', 'Interpreter', 'latex');
-legend(ax6bb, 'Location', 'northeast', 'FontSize', 8, 'Interpreter', 'latex');
+% Same axis-order note as tracking_vs_run2_run5.tikz above: radial is the
+% horizontal (plotted first) here, opposite of S1/S4's convention.
+xlabel(ax6bb, 'Radial $x$ [m]', 'Interpreter', 'latex');
+ylabel(ax6bb, 'Along-track $y$ [m]', 'Interpreter', 'latex');
+legend(ax6bb, 'Location', 'northwest', 'FontSize', 8, 'Interpreter', 'latex');
+% Widen left side (where the legend now sits) so it fits without
+% overflowing the axis, matching the same treatment as fig8 above.
+xlim6b_final(1) = xlim6b_final(1) - 70;
+xlim(ax6bb, xlim6b_final);
+ylim(ax6bb, ylim6b_final);
+
 exportgraphics(fig6b, fullfile(fig_dir, 'failure_modes_overlay.pdf'), 'ContentType', 'vector');
 exportgraphics(fig6b, fullfile(fig_dir, 'failure_modes_overlay.png'), 'Resolution', 300);
 if exist('matlab2tikz', 'file')
-    matlab2tikz(fullfile(fig_dir, 'failure_modes_overlay.tikz'), ...
-        'figurehandle', fig6b, 'showInfo', false, 'parseStrings', false);
+    tikz_path6b = fullfile(fig_dir, 'failure_modes_overlay.tikz');
+    matlab2tikz(tikz_path6b, 'figurehandle', fig6b, 'showInfo', false, 'parseStrings', false);
+    txt6b = fileread(tikz_path6b);
+    txt6b = regexprep(txt6b, 'legend style=\{', 'legend style={font=\\tiny, ', 'once');
+    fid6b = fopen(tikz_path6b, 'w'); fprintf(fid6b, '%s', txt6b); fclose(fid6b);
 end
 
 %% JSON EXPORT

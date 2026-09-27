@@ -8,26 +8,24 @@
 \begin{tikzpicture}
 
 \begin{axis}[%
-width=7.677in,
+width=2.353in,
 height=4.865in,
-at={(1.288in,0.657in)},
+at={(3.95in,0.657in)},
 scale only axis,
-xmin=-345.232368017394,
-xmax=366.240482682943,
+xmin=-178.680684988743,
+xmax=109.688799654291,
 xlabel style={font=\color{mycolor4}},
-xlabel={$r_x$ (radial) [m]},
-ymin=-150.076026980101,
-ymax=300.728577901421,
+xlabel={Radial $x$ [m]},
+ymin=-222.694997643767,
+ymax=373.347548565088,
 ylabel style={font=\color{mycolor4}},
-ylabel={$r_y$ (along-track) [m]},
+ylabel={Along-track $y$ [m]},
 axis background/.style={fill=white},
-title style={font=\bfseries\color{mycolor4}},
-title={Hill-Frame Trajectory, NMC Fly-Around},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
 ymajorgrids,
-legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
+legend style={font=\tiny, at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
 ]
 \addplot [color=mycolor1, dashed, line width=2.0pt]
   table[row sep=crcr]{%
@@ -127,7 +125,7 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 };
 \addlegendentry{$\Pi^*$ ($b=75$\,m)}
 
-\addplot [color=mycolor2, line width=1.0pt]
+\addplot [color=mycolor2, line width=1.4pt]
   table[row sep=crcr]{%
 0	300\\
 17.328654845119	281.039020363474\\
@@ -683,9 +681,9 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 74.8251576897905	10.2363620019937\\
 75.0000000011402	-4.69007319629249e-10\\
 };
-\addlegendentry{Std. MPC}
+\addlegendentry{Std.\ MPC}
 
-\addplot [color=mycolor3, line width=1.0pt]
+\addplot [color=mycolor3, dashed, line width=1.4pt]
   table[row sep=crcr]{%
 0	300\\
 0.0265328842844806	300.029663409608\\
@@ -1241,9 +1239,9 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 74.8229002400356	10.208938958396\\
 74.997523483868	-0.0270996857362353\\
 };
-\addlegendentry{EMPC+ periodic term. eq.}
+\addlegendentry{Per.\ term.\ eq.}
 
-\addplot [color=red!80!green, line width=1.0pt]
+\addplot [color=red!80!green, dashdotted, line width=1.4pt]
   table[row sep=crcr]{%
 0	300\\
 17.3286548451189	281.039020363474\\
@@ -1799,7 +1797,7 @@ legend style={at={(0.03,0.97)}, anchor=north west, legend cell align=left, align
 74.8251585347618	10.2363624600856\\
 74.9999994308162	9.93655319113304e-07\\
 };
-\addlegendentry{EMPC+ phase-sync. pen.}
+\addlegendentry{Phase synchr.\ $\ell_{\mathrm{aug}}$}
 
 \addplot [color=white!40!black, only marks, mark size=2.8pt, mark=square*, mark options={solid, fill=white!40!black, white!40!black}]
   table[row sep=crcr]{%
