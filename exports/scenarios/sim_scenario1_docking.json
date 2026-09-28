@@ -2,7 +2,7 @@
   "scenario": {
     "name": "S1_docking",
     "description": "150m V-bar hold to docking port, ADRIOS/ClearSpace-1 analogue",
-    "date": "2026-09-26 07:34",
+    "date": "2026-09-28 07:57",
     "dt_s": 10,
     "N": 24,
     "x0": [

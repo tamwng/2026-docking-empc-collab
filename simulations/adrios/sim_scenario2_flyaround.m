@@ -362,208 +362,22 @@ run_cfg_3c.use_band              = false;
 
 r3c = run_flyaround(run_cfg_3c, matrices_3c, params_3c);
 
+n_sim_3a = r3a.n_sim;
+n_sim_3b = r3b.n_sim;
+n_sim_3c = r3c.n_sim;
+
 %% FIGURES
 fig_dir = fullfile(script_dir, '..', '..', 'results', 'figures', 's2_flyaround');
 if ~exist(fig_dir, 'dir'); mkdir(fig_dir); end
 
-c_r2   = [0.00 0.45 0.70];  
-c_star = [0.93 0.69 0.13];   
-c_r1   = [0.85 0.33 0.10];   
+c_r2   = [0.00 0.45 0.70];
+c_star = [0.93 0.69 0.13];
+c_r1   = [0.85 0.33 0.10];
+c_r5   = [0.80 0.20 0.00];   % dark orange-red
 
 n_sim_r1  = r1.n_sim;
 time_s_r2 = (0 : n_sim_r2) * dt;
-
-% Fig 1: Hill-frame - Run 1 stuck vs Run 2 converging to Π*
-fig1 = figure('Name', 'S2 - Hill-frame');
-ax1  = axes(fig1);
-hold(ax1, 'on'); grid(ax1, 'on'); axis(ax1, 'equal');
 x_star_cl = [x_star, x_star(:,1)];   % close the curve for plotting
-plot(ax1, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
-    'DisplayName', sprintf('\\Pi^* (b = %d m)', b_nmc));
-plot(ax1, r2.x_log(1,:), r2.x_log(2,:), 'Color', c_r2, 'LineWidth', 1.0, ...
-    'DisplayName', 'Run 2: trajectory');
-plot(ax1, r1.x_log(1,:), r1.x_log(2,:), 'Color', c_r1, 'LineWidth', 1.0, ...
-    'DisplayName', 'Run 1: free drift (no terminal cstr.)');
-plot(ax1, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 10, ...
-    'MarkerFaceColor', c_r1, 'LineWidth', 1.5, 'HandleVisibility', 'off');
-plot(ax1, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax1, 'r_x (radial) [m]');
-ylabel(ax1, 'r_y (along-track) [m]');
-title(ax1, 'S2 - Run 1: free drift vs Run 2: stabilises \Pi^*');
-legend(ax1, 'Location', 'northeast');
-exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.pdf'), 'ContentType', 'vector');
-exportgraphics(fig1, fullfile(fig_dir, 'hill_frame_overlay.png'), 'Resolution', 300);
-
-% Fig 5: Non-equilibrium IC drift (Run 1 detail)
-time_s_r1 = (0 : n_sim_r1) * dt;
-
-fig5 = figure('Name', 'S2 - Non-equilibrium drift (Run 1)');
-tl5  = tiledlayout(fig5, 2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-
-% Top: Hill-frame trajectory
-ax5a = nexttile(tl5);
-hold(ax5a, 'on'); grid(ax5a, 'on'); axis(ax5a, 'equal');
-plot(ax5a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
-    'DisplayName', sprintf('\\Pi^* (b = %d m)', b_nmc));
-plot(ax5a, r1.x_log(1,:), r1.x_log(2,:), 'Color', c_r1, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 1: free drift');
-plot(ax5a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 10, ...
-    'MarkerFaceColor', c_r1, 'DisplayName', 'IC');
-plot(ax5a, r1.x_log(1,end), r1.x_log(2,end), '^', 'Color', [0.4 0.4 0.4], ...
-    'MarkerSize', 8, 'MarkerFaceColor', [0.4 0.4 0.4], 'DisplayName', 'Final (2T)');
-plot(ax5a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax5a, 'r_x (radial) [m]');
-ylabel(ax5a, 'r_y (along-track) [m]');
-title(ax5a, 'Hill-frame - drifting ellipse (U^* = 0, no terminal cstr.)');
-legend(ax5a, 'Location', 'northeast');
-
-% Bottom: along-track time series showing secular drift vs analytical trend
-ax5b = nexttile(tl5);
-hold(ax5b, 'on'); grid(ax5b, 'on');
-t_vec     = linspace(0, n_sim_r1 * dt, 500);
-y_secular = -6 * x0(1) * n * t_vec + x0(2);
-plot(ax5b, time_s_r1, r1.x_log(2,:), 'Color', c_r1, 'LineWidth', 1.2, ...
-    'DisplayName', 'r_y (simulated)');
-plot(ax5b, t_vec, y_secular, 'k--', 'LineWidth', 1.0, ...
-    'DisplayName', 'Secular trend: -6 x_0 n t + y_0');
-xline(ax5b, T, ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.9, ...
-    'Label', '1 orbit', 'HandleVisibility', 'off');
-xlabel(ax5b, 'Time [s]');
-ylabel(ax5b, 'r_y (along-track) [m]');
-title(ax5b, sprintf('Along-track secular drift  (avg. rate \\approx %.3f m/s)', 6 * x0(1) * n));
-legend(ax5b, 'Location', 'northeast');
-
-exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.pdf'), 'ContentType', 'vector');
-exportgraphics(fig5, fullfile(fig_dir, 'run1_nonequil_drift.png'), 'Resolution', 300);
-
-% Fig 2: Phase error
-fig2 = figure('Name', 'S2 - Phase error');
-ax2  = axes(fig2);
-hold(ax2, 'on'); grid(ax2, 'on');
-semilogy(ax2, time_s_r2, phase_err, 'Color', c_r2, 'LineWidth', 1.2);
-xlabel(ax2, 'Time [s]');
-ylabel(ax2, '||x(k) - x^*_{k \rm mod P}|| [m]');
-title(ax2, 'Convergence to \Pi^* - Keerthi-Gilbert / Theorem 2.24');
-ylim(ax2, [1e-2, 1e3]);
-exportgraphics(fig2, fullfile(fig_dir, 'phase_error.pdf'), 'ContentType', 'vector');
-exportgraphics(fig2, fullfile(fig_dir, 'phase_error.png'), 'Resolution', 300);
-
-% Fig 3: Control effort Run 2 (log scale)
-fig3 = figure('Name', 'S2 - Control effort');
-ax3  = axes(fig3);
-hold(ax3, 'on'); grid(ax3, 'on');
-semilogy(ax3, time_s_r2(1:n_sim_r2), r2.u_norm, 'Color', c_r2, 'LineWidth', 1.2);
-if r2.inject_end < n_sim_r2
-    xline(ax3, r2.inject_end * dt, '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.9, ...
-        'DisplayName', 'Orbit reached');
-end
-xlabel(ax3, 'Time [s]');
-ylabel(ax3, '||u|| [m/s^2]');
-title(ax3, 'S2 - Control effort (log scale)');
-ylim(ax3, [1e-11, 1e-4]);
-exportgraphics(fig3, fullfile(fig_dir, 'control_effort.pdf'), 'ContentType', 'vector');
-exportgraphics(fig3, fullfile(fig_dir, 'control_effort.png'), 'Resolution', 300);
-
-% Fig 4: Cumulative ΔV Run 2
-fig4 = figure('Name', 'S2 - Cumulative DeltaV');
-ax4  = axes(fig4);
-hold(ax4, 'on'); grid(ax4, 'on');
-plot(ax4, time_s_r2(1:n_sim_r2), cumsum(r2.dv_log), 'Color', c_r2, 'LineWidth', 1.2);
-xlabel(ax4, 'Time [s]');
-ylabel(ax4, 'Cumulative \DeltaV [m/s]');
-title(ax4, 'S2 - Cumulative \DeltaV');
-exportgraphics(fig4, fullfile(fig_dir, 'cumulative_dv.pdf'), 'ContentType', 'vector');
-exportgraphics(fig4, fullfile(fig_dir, 'cumulative_dv.png'), 'Resolution', 300);
-
-fprintf('Figures saved to %s\n', fig_dir);
-
-% Fig 5: Run 4: manifold IC -> free orbit maintenance
-c_r4        = [0.50 0.00 0.50];   % purple
-time_s_r4   = (0 : n_sim_r4) * dt;
-
-fig5 = figure('Name', 'S2 - Run 4: manifold IC');
-tl5b = tiledlayout(fig5, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-
-% Hill frame: trajectory should lie on top of Π*
-ax5b1 = nexttile(tl5b);
-hold(ax5b1, 'on'); grid(ax5b1, 'on'); axis(ax5b1, 'equal');
-plot(ax5b1, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 3.0, ...
-    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
-plot(ax5b1, r4.x_log(1,:), r4.x_log(2,:), 'Color', c_r4, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 4: trajectory (u^*=0)');
-plot(ax5b1, x0_r4(1), x0_r4(2), 'o', 'Color', c_r4, 'MarkerSize', 8, ...
-    'MarkerFaceColor', c_r4, 'DisplayName', 'IC (on \Pi^*)');
-plot(ax5b1, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax5b1, 'r_x (radial) [m]');
-ylabel(ax5b1, 'r_y (along-track) [m]');
-title(ax5b1, 'Run 4: IC on \Pi^* - trajectory coincides with \Pi^*');
-legend(ax5b1, 'Location', 'northeast');
-
-% Phase error: should be numerical noise
-ax5b2 = nexttile(tl5b);
-hold(ax5b2, 'on'); grid(ax5b2, 'on');
-semilogy(ax5b2, time_s_r4, phase_err_r4 + 1e-16, 'Color', c_r4, 'LineWidth', 1.2);
-xlabel(ax5b2, 'Time [s]');
-ylabel(ax5b2, '||x(k) - x^*_{k \rm mod P}|| [m]');
-title(ax5b2, 'Phase error (expect \approx 0)');
-ylim(ax5b2, [1e-16, 1e-3]);
-
-sgtitle(fig5, 'S2 Run 4 - NMC manifold IC: orbit maintained with u^* = 0');
-exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.pdf'), 'ContentType', 'vector');
-exportgraphics(fig5, fullfile(fig_dir, 'run4_manifold_ic.png'), 'Resolution', 300);
-
-% Fig 7: Run 5 vs Run 2: periodic stage cost vs terminal equality
-c_r5        = [0.80 0.20 0.00];   % dark orange-red
-time_s_r5   = (0 : n_sim_r5) * dt;
-
-fig7 = figure('Name', 'S2 - Run 5 vs Run 2');
-tl7  = tiledlayout(fig7, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-
-% Hill frame: Run 5 should converge to Π* without terminal constraint
-ax7a = nexttile(tl7);
-hold(ax7a, 'on'); grid(ax7a, 'on'); axis(ax7a, 'equal');
-plot(ax7a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 2.0, ...
-    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
-plot(ax7a, r2.x_log(1,:), r2.x_log(2,:), 'Color', c_r2, 'LineWidth', 0.8, ...
-    'DisplayName', 'Run 2 (terminal eq.)');
-plot(ax7a, r5.x_log(1,:), r5.x_log(2,:), 'Color', c_r5, 'LineWidth', 1.0, ...
-    'DisplayName', 'Run 5 (periodic ℓ_{aug})');
-plot(ax7a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
-    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
-plot(ax7a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax7a, 'r_x [m]'); ylabel(ax7a, 'r_y [m]');
-title(ax7a, 'Hill frame: Run 2 vs Run 5');
-legend(ax7a, 'Location', 'northeast', 'FontSize', 7);
-
-% Phase error comparison
-ax7b = nexttile(tl7);
-hold(ax7b, 'on'); grid(ax7b, 'on');
-semilogy(ax7b, time_s_r2, phase_err,    'Color', c_r2, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 2 (terminal eq.)');
-semilogy(ax7b, time_s_r5, phase_err_r5, 'Color', c_r5, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 5 (periodic ℓ_{aug})');
-xlabel(ax7b, 'Time [s]');
-ylabel(ax7b, '||x(k) - x^*_{k \rm mod P}|| [m]');
-title(ax7b, 'Phase error convergence');
-legend(ax7b, 'Location', 'northeast', 'FontSize', 7);
-ylim(ax7b, [1e-3, 1e3]);
-
-% Control effort comparison
-ax7c = nexttile(tl7);
-hold(ax7c, 'on'); grid(ax7c, 'on');
-semilogy(ax7c, time_s_r2(1:n_sim_r2), r2.u_norm, 'Color', c_r2, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 2');
-semilogy(ax7c, time_s_r5(1:n_sim_r5), r5.u_norm, 'Color', c_r5, 'LineWidth', 1.2, ...
-    'DisplayName', 'Run 5');
-xlabel(ax7c, 'Time [s]');
-ylabel(ax7c, '||u|| [m/s^2]');
-title(ax7c, 'Control effort');
-legend(ax7c, 'Location', 'northeast', 'FontSize', 7);
-ylim(ax7c, [1e-11, 1e-2]);
-
-sgtitle(fig7, sprintf('S2: Run 2 (Keerthi-Gilbert) vs Run 5 (periodic ℓ_{aug}, \\epsilon=%.0e)', eps_r5));
-exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.pdf'), 'ContentType', 'vector');
-exportgraphics(fig7, fullfile(fig_dir, 'run5_vs_run2.png'), 'Resolution', 300);
 
 % Fig 8: Standard Tracking MPC vs Run 2 vs Run 5: Hill-frame overlay + table
 c_track = [0.55 0.10 0.75];   % purple, standard tracking baseline
@@ -669,69 +483,10 @@ fprintf(fid_ct, 'Run 5 (periodic $\\ell_{\\mathrm{aug}}$) & %.4f & %.1f & %s \\\
 fprintf(fid_ct, '\\bottomrule\n\\end{tabular}\n');
 fclose(fid_ct);
 
-% Fig 6: Failure-mode suite: runs 3a / 3b / 3c
-c_3a = [0.13 0.63 0.37];  
-c_3b = [0.49 0.18 0.56];  
-c_3c = [0.93 0.53 0.18];   
-
-n_sim_3a = r3a.n_sim;
-n_sim_3b = r3b.n_sim;
-n_sim_3c = r3c.n_sim;
-
-fig6 = figure('Name', 'S2 - Failure modes (Runs 3a/3b/3c)');
-tl6  = tiledlayout(fig6, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-
-% 3a: band + Q -> V-bar equilibrium at boundary
-ax6a = nexttile(tl6);
-hold(ax6a, 'on'); grid(ax6a, 'on'); axis(ax6a, 'equal');
-plot(ax6a, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
-    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
-plot(ax6a, r3a.x_log(1,:), r3a.x_log(2,:), 'Color', c_3a, 'LineWidth', 1.0, ...
-    'DisplayName', '3a trajectory');
-plot(ax6a, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
-    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
-plot(ax6a, r3a.x_log(1,end), r3a.x_log(2,end), '^', 'Color', c_3a, ...
-    'MarkerSize', 8, 'MarkerFaceColor', c_3a, 'DisplayName', 'Final state');
-plot(ax6a, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax6a, 'r_x [m]'); ylabel(ax6a, 'r_y [m]');
-title(ax6a, '3a: band + Q  \rightarrow V-bar eq. at boundary');
-legend(ax6a, 'Location', 'northeast', 'FontSize', 7);
-
-% 3b: band + fuel -> free drift
-ax6b = nexttile(tl6);
-hold(ax6b, 'on'); grid(ax6b, 'on'); axis(ax6b, 'equal');
-plot(ax6b, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
-    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
-plot(ax6b, r3b.x_log(1,:), r3b.x_log(2,:), 'Color', c_3b, 'LineWidth', 1.0, ...
-    'DisplayName', '3b trajectory (drift)');
-plot(ax6b, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
-    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
-plot(ax6b, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax6b, 'r_x [m]'); ylabel(ax6b, 'r_y [m]');
-title(ax6b, '3b: band + fuel  \rightarrow free drift (u^*=0)');
-legend(ax6b, 'Location', 'northeast', 'FontSize', 7);
-
-% 3c: no band, small Q -> regulation to origin
-ax6c = nexttile(tl6);
-hold(ax6c, 'on'); grid(ax6c, 'on'); axis(ax6c, 'equal');
-plot(ax6c, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.5, ...
-    'DisplayName', sprintf('\\Pi^* (b=%dm)', b_nmc));
-plot(ax6c, r3c.x_log(1,:), r3c.x_log(2,:), 'Color', c_3c, 'LineWidth', 1.0, ...
-    'DisplayName', '3c trajectory');
-plot(ax6c, x0(1), x0(2), 's', 'Color', c_r1, 'MarkerSize', 8, ...
-    'MarkerFaceColor', c_r1, 'HandleVisibility', 'off');
-plot(ax6c, r3c.x_log(1,end), r3c.x_log(2,end), '^', 'Color', c_3c, ...
-    'MarkerSize', 8, 'MarkerFaceColor', c_3c, 'DisplayName', 'Final state');
-plot(ax6c, 0, 0, '.k', 'MarkerSize', 14, 'DisplayName', 'Target');
-xlabel(ax6c, 'r_x [m]'); ylabel(ax6c, 'r_y [m]');
-title(ax6c, '3c: Q only  \rightarrow regulation to origin');
-legend(ax6c, 'Location', 'northeast', 'FontSize', 7);
-
-sgtitle(fig6, 'S2 - Why the periodic terminal constraint is necessary');
-exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.pdf'), 'ContentType', 'vector');
-exportgraphics(fig6, fullfile(fig_dir, 'failure_modes.png'), 'Resolution', 300);
-
 % Fig 6b: Failure modes overlaid in a single Hill-frame (3a/3b/3c)
+c_3a = [0.13 0.63 0.37];
+c_3b = [0.49 0.18 0.56];
+c_3c = [0.93 0.53 0.18];
 fig6b  = figure('Name', 'Op 2 - Failure modes overlay (3a/3b/3c)');
 ax6bb  = axes(fig6b); hold(ax6bb, 'on'); grid(ax6bb, 'on'); axis(ax6bb, 'equal');
 plot(ax6bb, x_star_cl(1,:), x_star_cl(2,:), '--', 'Color', c_star, 'LineWidth', 1.8, ...

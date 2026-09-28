@@ -232,10 +232,7 @@ c_mpc = [0.12 0.47 0.71];
 conv_tol_s4 = 50;         % [m] run_closing convergence threshold
 zoom_hw     = 150;        % [m] half-width of the switch-point zoom window
 
-% Presentation-facing run labels (thesis/slide terminology, not the code's
-% internal run names): A1 uses an L-inf terminal BOX (not a true ball), so
-% "terminal box" is the accurate term; MPC is the standard (non-economic)
-% baseline; B-noball/C are the two eMPC stabilisation mechanisms.
+
 lbl_A1  = 'Term.\ ball';
 lbl_Bnb = '$\rho_c$ stage-cost reg.';
 lbl_C   = 'Term.\ cost';
@@ -267,8 +264,7 @@ xlabel(ax4a, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
 ylabel(ax4a, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
 legend(ax4a, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
 
-% Panel B: zoom on the switch point, no repeated legend (colors already
-% established in Panel A).
+% Panel B: zoom on the switch point
 ax4b = subplot(1, 2, 2);
 hold(ax4b,'on'); grid(ax4b,'on'); axis(ax4b,'equal');
 plot(ax4b, resA1.X(2,:),       resA1.X(1,:),       '-', 'Color', c_A1, 'LineWidth', 1.4);
@@ -281,8 +277,6 @@ xlim(ax4b, x_switch(2) + [-zoom_hw, zoom_hw]);
 ylim(ax4b, x_switch(1) + [-zoom_hw, zoom_hw]);
 xlabel(ax4b, 'Along-track $y$ [m]', 'Interpreter', 'latex', 'FontSize', 11);
 ylabel(ax4b, 'Radial $x$ [m]',      'Interpreter', 'latex', 'FontSize', 11);
-% No in-plot titles/sgtitle -- panel descriptions belong in the LaTeX
-% figure caption instead.
 
 out_dir_hill = 'results/figures/scenario4';
 [~, ~] = mkdir(out_dir_hill);

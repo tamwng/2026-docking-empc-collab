@@ -154,14 +154,6 @@ c1 = [0.12 0.47 0.71];
 c2 = [0.00 0.68 0.68];   
 c3 = [0.85 0.33 0.10];   
 
-n_ctrl1 = res1.n_ctrl;
-n_ctrl2 = res2.n_ctrl;
-n_ctrl3 = res3.n_ctrl;
-
-t1_min = res1.t_vec / 60;
-t2_min = res2.t_vec / 60;
-t3_min = res3.t_vec / 60;
-
 %  Figure 1: Hill-frame trajectory (y-x plane), full approach + terminal zoom
 % LoS cone cross-section (z = 0): docking axis along +y, edges x = ±y·tan(alpha).
 alpha_deg = round(rad2deg(los_half_angle));
@@ -187,145 +179,10 @@ ylim(ax1b, [-zoom_r, zoom_r]);
 % No in-plot titles/sgtitle -- panel descriptions belong in the LaTeX
 % figure caption instead.
 
-% Figure 2: Cumulative Δv comparison
-fig2 = figure('Name', 'S1 Docking - Cumulative Deltav');
-ax2  = axes(fig2);
-hold(ax2, 'on'); grid(ax2, 'on');
-
-plot(ax2, t1_min(1:n_ctrl1), cumsum(vecnorm(res1.U(:,1:n_ctrl1),2,1))*dt, ...
-    'Color', c1, 'LineWidth', 1.4, ...
-    'DisplayName', sprintf('Run 1 - Std MPC  (%.4f m/s)', res1.dv));
-plot(ax2, t2_min(1:n_ctrl2), cumsum(vecnorm(res2.U(:,1:n_ctrl2),2,1))*dt, ...
-    'Color', c2, 'LineWidth', 1.4, ...
-    'DisplayName', sprintf('Run 2 - EMPC, CLF $V_f$  (%.4f m/s)', res2.dv));
-plot(ax2, t3_min(1:n_ctrl3), cumsum(vecnorm(res3.U(:,1:n_ctrl3),2,1))*dt, ...
-    '--', 'Color', c3, 'LineWidth', 1.4, ...
-    'DisplayName', sprintf('Run 3 - EMPC $+$ term.eq  (%.4f m/s)', res3.dv));
-
-xlabel(ax2, 'Time [min]',                            'Interpreter', 'latex');
-ylabel(ax2, 'Cumulative $\Delta v$ [m/s]',           'Interpreter', 'latex');
-title(ax2,  'Cumulative $\Delta v$ - Docking Approach', 'Interpreter', 'latex');
-legend(ax2, 'Location', 'northwest', 'Interpreter', 'latex');
-
-% Figure 3: Thrust norm time history (log scale, 3 panels)
-fig3 = figure('Name', 'S1 Docking - Thrust Profile');
-fig3.Position(3:4) = [900, 350];
-
-ax3a = subplot(1, 3, 1);
-hold(ax3a, 'on'); grid(ax3a, 'on'); set(ax3a, 'YScale', 'log');
-stem(ax3a, 1:n_ctrl1, max(res1.u_norm_seq, 1e-12), ...
-    'Color', c1, 'LineWidth', 0.9, 'MarkerSize', 3, ...
-    'DisplayName', sprintf('$\\Delta v=%.4f$ m/s', res1.dv));
-xlabel(ax3a, 'Step $k$',             'Interpreter', 'latex');
-ylabel(ax3a, '$\|u_k\|$ [m/s$^2$]', 'Interpreter', 'latex');
-title(ax3a,  'Run 1 - Std MPC',      'Interpreter', 'latex');
-legend(ax3a, 'Interpreter', 'latex', 'Location', 'northeast');
-
-ax3b = subplot(1, 3, 2);
-hold(ax3b, 'on'); grid(ax3b, 'on'); set(ax3b, 'YScale', 'log');
-stem(ax3b, 1:n_ctrl2, max(res2.u_norm_seq, 1e-12), ...
-    'Color', c2, 'LineWidth', 0.9, 'MarkerSize', 3, ...
-    'DisplayName', sprintf('$\\Delta v=%.4f$ m/s', res2.dv));
-xlabel(ax3b, 'Step $k$',                 'Interpreter', 'latex');
-title(ax3b,  'Run 2 - EMPC, CLF $V_f$', 'Interpreter', 'latex');
-legend(ax3b, 'Interpreter', 'latex', 'Location', 'northeast');
-
-ax3c = subplot(1, 3, 3);
-hold(ax3c, 'on'); grid(ax3c, 'on'); set(ax3c, 'YScale', 'log');
-stem(ax3c, 1:n_ctrl3, max(res3.u_norm_seq, 1e-12), ...
-    'Color', c3, 'LineWidth', 0.9, 'MarkerSize', 3, ...
-    'DisplayName', sprintf('$\\Delta v=%.4f$ m/s', res3.dv));
-xlabel(ax3c, 'Step $k$',                      'Interpreter', 'latex');
-title(ax3c,  'Run 3 - EMPC $+$ term.~eq',    'Interpreter', 'latex');
-legend(ax3c, 'Interpreter', 'latex', 'Location', 'northeast');
-
-sgtitle(fig3, ...
-    'Thrust profiles - Docking approach 150 m $\to$ 0 m  ($dt=10\,\mathrm{s}$, $N=24$)', ...
-    'Interpreter', 'latex');
-
-% Figure 4: Error norm decay (log scale)
-fig4 = figure('Name', 'S1 Docking - Error decay');
-ax4  = axes(fig4);
-hold(ax4, 'on'); grid(ax4, 'on'); set(ax4, 'YScale', 'log');
-
-plot(ax4, t1_min, res1.ef, '-',  'Color', c1, 'LineWidth', 1.4, ...
-    'DisplayName', 'Run 1 - Std MPC');
-plot(ax4, t2_min, res2.ef, '-',  'Color', c2, 'LineWidth', 1.4, ...
-    'DisplayName', 'Run 2 - EMPC, CLF $V_f$');
-plot(ax4, t3_min, res3.ef, '--', 'Color', c3, 'LineWidth', 1.4, ...
-    'DisplayName', 'Run 3 - EMPC $+$ term.eq');
-yline(ax4, params_base.conv_tol, '--k', 'LineWidth', 0.9, 'HandleVisibility', 'off');
-text(ax4, 0, params_base.conv_tol*1.3, sprintf('conv. tol %.3g m', params_base.conv_tol), ...
-    'FontSize', 8, 'Color', [0.3 0.3 0.3]);
-
-xlabel(ax4, 'Time [min]',                        'Interpreter', 'latex');
-ylabel(ax4, '$\|e_k\|$ [m]',                     'Interpreter', 'latex');
-title(ax4,  'Error norm decay - Docking approach', 'Interpreter', 'latex');
-legend(ax4, 'Location', 'northeast', 'Interpreter', 'latex');
-
-% Figure 5: Δv bar chart
-fig5 = figure('Name', 'S1 Docking - Deltav bar chart');
-ax5  = axes(fig5);
-dv_vals = [res1.dv, res2.dv, res3.dv];
-b5 = bar(ax5, dv_vals);
-b5.FaceColor = 'flat';
-b5.CData     = [c1; c2; c3];
-set(ax5, 'XTickLabel', {'Run 1  Std MPC', 'Run 2  EMPC CLF', 'Run 3  EMPC+term.eq'});
-grid(ax5, 'on');
-ylabel(ax5, 'Total $\Delta v$ [m/s]', 'Interpreter', 'latex');
-title(ax5, sprintf('$\\Delta v$ - Docking 150 m $\\to$ 0 m  (Run 2: %.0f%% saving vs Run 1)', ...
-    dv_saving_2vs1), 'Interpreter', 'latex');
-for bi = 1:3
-    text(ax5, bi, dv_vals(bi)*1.02, sprintf('%.4f', dv_vals(bi)), ...
-        'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'FontSize', 9);
-end
-
-% Figure 6: 3-D Hill-frame trajectory with LoS approach cone
-% Trajectories are planar (z = 0); the 3-D view exists to show the LoS
-% constraint as an actual cone (radius = y·tan(alpha) about the +y axis).
-fig6 = figure('Name', 'S1 Docking - 3D Hill Trajectory');
-ax6  = axes(fig6);
-hold(ax6, 'on'); grid(ax6, 'on');
-
-% LoS cone surface, axis along +y (along-track), plotted (y, x, z)
-ny = 32; nth = 30;
-[YG, TH] = meshgrid(linspace(0, x0(2)*1.02, ny), linspace(0, 2*pi, nth));
-RG = YG * tan(los_half_angle);
-surf(ax6, YG, RG.*cos(TH), RG.*sin(TH), ...
-    'FaceColor', [0.95 0.90 0.55], 'FaceAlpha', 0.15, ...
-    'EdgeColor', [0.80 0.75 0.45], 'EdgeAlpha', 0.30, 'LineWidth', 0.3, ...
-    'DisplayName', sprintf('LoS cone ($\\pm%d^\\circ$)', alpha_deg));
-
-styles6 = {'-', '-', '--'};
-names6  = {'Run 1 - Std MPC', 'Run 2 - EMPC, CLF $V_f$', 'Run 3 - EMPC $+$ term.eq'};
-for i = 1:3
-    plot3(ax6, R{i}.X(2,:), R{i}.X(1,:), R{i}.X(3,:), styles6{i}, ...
-        'Color', cols{i}, 'LineWidth', 1.6, 'DisplayName', names6{i});
-end
-
-plot3(ax6, x0(2), x0(1), x0(3), 'o', 'Color', [0.4 0.4 0.4], ...
-    'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerSize', 7, ...
-    'DisplayName', 'IC - V-bar hold (150 m)');
-plot3(ax6, 0, 0, 0, 'pk', 'MarkerSize', 11, 'MarkerFaceColor', 'k', ...
-    'DisplayName', 'Docking port (origin)');
-
-xlabel(ax6, 'Along-track $y$ [m]', 'Interpreter', 'latex');
-ylabel(ax6, 'Radial $x$ [m]',      'Interpreter', 'latex');
-zlabel(ax6, 'Cross-track $z$ [m]', 'Interpreter', 'latex');
-title(ax6,  'Hill-Frame Trajectory with LoS Cone (3-D)', 'Interpreter', 'latex');
-legend(ax6, 'Location', 'northeast', 'Interpreter', 'latex', 'FontSize', 8);
-daspect(ax6, [1 1 1]);
-view(ax6, -35, 22);
-
 % PNG export
 out_dir = 'results/figures/s1_docking';
 [~, ~]  = mkdir(out_dir);
 print(fig1, fullfile(out_dir, 'hill_trajectory'), '-dpng', '-r150');
-print(fig6, fullfile(out_dir, 'hill_trajectory_3d'), '-dpng', '-r150');
-print(fig2, fullfile(out_dir, 'cumulative_dv'),   '-dpng', '-r150');
-print(fig3, fullfile(out_dir, 'thrust_profiles'), '-dpng', '-r150');
-print(fig4, fullfile(out_dir, 'error_decay'),     '-dpng', '-r150');
-print(fig5, fullfile(out_dir, 'dv_bar_chart'),    '-dpng', '-r150');
 fprintf('PNG figures saved to %s/\n\n', out_dir);
 
 % LaTeX comparison table (booktabs)
@@ -347,14 +204,6 @@ fprintf('LaTeX comparison table saved to %s\n\n', tex_path);
 if exist('matlab2tikz', 'file')
     matlab2tikz(fullfile(out_dir, 'hill_trajectory.tikz'), ...
         'figurehandle', fig1, 'showInfo', false);
-    matlab2tikz(fullfile(out_dir, 'hill_trajectory_3d.tikz'), ...
-        'figurehandle', fig6, 'showInfo', false);
-    matlab2tikz(fullfile(out_dir, 'cumulative_dv.tikz'), ...
-        'figurehandle', fig2, 'showInfo', false);
-    matlab2tikz(fullfile(out_dir, 'thrust_profiles.tikz'), ...
-        'figurehandle', fig3, 'showInfo', false);
-    matlab2tikz(fullfile(out_dir, 'error_decay.tikz'), ...
-        'figurehandle', fig4, 'showInfo', false);
     fprintf('TikZ figures exported to %s/\n\n', out_dir);
 else
     fprintf('TikZ export skipped (matlab2tikz not on path, run setup.m first).\n\n');
