@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: Docking Control via Economic Model Predictive Control
+message: "If you use this software, please cite the associated publication."
+
+authors:
+  - family-names: Maier
+    given-names: Nils
+
+  - family-names: Nguyen
+    given-names: Tam W.
+
+  - family-names: Cunis
+    given-names: Torbjörn
+
+license: BSD-3-Clause
+
+repository-code: https://github.com/maiergamer9/spacecraft-rendezvous-empc
+
+abstract: >
+  Research software for spacecraft rendezvous and docking using
+  Economic Model Predictive Control (EMPC).
+
+keywords:
+  - model predictive control
+  - economic MPC
+  - spacecraft
+  - rendezvous
+  - guidance
+  - control

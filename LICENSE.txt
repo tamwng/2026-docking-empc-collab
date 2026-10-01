@@ -1,95 +1,30 @@
-Custom Academic Collaboration License
-Version 1.0
+BSD 3-Clause License
 
-Copyright (c) 2026 Tam W. Nguyen
+Copyright (c) 2026, Nils Maier
+All rights reserved.
 
-1. Definitions
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-“Software” refers to all source code, documentation, data, and related materials contained in this repository.
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
 
-“Licensor” refers to Tam W. Nguyen, Kyoto University.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
 
-“Authorized Users” refers exclusively to:
-- Tam W. Nguyen, Kyoto University
-- Nils Maier, University of Stuttgart
-- Torbjorn Cunis, University of Stuttgart
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
 
-“Collaboration Period” refers to the duration of the student’s active research and thesis work conducted in connection with this repository.
-
-2. Grant of Rights
-
-The Licensor grants Authorized Users a limited, non-exclusive, non-transferable, revocable license to:
-
-- Access and use the Software for academic research
-- Modify the Software for internal research purposes
-- Create internal copies and mirrors of the Software
-- Share the Software strictly among Authorized Users
-
-3. Use Within Collaboration
-
-During the Collaboration Period:
-
-- The Software may be shared internally within the respective research groups of the Authorized Users for research and supervision purposes
-- Such internal use does not grant permission for independent publication or external communication of results derived from the Software
-- Any publication or external dissemination of results substantially based on the Software shall be conducted in coordination with the Licensor
-- The Software may not be used to support independent or parallel publication efforts outside the agreed collaboration, including by other students or projects, without prior discussion and agreement
-- Redistribution of the Software outside the Authorized Users remains prohibited
-- The Software is provided in support of the student’s thesis work within the collaboration and is intended to facilitate coordinated academic progress among Authorized Users
-
-4. Contributions
-
-Contributions made within this repository:
-
-- Remain owned by their respective authors
-- Are made available to all Authorized Users for joint academic research use
-- May be used, modified, and built upon internally within the collaboration
-
-5. Use After Collaboration
-
-After the Collaboration Period:
-
-- Authorized Users may continue to use the Software and their own contributions for internal academic research
-- Internal reuse, modification, and extension within their institutions are permitted
-- External distribution of the Software remains prohibited
-- Publications based on substantial reuse of the Software shall acknowledge the Licensor and be communicated in advance in good faith
-
-6. Restrictions
-
-At all times, the following are prohibited without prior written consent:
-
-- Public distribution of the Software
-- Sharing with third parties outside Authorized Users
-- Commercial use
-- Re-implementation or extraction of substantial portions of the Software for external use
-- Sub-licensing or transfer of rights
-
-7. Intellectual Property
-
-- All rights in the Software remain with the Licensor
-- No ownership is transferred under this License
-- This License does not claim ownership over independent research results produced by Authorized Users
-
-8. Publications and Attribution
-
-- Appropriate academic attribution to the Licensor is required for any use of the Software
-- Authorship should follow standard academic practices and be coordinated in good faith
-
-9. No Warranty
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND.
-
-10. Limitation of Liability
-
-THE LICENSOR SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM THE USE OF THE SOFTWARE.
-
-11. Termination
-
-This License terminates upon breach. All use must cease upon termination.
-
-12. Governing Law
-
-This License is governed by the laws of Japan.
-
----
-
-All rights not expressly granted are reserved.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.

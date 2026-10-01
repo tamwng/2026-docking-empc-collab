@@ -1,63 +1,74 @@
-# Docking Control via eMPC — Research Code
+# Docking Control via Economic Model Predictive Control
+
+Research software for spacecraft rendezvous and docking using Economic Model Predictive Control (EMPC).
+
+---
 
 ## Overview
 
-This repository contains research code for:
+This repository contains software developed for the simulation and evaluation of spacecraft rendezvous and proximity operations using Economic Model Predictive Control.
 
-- Modeling of docking and rendezvous systems  
-- Simulation and validation frameworks  
-- Implementation of economic Model Predictive Control (eMPC)  
-- Supporting documentation  
+Current components include:
 
-This codebase is under active development and intended for academic research use.
+- spacecraft rendezvous dynamics
+- Economic MPC implementations
+- simulation environment
+- numerical experiments
+- supporting documentation
 
----
-
-## Access
-
-This repository is private and restricted to authorized collaborators.
-
-For licensing and usage terms, see `LICENSE.txt`.
+The repository accompanies ongoing academic research in mission-centric spacecraft guidance and control.
 
 ---
 
-## Collaboration Context
+## Associated Publication
 
-This work is part of an academic collaboration between:
+An accompanying technical report / preprint is currently under preparation.
 
-- Kyoto University 
+Once publicly available, the citation information will be updated here and in `CITATION.cff`.
+
+---
+
+## Citation
+
+If this software contributes to your research, please cite the associated publication.
+
+Citation metadata is provided in `CITATION.cff`.
+
+---
+
+## Collaboration
+
+This repository was developed as part of a research collaboration between
+
+- Kyoto University
 - University of Stuttgart
 
 ---
 
-## Usage
+## Repository Structure
 
-- The code is experimental and may change without notice  
-- No guarantee of correctness or completeness  
-- Not intended for production or safety-critical systems  
-
----
-
-## Structure
-
-(To be completed and maintained by contributors)
-
-- `/models` — system modeling  
-- `/simulation` — simulation environment  
-- `/controller` — eMPC implementation  
-- `/docs` — notes and documentation  
+```
+exports/         Data exported
+results/         Simulation results
+simulations/     Numerical simulations
+src/             Source codes
+tests/           Validity tests
+tools/           Third-party tools
+visualization/   Visualization toolbox
+```
 
 ---
 
-## Notes for Contributors
+## License
 
-- Follow existing structure and conventions  
-- Keep changes modular and documented  
-- Coordinate major changes within the collaboration  
+This project is released under the BSD 3-Clause License.
+
+See `LICENSE`.
 
 ---
 
 ## Disclaimer
 
-This repository is governed by a custom license.  
-All rights and restrictions are defined in `LICENSE.txt`.
+This software is intended for research and educational purposes.
+
+It is experimental software and is provided without any guarantee of correctness, completeness, or suitability for safety-critical applications.
