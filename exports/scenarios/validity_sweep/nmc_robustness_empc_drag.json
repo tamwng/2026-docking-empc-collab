@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "study": "layer2_nmc_robustness_empc_drag",
+    "controller": "economic fly-around EMPC (S2 Run 2: pure fuel + periodic terminal eq x(N)=Pi*)",
+    "plant": "truth J2-J4 + drag, e=0, NRLMSISE-00 default SW",
+    "scenario": "NMC b=75 m, V-bar 300 m IC, dt=T/92, N=P=92, 4 orbits",
+    "a_km": 6771,
+    "date": "2026-09-24 07:59:15"
+  },
+  "bc_ratio": [
+    1,
+    1.5,
+    2,
+    3,
+    5
+  ],
+  "dv_last_orbit_ms": [
+    0.001171782591097631,
+    0.0068049361322451412,
+    0.013584928042757823,
+    0.027158169827974778,
+    0.054310673501515541
+  ],
+  "dv_total_ms": [
+    0.072284941480245557,
+    0.0857473371886581,
+    0.10397192338292141,
+    0.14548667725610162,
+    0.23548363223270458
+  ],
+  "range_last_orbit_m": [
+    150.6534422512851,
+    157.25688458860898,
+    163.89762381053504,
+    177.47691261545049,
+    205.24239289701339
+  ],
+  "n_infeasible": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

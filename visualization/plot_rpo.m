@@ -1,7 +1,7 @@
 % plot_rpo.m
 % Dedicated figure export script for sim_rpo results.
 % Run AFTER sim_rpo.m has been executed.
-% Exports TikZ .tex files to exports/figures/ for use in master-thesis repo.
+% Exports TikZ .tex files to results/figures/rpo/ (thesis figure convention).
 
 clear; clc;
 %%Paths 
@@ -9,9 +9,9 @@ clear; clc;
 base_dir = fileparts(mfilename('fullpath'));   % .../2026-docking-empc-collab/visualization
 repo_dir = fullfile(base_dir, '..');           % .../2026-docking-empc-collab
 
-addpath(fullfile(repo_dir, 'src', 'matlab2tikz-master', 'src'));
+addpath(fullfile(repo_dir, 'tools', 'matlab2tikz-master', 'src'));
 
-output_dir = fullfile(repo_dir, 'exports', 'figures');
+output_dir = fullfile(repo_dir, 'results', 'figures', 'rpo');
 if ~exist(output_dir, 'dir'), mkdir(output_dir); end
 
 %% Load simulation output 
@@ -38,7 +38,7 @@ title('Bounded Relative Orbit -- CWH Model');
 legend('Trajectory', 'Start', 'Location', 'best');
 grid on; axis equal;
 
-matlab2tikz([output_dir 'rpo_bounded_2d.tex'], ...
+matlab2tikz(fullfile(output_dir, 'rpo_bounded_2d.tex'), ...
     'width', figW, 'height', figH, 'showInfo', false, ...
     'extraAxisOptions', {'ylabel style={font=\small}', ...
                          'xlabel style={font=\small}'});
@@ -74,7 +74,7 @@ ylabel('Radial $x$ [km]');
 title('Secular Along-Track Drift -- CWH Model ($\dot{y}_0 = 0$)');
 grid on;
 
-matlab2tikz([output_dir 'rpo_drift_2d.tex'], ...
+matlab2tikz(fullfile(output_dir, 'rpo_drift_2d.tex'), ...
     'width', figW, 'height', figH, 'showInfo', false);
 close(fig2);
 
@@ -94,8 +94,8 @@ plot(t/60, Rho(3,:)/1e3, 'b');
 ylabel('$z$ [km]'); grid on;
 xlabel('Time [min]');
 
-matlab2tikz([output_dir 'rpo_time_history.tex'], ...
+matlab2tikz(fullfile(output_dir, 'rpo_time_history.tex'), ...
     'width', figW, 'height', figH, 'showInfo', false);
 close(fig3);
 
-disp('All figures exported to exports/figures/');
+disp('All figures exported to results/figures/rpo/');

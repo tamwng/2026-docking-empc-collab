@@ -1,0 +1,101 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.366\figurewidth,
+height=0.862\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor2}},
+xlabel={eccentricity $e$ [-]},
+ymode=log,
+ymin=0.0001,
+ymax=100,
+yminorticks=true,
+ylabel style={font=\color{mycolor2}},
+ylabel={maint.\ $\Delta v$ / orbit [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+0	0.000446241427383305\\
+0.02	0.0102068917542147\\
+0.04	0.0193203954787808\\
+0.06	0.0282626804236525\\
+0.08	0.0522501724467823\\
+0.1	0.163004460073642\\
+0.12	0.538674067404866\\
+0.14	1.59141424617438\\
+0.16	4.23088218463694\\
+0.18	10.2945823500469\\
+0.2	19.8865192345411\\
+0.22	31.1340099946781\\
+0.24	21.7914543535152\\
+0.26	21.1734588609878\\
+0.28	18.6020449901944\\
+0.3	13.6728168677891\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.366\figurewidth,
+height=0.862\figureheight,
+at={(0.634\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor2}},
+xlabel={eccentricity $e$ [-]},
+ymin=0,
+ymax=90,
+ylabel style={font=\color{mycolor2}},
+ylabel={\# infeasible QP steps},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=square, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+0	0\\
+0.02	0\\
+0.04	0\\
+0.06	0\\
+0.08	0\\
+0.1	0\\
+0.12	0\\
+0.14	0\\
+0.16	0\\
+0.18	0\\
+0.2	14\\
+0.22	15\\
+0.24	57\\
+0.26	67\\
+0.28	79\\
+0.3	88\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=1.058\figurewidth,
+height=1.058\figureheight,
+at={(-0.021\figurewidth,-0.116\figureheight)},
+scale only axis,
+xmin=0,
+xmax=1,
+ymin=0,
+ymax=1,
+axis line style={draw=none},
+ticks=none,
+axis x line*=bottom,
+axis y line*=left
+]
+\end{axis}
+\end{tikzpicture}%

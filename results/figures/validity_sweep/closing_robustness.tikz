@@ -1,0 +1,83 @@
+% This file was created by matlab2tikz.
+%
+\definecolor{mycolor1}{rgb}{0.06600,0.44300,0.74500}%
+\definecolor{mycolor2}{rgb}{0.12941,0.12941,0.12941}%
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.366\figurewidth,
+height=0.862\figureheight,
+at={(0\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor2}},
+xlabel={eccentricity $e$ [-]},
+ymin=5,
+ymax=20,
+ylabel style={font=\color{mycolor2}},
+ylabel={total $\Delta v$ [m/s]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=o, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+0	5.97316824889322\\
+0.02	5.85460488264431\\
+0.04	5.92664619050758\\
+0.06	6.637710050018\\
+0.08	7.09031372527193\\
+0.1	7.6459243811927\\
+0.12	8.29048291737255\\
+0.14	9.00694916967556\\
+0.16	9.79703238252006\\
+0.18	10.65303757861\\
+0.2	11.5489185512908\\
+0.22	12.4797181310451\\
+0.24	13.3214339972129\\
+0.26	14.4055280712903\\
+0.28	16.8626069109097\\
+0.3	18.5517230404046\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.366\figurewidth,
+height=0.862\figureheight,
+at={(0.634\figurewidth,0\figureheight)},
+scale only axis,
+xmin=0,
+xmax=0.3,
+xlabel style={font=\color{mycolor2}},
+xlabel={eccentricity $e$ [-]},
+ymin=1,
+ymax=4.5,
+ylabel style={font=\color{mycolor2}},
+ylabel={time to handover [h]},
+axis background/.style={fill=white},
+xmajorgrids,
+ymajorgrids
+]
+\addplot [color=mycolor1, line width=1.5pt, mark=square, mark options={solid, mycolor1}, forget plot]
+  table[row sep=crcr]{%
+0	1.2\\
+0.02	1.1\\
+0.04	1.03333333333333\\
+0.06	1.76666666666667\\
+0.08	1.9\\
+0.1	1.96666666666667\\
+0.12	2.03333333333333\\
+0.14	2.06666666666667\\
+0.16	2.1\\
+0.18	2.13333333333333\\
+0.2	2.1\\
+0.22	2\\
+0.24	1.6\\
+0.26	1.56666666666667\\
+0.28	4.03333333333333\\
+0.3	4.06666666666667\\
+};
+\end{axis}
+\end{tikzpicture}%

@@ -9,26 +9,24 @@
 \begin{tikzpicture}
 
 \begin{axis}[%
-width=7.677in,
+width=2.27in,
 height=4.865in,
-at={(1.288in,0.657in)},
+at={(3.991in,0.657in)},
 scale only axis,
-xmin=-355.658873327604,
-xmax=355.658873327604,
+xmin=-157,
+xmax=87,
 xlabel style={font=\color{mycolor5}},
-xlabel={$r_x$ (radial) [m]},
-ymin=-150,
-ymax=300.706327599808,
+xlabel={Radial $x$ [m]},
+ymin=-186.056506207985,
+ymax=336.762833807793,
 ylabel style={font=\color{mycolor5}},
-ylabel={$r_y$ (along-track) [m]},
+ylabel={Along-track $y$ [m]},
 axis background/.style={fill=white},
-title style={font=\bfseries\color{mycolor5}},
-title={S2: Failure modes -- none acquires $\Pi^*$},
 axis x line*=bottom,
 axis y line*=left,
 xmajorgrids,
 ymajorgrids,
-legend style={legend cell align=left, align=left}
+legend style={font=\tiny, at={(0.03,0.97)}, anchor=north west, legend cell align=left, align=left}
 ]
 \addplot [color=mycolor1, dashed, line width=1.8pt]
   table[row sep=crcr]{%
@@ -128,7 +126,7 @@ legend style={legend cell align=left, align=left}
 };
 \addlegendentry{$\Pi^*$ ($b=75$\,m)}
 
-\addplot [color=mycolor2, line width=1.2pt]
+\addplot [color=mycolor2, line width=1.4pt]
   table[row sep=crcr]{%
 0	300\\
 17.3286548450849	281.03902036349\\
@@ -408,9 +406,9 @@ legend style={legend cell align=left, align=left}
 -35.7513488964975	65.9305963475766\\
 -32.0771050098827	67.7942680487544\\
 };
-\addlegendentry{3a: band $+\,Q \rightarrow$ V-bar eq.}
+\addlegendentry{band $+\,Q$}
 
-\addplot [color=mycolor3, line width=1.2pt]
+\addplot [color=mycolor3, line width=1.4pt]
   table[row sep=crcr]{%
 0	300\\
 0.173187824876407	300.071790749564\\
@@ -598,9 +596,9 @@ legend style={legend cell align=left, align=left}
 0.00246281317619604	77.7362342551549\\
 0.00212526475098441	77.73681859713\\
 };
-\addlegendentry{3b: band $+$ fuel $\rightarrow$ drift}
+\addlegendentry{band $+$ fuel}
 
-\addplot [color=mycolor4, line width=1.2pt]
+\addplot [color=mycolor4, line width=1.4pt]
   table[row sep=crcr]{%
 0	300\\
 17.3286548450991	281.039020363476\\
@@ -880,7 +878,7 @@ legend style={legend cell align=left, align=left}
 9.58250662470214e-08	2.81745713509939e-07\\
 -6.62319131065197e-08	-5.57249496340934e-07\\
 };
-\addlegendentry{3c: $Q$ only $\rightarrow$ origin}
+\addlegendentry{$Q$ only}
 
 \addplot [color=white!40!black, only marks, mark size=2.8pt, mark=square*, mark options={solid, fill=white!40!black, white!40!black}]
   table[row sep=crcr]{%
