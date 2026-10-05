@@ -22,9 +22,9 @@ The repository accompanies ongoing academic research in mission-centric spacecra
 
 ## Associated Publication
 
-An accompanying technical report / preprint is currently under preparation.
+The accompanying technical report is available in `report/`.
 
-Once publicly available, the citation information will be updated here and in `CITATION.cff`.
+The citation information can be found in `CITATION.cff`.
 
 ---
 
