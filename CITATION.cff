@@ -1,25 +1,17 @@
 cff-version: 1.2.0
 title: Docking Control via Economic Model Predictive Control
 message: "If you use this software, please cite the associated publication."
-
+type: software
 authors:
   - family-names: Maier
     given-names: Nils
-
+  - family-names: Cunis
+    given-names: Torbjørn
   - family-names: Nguyen
     given-names: Tam W.
-
-  - family-names: Cunis
-    given-names: Torbjörn
-
 license: BSD-3-Clause
-
 repository-code: https://github.com/maiergamer9/spacecraft-rendezvous-empc
-
-abstract: >
-  Research software for spacecraft rendezvous and docking using
-  Economic Model Predictive Control (EMPC).
-
+abstract: "Research software for spacecraft rendezvous and docking using Economic Model Predictive Control (EMPC)."
 keywords:
   - model predictive control
   - economic MPC
@@ -27,3 +19,21 @@ keywords:
   - rendezvous
   - guidance
   - control
+preferred-citation:
+  type: article
+  authors:
+  - family-names: Maier
+    given-names: Nils
+  - family-names: Cunis
+    given-names: Torbjørn
+  - family-names: Nguyen
+    given-names: Tam W.
+  title: "Mission-Centric Requirements Analysis of Model Predictive Control in Spacecraft Rendezvous and Proximity Operations"
+  journal: "arXiv"
+  year: 2026
+  month: 10
+  version: "1"
+  date-released: "2026-10-02"
+  doi: "10.48550/arXiv.2610.02782"
+  url: "https://arxiv.org/abs/2610.02782"
+  abstract: "Rendezvous and proximity operations (RPO) missions are commonly designed as a sequence of distinct phases each governed by its own sample time, constraint set, and cost structure, with the translation from mission-level requirements to model predictive control (MPC) design parameters typically performed ad hoc. This report takes a first step toward a systematic, traceable mapping between mission requirements and MPC design choices, using the ADRIOS / ClearSpace-1 active debris removal mission as a case study across three sequential operations. Its central hypothesis is that Economic MPC (EMPC), in which the stage cost reflects propellant consumption directly, is structurally better suited to proximity operations than fixed-point regulation or reference tracking, because it can exploit the natural, fuel-free relative-orbital-motion trajectories admitted by the Clohessy-Wiltshire-Hill (CWH) dynamics instead of fighting them. We show that a pure-fuel stage cost is fundamentally degenerate for this class of problem as the closed-loop optimum is not strictly dissipative with respect to any single target state or orbit, and analyse, operation by operation, which terminal ingredient (a terminal region, a terminal cost, a terminal equality, or a stage-cost regularisation) is required to repair this degeneracy, at what fuel and time cost, and under what formal guarantee. Across all three operations the economic controllers cut fuel consumption by roughly 40-99% relative to standard quadratic-tracking MPC, at the cost of longer manoeuvre times, and we synthesise the results into a cross-scenario table of mission requirements, MPC ingredients, and their residual limitations."
